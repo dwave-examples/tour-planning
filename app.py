@@ -101,3 +101,30 @@ solver_card = dbc.Card([
         html.P(id='job_status', children=''),
         dbc.Progress(id="job_status_progress", value=0, color="info", className="mb-3"),]),],
     color="secondary")
+
+app.layout = dbc.Container([
+    html.H1("Tour Planner"),
+    dbc.Row([
+        dbc.Col(tour_config, width=3),
+        dbc.Col(cqm_config, width=3),
+        dbc.Col(solver_card, width=3),],
+        justify="left",),
+    dbc.Row([
+        graph_card],
+        justify="left",),
+    dbc.Row([
+        dbc.Col([
+            dbc.Button("Make CQM", id="btn_update_cqm", color="primary", className="me-1"),
+            html.Label('CQM:'),
+            dcc.Textarea(id="cqm_print", value='Your CQM',
+                style={'width': '50%', 'height': 100}),],),],
+        justify="left",),
+    dbc.Tooltip("Number of legs for the tour.",
+                target="num_legs",),
+    dbc.Tooltip("Maximum length for a single leg.",
+                target="max_leg_length",),
+    dbc.Tooltip("Minimum length for a single leg.",
+                target="min_leg_length",),
+    dbc.Tooltip("Maximum elevation for a single leg.",
+                target="max_leg_slope",),],
+    fluid=True, style={"backgroundColor": "black", "color": "#f37820"})

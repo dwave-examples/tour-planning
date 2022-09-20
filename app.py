@@ -86,3 +86,18 @@ tour_config = dbc.Card(
         width=6,),],
         justify="left")],
     body=True, color="secondary")
+
+graph_card = dbc.Card([
+    html.H4("Tour Legs", className="card-title"),
+    dbc.Col(
+        dcc.Graph(id='tour_graph'), width=12),],
+    color="secondary")
+
+solver_card = dbc.Card([
+    html.H4("Job Submission", className="card-title"),
+    dbc.Col([
+        dbc.Button("Solve CQM", id="btn_solve_cqm", color="primary", className="me-1"),
+        dcc.Interval(id='check_job_status', interval=2 * 1000, n_intervals=0, disabled=True),
+        html.P(id='job_status', children=''),
+        dbc.Progress(id="job_status_progress", value=0, color="info", className="mb-3"),]),],
+    color="secondary")

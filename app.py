@@ -59,3 +59,30 @@ cqm_config = dbc.Card(
      html.Label('Text Input'),
      dcc.Input(id="test2", value='MTL', type='text'),],
     body=True, color="secondary")
+
+tour_config = dbc.Card(
+    [dbc.Row([
+        html.H4("Tour Settings", className="card-title"),
+        dbc.Col([
+            html.B("Legs"),
+            html.Br(),
+            dcc.Input(id='num_legs', type='number', min=5, max=100, step=1, value=10)],
+        width=5),
+        dbc.Col([
+            html.B("Leg Description"),
+            dbc.Row([
+                "Max. Length:",
+                dcc.Input(id='max_leg_length', type='number', min=1, max=20,
+                          step=1, value=10),],),
+            dbc.Row([
+               "Min. Length:",
+               dcc.Input(id='min_leg_length', type='number', min=1, max=20,
+                         step=1, value=2),]),
+            dbc.Row([
+               "Max. Slope:",
+               dcc.Slider(min=0, max=10, step=1,
+                          marks={i: f'{str(i)}' for i in range(0, 11)},
+                          value=8, id='max_leg_slope'),]),],
+        width=6,),],
+        justify="left")],
+    body=True, color="secondary")

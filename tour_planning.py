@@ -65,3 +65,18 @@ for leg in range(L):
          cqm.add_constraint(t[num_modes*leg:num_modes*leg+num_modes][drive_index] == 0, label=f"Toll to drive on leg {leg}")
      if legs[leg]['uphill'] > MAX_ELEVATION/2:
          cqm.add_constraint(t[num_modes*leg:num_modes*leg+num_modes][cycle_index] == 0, label=f"Too steep to cycle on leg {leg}", weight=150)
+
+
+sampler = LeapHybridCQMSampler()
+
+sampleset = sampler.sample_cqm(cqm, time_limit=5)
+sampleset_feasible = sampleset.filter(lambda row: row.is_feasible)
+
+data = []
+for datum in sampleset_feasible.data(fields=['sample', 'energy']):
+    modes_on = [key.split('_')[0] for key,val in datum.sample.items() if val==1.0]
+    row = {mode_on: modes_on.count(mode_on) for mode_on in transport.keys()}
+    row.update({'energy': datum.energy})
+    data.append(row)
+
+df = pd.DataFrame(data).drop_duplicates(keep='first', ignore_index=True, subset=transport.keys())

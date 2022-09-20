@@ -128,3 +128,38 @@ app.layout = dbc.Container([
     dbc.Tooltip("Maximum elevation for a single leg.",
                 target="max_leg_slope",),],
     fluid=True, style={"backgroundColor": "black", "color": "#f37820"})
+
+@app.callback(
+    Output('max_leg_length', 'value'),
+    Output('min_leg_length', 'value'),
+    Input('num_legs', 'value'),
+    Input('max_leg_length', 'value'),
+    Input('min_leg_length', 'value'),
+    Input('max_leg_slope', 'value'),)
+def update_tour(num_legs, max_leg_length, min_leg_length, max_leg_slope):
+    """Build tour
+
+    Args:
+        G (networkx Graph)
+        k (int):
+            Maximum number of communities.
+
+    Returns:
+        DiscreteQuadraticModel
+    """
+    trigger_id = dash.callback_context.triggered[0]["prop_id"].split(".")[0]
+    if "num_legs" == trigger_id:
+        tour.num_legs = num_legs
+    elif 'max_leg_length' == trigger_id:
+        tour.max_length = max_leg_length
+        if max_leg_length < tour.min_length:
+            tour.min_length = tour.max_length
+    elif 'min_leg_length' == trigger_id:
+        tour.min_length = min_leg_length
+        if min_leg_length > tour.max_length:
+            tour.max_length = tour.min_length
+    elif 'max_leg_slope' == trigger_id:
+        tour.max_elevation = max_leg_slope
+
+    tour.update_config()
+    return tour.max_length, tour.min_length

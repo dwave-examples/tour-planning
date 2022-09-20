@@ -16,67 +16,56 @@ import dimod
 import random
 import numpy as np
 import pandas as pd
-from dwave.system import LeapHybridCQMSampler
 
-L = 10
-
-transport = {
-    'walk': {'Speed': 1, 'Cost': 0, 'Exercise': 1},
-    'cycle': {'Speed': 3, 'Cost': 2, 'Exercise': 2},
-     'bus': {'Speed': 4, 'Cost': 3, 'Exercise': 0},
-     'drive': {'Speed': 7, 'Cost': 5, 'Exercise': 0}}
-
-modes = transport.keys()
-num_modes = len(modes)
-
-MAX_LENGTH = 10
-MIN_LENGTH = 0.2*MAX_LENGTH
-MAX_ELEVATION = 8
-legs = [{'length': round((MAX_LENGTH - MIN_LENGTH)*random.random() + MIN_LENGTH, 1),
-         'uphill': round(MAX_ELEVATION*random.random(), 1),
-         'toll': np.random.choice([True, False], 1, p=[0.2, 0.8])[0]} for i in range(L)]
-
-max_cost = sum(l["length"] for l in legs)*np.mean([c["Cost"] for c in transport.values()])
-max_time = 0.5*sum(l["length"] for l in legs)/min(s["Speed"] for s in transport.values())
-
-t= [dimod.Binary(f'{mode}_{i}') for i in range(L) for mode in transport.keys()]
-
-def calculate_total(t, measure):
+def calculate_total(t, measure, tour):
     if measure == 'Exercise':
-        return dimod.quicksum(t[i]*transport[t[i].variables[0].split('_')[0]]['Exercise']*legs[i//num_modes]['length']*legs[i//num_modes]['uphill'] for i in range(num_modes*L))
+        return dimod.quicksum(t[i]*tour.transport[t[i].variables[0].split('_')[0]]['Exercise']*tour.legs[i//tour.num_modes]['length']*tour.legs[i//tour.num_modes]['uphill'] for i in range(tour.num_modes*tour.num_legs))
     elif measure == 'Time':
-        return dimod.quicksum(t[i]*legs[i//num_modes]['length']/transport[t[i].variables[0].split('_')[0]]['Speed'] for i in range(num_modes*L))
+        return dimod.quicksum(t[i]*tour.legs[i//tour.num_modes]['length']/tour.transport[t[i].variables[0].split('_')[0]]['Speed'] for i in range(tour.num_modes*tour.num_legs))
     else:
-        return dimod.quicksum(t[i]*transport[t[i].variables[0].split('_')[0]][measure]*legs[i//num_modes]['length'] for i in range(num_modes*L))
+        return dimod.quicksum(t[i]*tour.transport[t[i].variables[0].split('_')[0]][measure]*tour.legs[i//tour.num_modes]['length'] for i in range(tour.num_modes*tour.num_legs))
 
+def build_cqm(tour):
+    """Build DQM for maximizing modularity.
 
-cqm = dimod.ConstrainedQuadraticModel()
-cqm.set_objective(-calculate_total(t, "Exercise"))
+    Args:
+        G (networkx Graph)
+        k (int):
+            Maximum number of communities.
 
-for leg in range(L):
-    cqm.add_constraint(dimod.quicksum(t[num_modes*leg:num_modes*leg+num_modes]) == 1, label=f"One-hot leg{leg}")
-cqm.add_constraint(calculate_total(t, "Cost") <= max_cost, label="Total cost", weight=100, penalty='quadratic')
-cqm.add_constraint(calculate_total(t, "Time") <= max_time, label="Total time", weight=30, penalty='linear')
+    Returns:
+        DiscreteQuadraticModel
+    """
+    t= [dimod.Binary(f'{mode}_{i}') for i in range(tour.num_legs) for mode in tour.transport.keys()]
 
-drive_index = list(modes).index('drive')
-cycle_index = list(modes).index('cycle')
-for leg in range(L):
-     if legs[leg]['toll']:
-         cqm.add_constraint(t[num_modes*leg:num_modes*leg+num_modes][drive_index] == 0, label=f"Toll to drive on leg {leg}")
-     if legs[leg]['uphill'] > MAX_ELEVATION/2:
-         cqm.add_constraint(t[num_modes*leg:num_modes*leg+num_modes][cycle_index] == 0, label=f"Too steep to cycle on leg {leg}", weight=150)
+    cqm = dimod.ConstrainedQuadraticModel()
+    cqm.set_objective(-calculate_total(t, "Exercise", tour))
 
+    for leg in range(tour.num_legs):
+        cqm.add_constraint(dimod.quicksum(t[tour.num_modes*leg:tour.num_modes*leg+tour.num_modes]) == 1, label=f"One-hot leg{leg}")
+    cqm.add_constraint(calculate_total(t, "Cost", tour) <= tour.max_cost, label="Total cost", weight=100, penalty='quadratic')
+    cqm.add_constraint(calculate_total(t, "Time", tour) <= tour.max_time, label="Total time", weight=30, penalty='linear')
 
-sampler = LeapHybridCQMSampler()
+    drive_index = list(tour.modes).index('drive')
+    cycle_index = list(tour.modes).index('cycle')
+    for leg in range(tour.num_legs):
+         if tour.legs[leg]['toll']:
+             cqm.add_constraint(t[tour.num_modes*leg:tour.num_modes*leg+tour.num_modes][drive_index] == 0, label=f"Toll to drive on leg {leg}")
+         if tour.legs[leg]['uphill'] > tour.max_elevation/2:
+             cqm.add_constraint(t[tour.num_modes*leg:tour.num_modes*leg+tour.num_modes][cycle_index] == 0, label=f"Too steep to cycle on leg {leg}", weight=150)
 
-sampleset = sampler.sample_cqm(cqm, time_limit=5)
-sampleset_feasible = sampleset.filter(lambda row: row.is_feasible)
+    return cqm
 
-data = []
-for datum in sampleset_feasible.data(fields=['sample', 'energy']):
-    modes_on = [key.split('_')[0] for key,val in datum.sample.items() if val==1.0]
-    row = {mode_on: modes_on.count(mode_on) for mode_on in transport.keys()}
-    row.update({'energy': datum.energy})
-    data.append(row)
+def solve_cqm(cqm, sampler):
+    """Solve the CQM on Leap CQM hybrid solver.
 
-df = pd.DataFrame(data).drop_duplicates(keep='first', ignore_index=True, subset=transport.keys())
+    Args:
+        G (networkx Graph)
+        k (int):
+            Maximum number of communities.
+
+    Returns:
+        DiscreteQuadraticModel
+    """
+    sampleset = sampler.sample_cqm(cqm, time_limit=5)
+    sampleset_feasible = sampleset.filter(lambda row: row.is_feasible)

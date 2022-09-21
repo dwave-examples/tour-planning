@@ -204,3 +204,39 @@ def submit_cqm(button_solve_cqm):
         return_vals = [str(first), True, False]
 
     return return_vals[0], return_vals[1], return_vals[2]
+
+@app.callback(
+    Output('job_status_progress', 'value'),
+    Output('job_status_progress', 'color'),
+    Input('job_status', 'children'),)
+def get_solution(progress_print):
+    """Retrieve solutions from Leap
+
+    Args:
+        G (networkx Graph)
+        k (int):
+            Maximum number of communities.
+
+    Returns:
+        DiscreteQuadraticModel
+    """
+    trigger_id = dash.callback_context.triggered[0]["prop_id"].split(".")[0]
+
+    if 'job_status' == trigger_id:
+
+        if job_tracker.computation:
+            job_tracker.status = job_tracker.computation.remote_status
+
+        print(progress_print)
+        progress_bar_val = [int(s) for s in progress_print.split() if s.isdigit()][0]
+
+        if progress_bar_val < 20:
+            return progress_bar_val, dash.no_update
+        elif progress_bar_val < 40:
+            return progress_bar_val, 'warning'
+        elif progress_bar_val < 60:
+            return progress_bar_val, 'danger'
+        else:
+            return progress_bar_val, 'success'
+    else:
+        return dash.no_update, dash.no_update

@@ -56,7 +56,38 @@ def build_cqm(tour):
 
     return cqm
 
-def solve_cqm(cqm, sampler):
+def get_solver(profile):
+    """Get the Leap CQM hybrid solver.
+
+    Args:
+        G (networkx Graph)
+        k (int):
+            Maximum number of communities.
+
+    Returns:
+        DiscreteQuadraticModel
+    """
+    with Client.from_config(profile=profile) as client:
+        solver = client.get_solver(supported_problem_types__issubset={"cqm"})
+        return solver.name
+
+def upload_cqm(cqm, solver_name):
+    """Upload the CQM on Leap CQM hybrid solver.
+
+    Args:
+        G (networkx Graph)
+        k (int):
+            Maximum number of communities.
+
+    Returns:
+        DiscreteQuadraticModel
+    """
+    with Client.from_config(profile="test") as client:
+        solver = client.get_solver(name=solver_name)
+        problem_data_id = solver.upload_cqm(cqm).result()
+        return problem_data_id
+
+def solve_cqm(problem_data_id, time_limit, solver_name):
     """Solve the CQM on Leap CQM hybrid solver.
 
     Args:
@@ -67,5 +98,7 @@ def solve_cqm(cqm, sampler):
     Returns:
         DiscreteQuadraticModel
     """
-    sampleset = sampler.sample_cqm(cqm, time_limit=5)
-    sampleset_feasible = sampleset.filter(lambda row: row.is_feasible)
+    with Client.from_config(profile="test") as client:
+        solver = client.get_solver(name=solver_name)
+        computation = solver.sample_cqm(problem_data_id, label="Tour Planning", time_limit=time_limit)
+        return computation

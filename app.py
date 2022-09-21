@@ -163,3 +163,44 @@ def update_tour(num_legs, max_leg_length, min_leg_length, max_leg_slope):
 
     tour.update_config()
     return tour.max_length, tour.min_length
+
+@app.callback(
+    Output('test2', 'value'),
+    Output('btn_solve_cqm', 'disabled'),
+    Output('check_job_status', 'disabled'),
+    Input('btn_solve_cqm', 'n_clicks'),)
+def submit_cqm(button_solve_cqm):
+    """Solve the CQM
+
+    Args:
+        G (networkx Graph)
+        k (int):
+            Maximum number of communities.
+
+    Returns:
+        DiscreteQuadraticModel
+    """
+    solve_button_diabled = False
+    timer_disabled = True
+    test2_output = "placeholder"
+    return_vals = [test2_output, solve_button_diabled, timer_disabled]
+    trigger_id = dash.callback_context.triggered[0]["prop_id"].split(".")[0]
+    # value = input_value if trigger_id == "input-circular" else slider_value
+    # changed_id = [p['prop_id'] for p in dash.callback_context.triggered][0]
+    if "btn_solve_cqm" == trigger_id:
+        tour.cqm = build_cqm(tour)
+        print(f"solve_cqm button {job_tracker.solver_name} and {tour.cqm}")
+        job_tracker.problem_id = upload_cqm(tour.cqm, job_tracker.solver_name)
+        #sampleset = sampler.sample_cqm(cqm, time_limit=5)
+        #sampleset_feasible = sampleset.filter(lambda row: row.is_feasible)
+        # data = []
+        # for datum in sampleset_feasible.data(fields=['sample', 'energy']):
+        #     modes_on = [key.split('_')[0] for key,val in datum.sample.items() if val==1.0]
+        #     row = {mode_on: modes_on.count(mode_on) for mode_on in transport.keys()}
+        #     row.update({'energy': datum.energy})
+        #     data.append(row)
+        data = imported_data
+        first = sorted({int(key.split('_')[1]): key.split('_')[0] for key,val in data[0].items() if val==1.0}.items())
+        return_vals = [str(first), True, False]
+
+    return return_vals[0], return_vals[1], return_vals[2]

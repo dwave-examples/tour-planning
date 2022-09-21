@@ -165,11 +165,13 @@ def update_tour(num_legs, max_leg_length, min_leg_length, max_leg_slope):
     return tour.max_length, tour.min_length
 
 @app.callback(
-    Output('test2', 'value'),
     Output('btn_solve_cqm', 'disabled'),
     Output('check_job_status', 'disabled'),
-    Input('btn_solve_cqm', 'n_clicks'),)
-def submit_cqm(button_solve_cqm):
+    Output('job_status_progress', 'value'),
+    Output('job_status_progress', 'color'),
+    Input('btn_solve_cqm', 'n_clicks'),
+    Input('job_status', 'children'),)
+def submit_cqm(btn_solve_cqm_clicks, job_status):
     """Solve the CQM
 
     Args:
@@ -180,71 +182,48 @@ def submit_cqm(button_solve_cqm):
     Returns:
         DiscreteQuadraticModel
     """
-    solve_button_diabled = False
-    timer_disabled = True
-    test2_output = "placeholder"
-    return_vals = [test2_output, solve_button_diabled, timer_disabled]
     trigger_id = dash.callback_context.triggered[0]["prop_id"].split(".")[0]
-    # value = input_value if trigger_id == "input-circular" else slider_value
-    # changed_id = [p['prop_id'] for p in dash.callback_context.triggered][0]
-    if "btn_solve_cqm" == trigger_id:
+    if trigger_id == ".":
+        solve_button_diabled = False
+        timer_disabled = True
+        print(f"submit_cqm: {trigger_id} {job_tracker.status}")
+
+    elif trigger_id == "btn_solve_cqm":
+        solve_button_diabled = True
+        timer_disabled = False
+        print(f"submit_cqm: {trigger_id} {job_tracker.status}")
         tour.cqm = build_cqm(tour)
-        print(f"solve_cqm button {job_tracker.solver_name} and {tour.cqm}")
-        job_tracker.problem_id = upload_cqm(tour.cqm, job_tracker.solver_name)
-        #sampleset = sampler.sample_cqm(cqm, time_limit=5)
-        #sampleset_feasible = sampleset.filter(lambda row: row.is_feasible)
-        # data = []
-        # for datum in sampleset_feasible.data(fields=['sample', 'energy']):
-        #     modes_on = [key.split('_')[0] for key,val in datum.sample.items() if val==1.0]
-        #     row = {mode_on: modes_on.count(mode_on) for mode_on in transport.keys()}
-        #     row.update({'energy': datum.energy})
-        #     data.append(row)
+        print(f"solve_cqm button submitted to {job_tracker.solver_name}")
+        job_tracker.problem_data_id = upload_cqm(tour.cqm, job_tracker.solver_name)
+        job_tracker.computation = solve_cqm(job_tracker.problem_data_id, time_limit=5, solver_name=job_tracker.solver_name)
+        job_tracker.status = "SUBMITTED"
+
         data = imported_data
         first = sorted({int(key.split('_')[1]): key.split('_')[0] for key,val in data[0].items() if val==1.0}.items())
-        return_vals = [str(first), True, False]
 
-    return return_vals[0], return_vals[1], return_vals[2]
+    elif trigger_id == "job_status":
+        solve_button_diabled = True
+        timer_disabled = False
+        job_tracker.status = job_tracker.computation.remote_status
+        print(f"submit_cqm: {trigger_id} {job_tracker.status}")
+        if job_tracker.status == 'COMPLETED':
+            solve_button_diabled = False
+            timer_disabled = True
+            job_tracker.result = job_tracker.computation.result()
 
-@app.callback(
-    Output('job_status_progress', 'value'),
-    Output('job_status_progress', 'color'),
-    Input('job_status', 'children'),)
-def get_solution(progress_print):
-    """Retrieve solutions from Leap
+    status_bar_val = status_bar_state[job_tracker.status][0]
+    status_bar_color = status_bar_state[job_tracker.status][1]
 
-    Args:
-        G (networkx Graph)
-        k (int):
-            Maximum number of communities.
-
-    Returns:
-        DiscreteQuadraticModel
-    """
-    trigger_id = dash.callback_context.triggered[0]["prop_id"].split(".")[0]
-
-    if 'job_status' == trigger_id:
-
-        if job_tracker.computation:
-            job_tracker.status = job_tracker.computation.remote_status
-
-        print(progress_print)
-        progress_bar_val = [int(s) for s in progress_print.split() if s.isdigit()][0]
-
-        if progress_bar_val < 20:
-            return progress_bar_val, dash.no_update
-        elif progress_bar_val < 40:
-            return progress_bar_val, 'warning'
-        elif progress_bar_val < 60:
-            return progress_bar_val, 'danger'
-        else:
-            return progress_bar_val, 'success'
-    else:
-        return dash.no_update, dash.no_update
+    return solve_button_diabled, timer_disabled, status_bar_val, status_bar_color
 
 @app.callback(
     Output('job_status', 'children'),
     Input('check_job_status', 'n_intervals'),)
 def check_job_status(n):
+    trigger_id = dash.callback_context.triggered[0]["prop_id"].split(".")[0]
+    print(f"check_job_status: {trigger_id} {job_tracker.status}")
+    if trigger_id == ".":
+        return dash.no_update
     return f"Job Status: {job_tracker.status} (Elapsed: {n} seconds)"
 
 @app.callback(

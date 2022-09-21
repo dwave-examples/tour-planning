@@ -12,10 +12,13 @@
 #    See the License for the specific language governing permissions and
 #    limitations under the License.
 
-import dimod
 import random
 import numpy as np
 import pandas as pd
+
+import dimod
+from dwave.cloud.hybrid import Client
+
 
 def calculate_total(t, measure, tour):
     if measure == 'Exercise':
@@ -102,3 +105,6 @@ def solve_cqm(problem_data_id, time_limit, solver_name):
         solver = client.get_solver(name=solver_name)
         computation = solver.sample_cqm(problem_data_id, label="Tour Planning", time_limit=time_limit)
         return computation
+
+    # sampleset = sampler.sample_cqm(cqm, time_limit=5)
+    # sampleset_feasible = sampleset.filter(lambda row: row.is_feasible)

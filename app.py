@@ -242,6 +242,12 @@ def get_solution(progress_print):
         return dash.no_update, dash.no_update
 
 @app.callback(
+    Output('job_status', 'children'),
+    Input('check_job_status', 'n_intervals'),)
+def check_job_status(n):
+    return f"Job Status: {job_tracker.status} (Elapsed: {n} seconds)"
+
+@app.callback(
     Output('tour_graph', 'figure'),
     Input('btn_update_cqm', 'n_clicks'),)
 def update_graph(btn_update_cqm):

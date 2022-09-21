@@ -240,3 +240,49 @@ def get_solution(progress_print):
             return progress_bar_val, 'success'
     else:
         return dash.no_update, dash.no_update
+
+@app.callback(
+    Output('tour_graph', 'figure'),
+    Input('btn_update_cqm', 'n_clicks'),)
+def update_graph(btn_update_cqm):
+    """Build tour
+
+    Args:
+        G (networkx Graph)
+        k (int):
+            Maximum number of communities.
+
+    Returns:
+        DiscreteQuadraticModel
+    """
+    df_legs = pd.DataFrame({'Length': [l['length'] for l in tour.legs],
+                            'Slope': [s['uphill'] for s in tour.legs]})
+    df_legs["Tour"] = 0
+    fig = px.bar(df_legs, x="Length", y='Tour', color="Slope", orientation="h",
+                 color_continuous_scale=px.colors.diverging.Geyser)
+
+    trigger_id = dash.callback_context.triggered[0]["prop_id"].split(".")[0]
+    if "btn_update_cqm" == trigger_id:
+        print("solve_cqm button clicked in update_graph")
+        fake_sol = [np.random.choice(["walk", "cycle", "car", "bus"], 1)[0] for i in range(len(tour.legs))]
+        fig = px.bar(df_legs, x="Length", y='Tour', color="Slope", orientation="h",
+                     color_continuous_scale=px.colors.diverging.Geyser, text=fake_sol)
+    fig.add_layout_image(
+            dict(
+                source="assets/map.png",
+                xref="paper",
+                yref="paper",
+                x=0,
+                y=1,
+                sizex=1,
+                sizey=1,
+                sizing="stretch",
+                opacity=0.75,
+                layer="below"))
+
+    fig.update_xaxes(showticklabels=False, title=None)
+    fig.update_yaxes(showticklabels=False, title=None)
+    fig.update_traces(width=.1)
+    fig.update_layout(template="plotly_white")
+
+    return fig

@@ -189,27 +189,29 @@ def submit_cqm(btn_solve_cqm_clicks, job_status):
         print(f"submit_cqm: {trigger_id} {job_tracker.status}")
 
     elif trigger_id == "btn_solve_cqm":
+        job_tracker.status = "SUBMITTED"
+        job_tracker.computation = None
         solve_button_diabled = True
         timer_disabled = False
         print(f"submit_cqm: {trigger_id} {job_tracker.status}")
-        tour.cqm = build_cqm(tour)
-        print(f"solve_cqm button submitted to {job_tracker.solver_name}")
+        tour.cqm = build_cqm(tour)   # to move
         job_tracker.problem_data_id = upload_cqm(tour.cqm, job_tracker.solver_name)
-        job_tracker.computation = solve_cqm(job_tracker.problem_data_id, time_limit=5, solver_name=job_tracker.solver_name)
-        job_tracker.status = "SUBMITTED"
-
-        data = imported_data
-        first = sorted({int(key.split('_')[1]): key.split('_')[0] for key,val in data[0].items() if val==1.0}.items())
+        #job_tracker.computation = solve_cqm(job_tracker.problem_data_id, time_limit=5, solver_name=job_tracker.solver_name)
+        client = Client.from_config(profile="test")
+        solver = client.get_solver(name=job_tracker.solver_name)
+        job_tracker.computation = solver.sample_cqm(job_tracker.problem_data_id,
+                    label="with context manager", time_limit=10)
 
     elif trigger_id == "job_status":
         solve_button_diabled = True
         timer_disabled = False
         job_tracker.status = job_tracker.computation.remote_status
         print(f"submit_cqm: {trigger_id} {job_tracker.status}")
-        if job_tracker.status == 'COMPLETED':
+        if job_tracker.status in ['COMPLETED', 'CANCELLED', 'FAILED']:
             solve_button_diabled = False
             timer_disabled = True
             job_tracker.result = job_tracker.computation.result()
+            client(close)
 
     status_bar_val = status_bar_state[job_tracker.status][0]
     status_bar_color = status_bar_state[job_tracker.status][1]

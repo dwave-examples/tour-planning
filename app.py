@@ -1,17 +1,4 @@
-# Copyright 2022 D-Wave Systems Inc.
-#
-#    Licensed under the Apache License, Version 2.0 (the "License");
-#    you may not use this file except in compliance with the License.
-#    You may obtain a copy of the License at
-#
-#        http://www.apache.org/licenses/LICENSE-2.0
-#
-#    Unless required by applicable law or agreed to in writing, software
-#    distributed under the License is distributed on an "AS IS" BASIS,
-#    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-#    See the License for the specific language governing permissions and
-#    limitations under the License.
-
+# http://127.0.0.1:8050/
 
 import dash
 import dash_bootstrap_components as dbc
@@ -23,67 +10,18 @@ import numpy as np
 from pprint import pprint
 import time
 
-from tour_planning import build_cqm, solve_cqm
-from tour_planning import get_solver, upload_cqm, solve_cqm
-from dwave.system import LeapHybridCQMSampler
+from tour_planning import job_submission, tour
+from tour_planning import build_cqm, get_solver, upload_cqm
+# from dwave.system import LeapHybridCQMSampler
 
 from dwave.cloud.hybrid import Client  # remove later
 
 app = dash.Dash(__name__, external_stylesheets=[dbc.themes.BOOTSTRAP])
 
-imported_data = [{'bus_0': 0.0, 'bus_1': 1.0, 'bus_2': 0.0, 'bus_3': 0.0, 'bus_4': 0.0, 'bus_5': 0.0, 'bus_6': 0.0, 'bus_7': 0.0, 'bus_8': 0.0, 'bus_9': 0.0, 'cycle_0': 1.0, 'cycle_1': 0.0, 'cycle_2': 1.0, 'cycle_3': 1.0, 'cycle_4': 0.0, 'cycle_5': 0.0, 'cycle_6': 1.0, 'cycle_7': 1.0, 'cycle_8': 1.0, 'cycle_9': 0.0, 'drive_0': 0.0, 'drive_1': 0.0,
-'drive_2': 0.0, 'drive_3': 0.0, 'drive_4': 0.0, 'drive_5': 0.0, 'drive_6': 0.0, 'drive_7': 0.0, 'drive_8': 0.0, 'drive_9': 0.0, 'walk_0': 0.0, 'walk_1': 0.0, 'walk_2': 0.0, 'walk_3': 0.0, 'walk_4': 1.0, 'walk_5': 1.0, 'walk_6': 0.0, 'walk_7': 0.0, 'walk_8': 0.0, 'walk_9': 1.0}, -227.57000000000036, 1, -227.57000000000036, True,
-np.array([ True,  True,  True,  True,  True,  True,  True,  True,  True, True,  True,  True,  True,  True,  True,  True])]
+# imported_data = [{'bus_0': 0.0, 'bus_1': 1.0, 'bus_2': 0.0, 'bus_3': 0.0, 'bus_4': 0.0, 'bus_5': 0.0, 'bus_6': 0.0, 'bus_7': 0.0, 'bus_8': 0.0, 'bus_9': 0.0, 'cycle_0': 1.0, 'cycle_1': 0.0, 'cycle_2': 1.0, 'cycle_3': 1.0, 'cycle_4': 0.0, 'cycle_5': 0.0, 'cycle_6': 1.0, 'cycle_7': 1.0, 'cycle_8': 1.0, 'cycle_9': 0.0, 'drive_0': 0.0, 'drive_1': 0.0,
+# 'drive_2': 0.0, 'drive_3': 0.0, 'drive_4': 0.0, 'drive_5': 0.0, 'drive_6': 0.0, 'drive_7': 0.0, 'drive_8': 0.0, 'drive_9': 0.0, 'walk_0': 0.0, 'walk_1': 0.0, 'walk_2': 0.0, 'walk_3': 0.0, 'walk_4': 1.0, 'walk_5': 1.0, 'walk_6': 0.0, 'walk_7': 0.0, 'walk_8': 0.0, 'walk_9': 1.0}, -227.57000000000036, 1, -227.57000000000036, True,
+# np.array([ True,  True,  True,  True,  True,  True,  True,  True,  True, True,  True,  True,  True,  True,  True,  True])]
 
-status_bar_state = {'WAITING': [0, 'light'],
-                    'SUBMITTED': [25, 'info'],
-                    'PENDING': [50, 'warning'],
-                    'IN_PROGRESS': [75 ,'primary'],
-                    'COMPLETED': [100, 'success'],
-                    'CANCELLED': [100, 'info'],
-                    'FAILED': [100, 'danger'], }
-
-class tour():
-    """
-
-    """
-    def __init__(self):
-        self.num_legs = 10
-        self.max_length = 10
-        self.min_length = 2
-        self.max_elevation = 8
-        self.transport = {
-            'walk': {'Speed': 1, 'Cost': 0, 'Exercise': 1},
-            'cycle': {'Speed': 3, 'Cost': 2, 'Exercise': 2},
-             'bus': {'Speed': 4, 'Cost': 3, 'Exercise': 0},
-             'drive': {'Speed': 7, 'Cost': 5, 'Exercise': 0}}
-        self.cqm = None
-        self.update_config()
-
-    def update_config(self):
-        self.legs = [{'length': round((self.max_length - self.min_length)*random.random() + self.min_length, 1),
-                 'uphill': round(self.max_elevation*random.random(), 1),
-                 'toll': np.random.choice([True, False], 1, p=[0.2, 0.8])[0]} for i in range(self.num_legs)]
-
-        self.max_cost = sum(l["length"] for l in self.legs)*np.mean([c["Cost"] for c in self.transport.values()])
-        self.max_time = 0.5*sum(l["length"] for l in self.legs)/min(s["Speed"] for s in self.transport.values())
-
-        self.modes = self.transport.keys()
-        self.num_modes = len(self.modes)
-
-class job_submission():
-    """
-
-    """
-    def __init__(self, profile):
-        self.client = None
-        self.solver_name = get_solver(profile)
-        self.problem_data_id = ''
-        self.computation = None
-        self.submission_id = ''
-        self.status = "WAITING"
-        self.result = None
-        self.state = "READY"
 
 tour = tour()
 job_tracker = job_submission(profile='test')
@@ -143,7 +81,7 @@ solver_card = dbc.Card([
     html.H4("Job Submission", className="card-title"),
     dbc.Col([
         dbc.Button("Solve CQM", id="btn_solve_cqm", color="primary", className="me-1"),
-        dcc.Interval(id='check_job_status', interval=5*1000, n_intervals=0, disabled=True),
+        dcc.Interval(id='check_job_status', interval=None, n_intervals=0, disabled=True, max_intervals=1),
         html.P(id='job_status', children=''),
         dbc.Progress(id="job_status_progress", value=0, color="info", className="mb-3"),]),],
     color="secondary")
@@ -233,23 +171,34 @@ def update_cqm(btn_update_cqm):
         tour.cqm = build_cqm(tour)
         return tour.cqm.__str__()
 
+job_bar = {'WAITING': [0, 'light'],
+           'SUBMITTED': [25, 'info'],
+           'PENDING': [50, 'warning'],
+           'IN_PROGRESS': [75 ,'primary'],
+           'COMPLETED': [100, 'success'],
+           'CANCELLED': [100, 'info'],
+           'FAILED': [100, 'danger'], }
+
+
 @app.callback(
     Output('btn_solve_cqm', 'disabled'),
     Output('check_job_status', 'disabled'),
     Output('check_job_status', 'interval'),
     Output('check_job_status', 'n_intervals'),
+    Output('job_status_progress', 'value'),
+    Output('job_status_progress', 'color'),
     Input('btn_solve_cqm', 'n_clicks'),
     Input('check_job_status', 'n_intervals'),)
-def check_job_status(n_clicks, n_intervals):
+def submit_cqm(n_clicks, n_intervals):
 
     trigger_id = dash.callback_context.triggered[0]["prop_id"].split(".")[0]
     if not trigger_id in ["btn_solve_cqm", "check_job_status"]:
         print(f"check_job_status 1: {trigger_id}")
-        return dash.no_update, dash.no_update, dash.no_update, dash.no_update
+        return dash.no_update, dash.no_update, dash.no_update, dash.no_update, dash.no_update, dash.no_update
 
     if trigger_id == "btn_solve_cqm":
         print(f"press_btn_solve_cqm 2: {trigger_id}")
-        return True, False, 0.1*1000, 0
+        return True, False, 0.1*1000, 0, job_bar['WAITING'][0], job_bar['WAITING'][1]
 
     if job_tracker.state == "READY":
         job_tracker.state = "SUBMITTED"
@@ -262,7 +211,7 @@ def check_job_status(n_clicks, n_intervals):
                     label="no context manager", time_limit=10)
 
         print(f"check_job_status 3: {job_tracker.computation}")
-        return True, False, 1*1000, 0
+        return True, False, 1*1000, 0, job_bar['SUBMITTED'][0], job_bar['SUBMITTED'][1]
 
     if job_tracker.state in ["SUBMITTED", "RUNNING"]:
         job_tracker.status = job_tracker.computation.remote_status
@@ -271,22 +220,116 @@ def check_job_status(n_clicks, n_intervals):
         if job_tracker.status == None:   # First few checks
             print(f"check_job_status 5: None")
             job_tracker.state = "SUBMITTED"
-            return True, False, 0.5*1000, 0
+            return True, False, 0.5*1000, 0, job_bar['SUBMITTED'][0], job_bar['SUBMITTED'][1]
 
         if job_tracker.status in ['PENDING', 'IN_PROGRESS']:
             print(f"check_job_status 6: {job_tracker.status}")
             job_tracker.state = "RUNNING"
-            return True, False, 1*1000, 0
+            return True, False, 1*1000, 0, job_bar[job_tracker.status][0], job_bar[job_tracker.status][1]
+
 
         if job_tracker.status in ['COMPLETED', 'CANCELLED', 'FAILED']:
             print(f"check_job_status 7: {job_tracker.status}")
             job_tracker.state = "DONE"
-            return True, False, 1*1000, 0
+            return True, False, 1*1000, 0, job_bar[job_tracker.status][0], job_bar[job_tracker.status][1]
 
     if job_tracker.state == "DONE":
         job_tracker.state = "READY"
         print(f"check_job_status 8: {job_tracker.status}")
-        return False, True, 0.1*1000, 0
+        return False, True, 0.1*1000, 0, dash.no_update, dash.no_update
+
+#
+# @app.callback(
+#     Output('btn_solve_cqm', 'disabled'),
+#     Output('check_job_status', 'disabled'),
+#     Output('job_status_progress', 'value'),
+#     Output('job_status_progress', 'color'),
+#     Input('btn_solve_cqm', 'n_clicks'),
+#     Input('job_status', 'children'),)
+# def submit_cqm(btn_solve_cqm_clicks, job_status):
+#     """Solve the CQM
+#
+#     Args:
+#         G (networkx Graph)
+#         k (int):
+#             Maximum number of communities.
+#
+#     Returns:
+#         DiscreteQuadraticModel
+#     """
+#     trigger_id = dash.callback_context.triggered[0]["prop_id"].split(".")[0]
+#
+#     if trigger_id == "btn_solve_cqm":
+#         job_tracker.status = "SUBMITTED"
+#         job_tracker.computation = None
+#         solve_button_disabled = True
+#         timer_disabled = False
+#         print(f"submit_cqm button pressed/tested: {trigger_id}")
+#         tour.cqm = build_cqm(tour)   # to move
+#         job_tracker.problem_data_id = upload_cqm(tour.cqm, job_tracker.solver_name)
+#         #job_tracker.computation = solve_cqm(job_tracker.problem_data_id, time_limit=5, solver_name=job_tracker.solver_name)
+#         job_tracker.client = Client.from_config(profile="test")
+#         solver = job_tracker.client.get_solver(name=job_tracker.solver_name)
+#         job_tracker.computation = solver.sample_cqm(job_tracker.problem_data_id,
+#                     label="no context manager", time_limit=10)
+#
+#         status_bar_val = status_bar_state[job_tracker.status][0]
+#         status_bar_color = status_bar_state[job_tracker.status][1]
+#
+#         print(f"trigger_id == btn_solve_cqm: {solve_button_disabled}, {timer_disabled}, {status_bar_val}, {status_bar_color}")
+#         return solve_button_disabled, timer_disabled, status_bar_val, status_bar_color
+#
+#     if trigger_id == "job_status":
+#         solve_button_disabled = True
+#         timer_disabled = False
+#
+#         if not job_tracker.client:  # post submission trigger from watchdog
+#             solve_button_disabled = False
+#             timer_disabled = True
+#
+#             status_bar_val = status_bar_state[job_tracker.status][0]
+#             status_bar_color = status_bar_state[job_tracker.status][1]
+#
+#             print(f"trigger_id == btn_solve_cqm and not job_tracker.client: {solve_button_disabled}, {timer_disabled}, {status_bar_val}, {status_bar_color}")
+#             return solve_button_disabled, timer_disabled, status_bar_val, status_bar_color
+#
+#         job_tracker.status = job_tracker.computation.remote_status
+#         print(f"submit_cqm: {trigger_id} {job_tracker.status} {job_tracker.computation}")
+#
+#         if job_tracker.status == 'COMPLETED' or job_tracker.status == 'CANCELLED' or job_tracker.status == 'FAILED':
+#             solve_button_disabled = False
+#             timer_disabled = True
+#             job_tracker.result = job_tracker.computation.result()
+#             print(f"RESULT: {len(job_tracker.result)}")
+#             job_tracker.client(close)
+#             job_tracker.client = None
+#
+#             status_bar_val = status_bar_state[job_tracker.status][0]
+#             status_bar_color = status_bar_state[job_tracker.status][1]
+#
+#             print(f"trigger_id == btn_solve_cqm and TERMINATED: {solve_button_disabled}, {timer_disabled}, {status_bar_val}, {status_bar_color}")
+#             return solve_button_disabled, timer_disabled, status_bar_val, status_bar_color
+#
+#         if job_tracker.status == None:   # First few checks
+#             job_tracker.status = "SUBMITTED"
+#         if job_tracker.status in ['PENDING', 'IN_PROGRESS']:   # temp will remove
+#             print(f"submit_cqm in pending/progress: {trigger_id} {job_tracker.status} {job_tracker.computation}")
+#
+#         status_bar_val = status_bar_state[job_tracker.status][0]
+#         status_bar_color = status_bar_state[job_tracker.status][1]
+#
+#         print(f"trigger_id == btn_solve_cqm and In progress: {solve_button_disabled}, {timer_disabled}, {status_bar_val}, {status_bar_color}")
+#         return solve_button_disabled, timer_disabled, status_bar_val, status_bar_color
+#
+#     solve_button_disabled = False
+#     timer_disabled = True
+#
+#     status_bar_val = status_bar_state[job_tracker.status][0]
+#     status_bar_color = status_bar_state[job_tracker.status][1]
+#
+#     print(f"NO TRIGGER: {solve_button_disabled}, {timer_disabled}, {status_bar_val}, {status_bar_color}")
+#     return solve_button_disabled, timer_disabled, status_bar_val, status_bar_color
+#
 
 @app.callback(
     Output('tour_graph', 'figure'),

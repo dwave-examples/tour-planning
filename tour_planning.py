@@ -1,23 +1,51 @@
-# Copyright 2022 D-Wave Systems Inc.
-#
-#    Licensed under the Apache License, Version 2.0 (the "License");
-#    you may not use this file except in compliance with the License.
-#    You may obtain a copy of the License at
-#
-#        http://www.apache.org/licenses/LICENSE-2.0
-#
-#    Unless required by applicable law or agreed to in writing, software
-#    distributed under the License is distributed on an "AS IS" BASIS,
-#    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-#    See the License for the specific language governing permissions and
-#    limitations under the License.
-
 import random
 import numpy as np
 import pandas as pd
 
 import dimod
 from dwave.cloud.hybrid import Client
+
+class job_submission():
+    """
+
+    """
+    def __init__(self, profile):
+        self.client = None
+        self.solver_name = get_solver(profile)
+        self.problem_data_id = ''
+        self.computation = None
+        self.submission_id = ''
+        self.status = "WAITING"
+        self.result = None
+        self.state = "READY"
+
+class tour():
+    """
+
+    """
+    def __init__(self):
+        self.num_legs = 10
+        self.max_length = 10
+        self.min_length = 2
+        self.max_elevation = 8
+        self.transport = {
+            'walk': {'Speed': 1, 'Cost': 0, 'Exercise': 1},
+            'cycle': {'Speed': 3, 'Cost': 2, 'Exercise': 2},
+             'bus': {'Speed': 4, 'Cost': 3, 'Exercise': 0},
+             'drive': {'Speed': 7, 'Cost': 5, 'Exercise': 0}}
+        self.cqm = None
+        self.update_config()
+
+    def update_config(self):
+        self.legs = [{'length': round((self.max_length - self.min_length)*random.random() + self.min_length, 1),
+                 'uphill': round(self.max_elevation*random.random(), 1),
+                 'toll': np.random.choice([True, False], 1, p=[0.2, 0.8])[0]} for i in range(self.num_legs)]
+
+        self.max_cost = sum(l["length"] for l in self.legs)*np.mean([c["Cost"] for c in self.transport.values()])
+        self.max_time = 0.5*sum(l["length"] for l in self.legs)/min(s["Speed"] for s in self.transport.values())
+
+        self.modes = self.transport.keys()
+        self.num_modes = len(self.modes)
 
 
 def calculate_total(t, measure, tour):
@@ -76,12 +104,10 @@ def get_solver(profile):
 
 def upload_cqm(cqm, solver_name):
     """Upload the CQM on Leap CQM hybrid solver.
-
     Args:
         G (networkx Graph)
         k (int):
             Maximum number of communities.
-
     Returns:
         DiscreteQuadraticModel
     """
@@ -89,22 +115,3 @@ def upload_cqm(cqm, solver_name):
         solver = client.get_solver(name=solver_name)
         problem_data_id = solver.upload_cqm(cqm).result()
         return problem_data_id
-
-def solve_cqm(problem_data_id, time_limit, solver_name):
-    """Solve the CQM on Leap CQM hybrid solver.
-
-    Args:
-        G (networkx Graph)
-        k (int):
-            Maximum number of communities.
-
-    Returns:
-        DiscreteQuadraticModel
-    """
-    with Client.from_config(profile="test") as client:
-        solver = client.get_solver(name=solver_name)
-        computation = solver.sample_cqm(problem_data_id, label="Tour Planning", time_limit=time_limit)
-        return computation
-
-    # sampleset = sampler.sample_cqm(cqm, time_limit=5)
-    # sampleset_feasible = sampleset.filter(lambda row: row.is_feasible)

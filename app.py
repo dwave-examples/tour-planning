@@ -226,7 +226,7 @@ def submit_cqm(n_clicks, n_intervals):
         if job_tracker.status in ['COMPLETED', 'CANCELLED', 'FAILED']:
             job_tracker.state = "DONE"
             if job_tracker.status == 'COMPLETED':
-                job_tracker.result = job_tracker.computation.result()
+                job_tracker.result = job_tracker.computation.sampleset
             elapsed_time = round(time.time() - job_tracker.submission_time)
             return True, False, 1*1000, 0, job_bar[job_tracker.status][0], job_bar[job_tracker.status][1], html.P([f"Status: {job_tracker.status}",html.Br(),f"Elapsed: {elapsed_time} sec."])
 

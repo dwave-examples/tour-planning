@@ -265,9 +265,10 @@ def update_graph(color, n_clicks):
 
     if "job_status_progress" == trigger_id:
         if color == "success":
-            fake_sol = [np.random.choice(["walk", "cycle", "car", "bus"], 1)[0] for i in range(len(tour.legs))]
+            sampleset_feasible = job_tracker.result.filter(lambda row: row.is_feasible)
+            first = sorted({int(key.split('_')[1]): key.split('_')[0] for key,val in sampleset_feasible.first.sample.items() if val==1.0}.items())
             fig = px.bar(df_legs, x="Length", y='Tour', color="Slope", orientation="h",
-                         color_continuous_scale=px.colors.diverging.Geyser, text=fake_sol)
+                         color_continuous_scale=px.colors.diverging.Geyser, text=[transport for leg,transport in first])
 
     fig.add_layout_image(
             dict(

@@ -11,7 +11,6 @@ class job_submission():
     """
     def __init__(self, profile):
         self.client = None
-        self.solver_name = get_solver(profile)
         self.problem_data_id = ''
         self.computation = None
         self.submission_id = ''
@@ -86,32 +85,3 @@ def build_cqm(tour):
              cqm.add_constraint(t[tour.num_modes*leg:tour.num_modes*leg+tour.num_modes][cycle_index] == 0, label=f"Too steep to cycle on leg {leg}", weight=150)
 
     return cqm
-
-def get_solver(profile):
-    """Get the Leap CQM hybrid solver.
-
-    Args:
-        G (networkx Graph)
-        k (int):
-            Maximum number of communities.
-
-    Returns:
-        DiscreteQuadraticModel
-    """
-    with Client.from_config(profile=profile) as client:
-        solver = client.get_solver(supported_problem_types__issubset={"cqm"})
-        return solver.name
-
-def upload_cqm(cqm, solver_name):
-    """Upload the CQM on Leap CQM hybrid solver.
-    Args:
-        G (networkx Graph)
-        k (int):
-            Maximum number of communities.
-    Returns:
-        DiscreteQuadraticModel
-    """
-    with Client.from_config(profile="test") as client:
-        solver = client.get_solver(name=solver_name)
-        problem_data_id = solver.upload_cqm(cqm).result()
-        return problem_data_id

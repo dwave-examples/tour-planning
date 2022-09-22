@@ -83,6 +83,7 @@ class job_submission():
         self.submission_id = ''
         self.status = "WAITING"
         self.result = None
+        self.state = "READY"
 
 tour = tour()
 job_tracker = job_submission(profile='test')
@@ -235,104 +236,57 @@ def update_cqm(btn_update_cqm):
 @app.callback(
     Output('btn_solve_cqm', 'disabled'),
     Output('check_job_status', 'disabled'),
-    Output('job_status_progress', 'value'),
-    Output('job_status_progress', 'color'),
+    Output('check_job_status', 'interval'),
+    Output('check_job_status', 'n_intervals'),
     Input('btn_solve_cqm', 'n_clicks'),
-    Input('job_status', 'children'),)
-def submit_cqm(btn_solve_cqm_clicks, job_status):
-    """Solve the CQM
+    Input('check_job_status', 'n_intervals'),)
+def check_job_status(n_clicks, n_intervals):
 
-    Args:
-        G (networkx Graph)
-        k (int):
-            Maximum number of communities.
-
-    Returns:
-        DiscreteQuadraticModel
-    """
     trigger_id = dash.callback_context.triggered[0]["prop_id"].split(".")[0]
+    if not trigger_id in ["btn_solve_cqm", "check_job_status"]:
+        print(f"check_job_status 1: {trigger_id}")
+        return dash.no_update, dash.no_update, dash.no_update, dash.no_update
 
     if trigger_id == "btn_solve_cqm":
-        job_tracker.status = "SUBMITTED"
+        print(f"press_btn_solve_cqm 2: {trigger_id}")
+        return True, False, 0.1*1000, 0
+
+    if job_tracker.state == "READY":
+        job_tracker.state = "SUBMITTED"
         job_tracker.computation = None
-        solve_button_disabled = True
-        timer_disabled = False
-        print(f"submit_cqm button pressed/tested: {trigger_id}")
         tour.cqm = build_cqm(tour)   # to move
         job_tracker.problem_data_id = upload_cqm(tour.cqm, job_tracker.solver_name)
-        #job_tracker.computation = solve_cqm(job_tracker.problem_data_id, time_limit=5, solver_name=job_tracker.solver_name)
         job_tracker.client = Client.from_config(profile="test")
         solver = job_tracker.client.get_solver(name=job_tracker.solver_name)
         job_tracker.computation = solver.sample_cqm(job_tracker.problem_data_id,
                     label="no context manager", time_limit=10)
 
-        status_bar_val = status_bar_state[job_tracker.status][0]
-        status_bar_color = status_bar_state[job_tracker.status][1]
+        print(f"check_job_status 3: {job_tracker.computation}")
+        return True, False, 1*1000, 0
 
-        print(f"trigger_id == btn_solve_cqm: {solve_button_disabled}, {timer_disabled}, {status_bar_val}, {status_bar_color}")
-        return solve_button_disabled, timer_disabled, status_bar_val, status_bar_color
-
-    if trigger_id == "job_status":
-        solve_button_disabled = True
-        timer_disabled = False
-
-        if not job_tracker.client:  # post submission trigger from watchdog
-            solve_button_disabled = False
-            timer_disabled = True
-
-            status_bar_val = status_bar_state[job_tracker.status][0]
-            status_bar_color = status_bar_state[job_tracker.status][1]
-
-            print(f"trigger_id == btn_solve_cqm and not job_tracker.client: {solve_button_disabled}, {timer_disabled}, {status_bar_val}, {status_bar_color}")
-            return solve_button_disabled, timer_disabled, status_bar_val, status_bar_color
-
+    if job_tracker.state in ["SUBMITTED", "RUNNING"]:
         job_tracker.status = job_tracker.computation.remote_status
-        print(f"submit_cqm: {trigger_id} {job_tracker.status} {job_tracker.computation}")
-
-        if job_tracker.status == 'COMPLETED' or job_tracker.status == 'CANCELLED' or job_tracker.status == 'FAILED':
-            solve_button_disabled = False
-            timer_disabled = True
-            job_tracker.result = job_tracker.computation.result()
-            print(f"RESULT: {len(job_tracker.result)}")
-            job_tracker.client(close)
-            job_tracker.client = None
-
-            status_bar_val = status_bar_state[job_tracker.status][0]
-            status_bar_color = status_bar_state[job_tracker.status][1]
-
-            print(f"trigger_id == btn_solve_cqm and TERMINATED: {solve_button_disabled}, {timer_disabled}, {status_bar_val}, {status_bar_color}")
-            return solve_button_disabled, timer_disabled, status_bar_val, status_bar_color
+        print(f"check_job_status 4: {job_tracker.status}")
 
         if job_tracker.status == None:   # First few checks
-            job_tracker.status = "SUBMITTED"
-        if job_tracker.status in ['PENDING', 'IN_PROGRESS']:   # temp will remove
-            print(f"submit_cqm in pending/progress: {trigger_id} {job_tracker.status} {job_tracker.computation}")
+            print(f"check_job_status 5: None")
+            job_tracker.state = "SUBMITTED"
+            return True, False, 0.5*1000, 0
 
-        status_bar_val = status_bar_state[job_tracker.status][0]
-        status_bar_color = status_bar_state[job_tracker.status][1]
+        if job_tracker.status in ['PENDING', 'IN_PROGRESS']:
+            print(f"check_job_status 6: {job_tracker.status}")
+            job_tracker.state = "RUNNING"
+            return True, False, 1*1000, 0
 
-        print(f"trigger_id == btn_solve_cqm and In progress: {solve_button_disabled}, {timer_disabled}, {status_bar_val}, {status_bar_color}")
-        return solve_button_disabled, timer_disabled, status_bar_val, status_bar_color
+        if job_tracker.status in ['COMPLETED', 'CANCELLED', 'FAILED']:
+            print(f"check_job_status 7: {job_tracker.status}")
+            job_tracker.state = "DONE"
+            return True, False, 1*1000, 0
 
-    solve_button_disabled = False
-    timer_disabled = True
-
-    status_bar_val = status_bar_state[job_tracker.status][0]
-    status_bar_color = status_bar_state[job_tracker.status][1]
-
-    print(f"NO TRIGGER: {solve_button_disabled}, {timer_disabled}, {status_bar_val}, {status_bar_color}")
-    return solve_button_disabled, timer_disabled, status_bar_val, status_bar_color
-
-@app.callback(
-    Output('job_status', 'children'),
-    Input('check_job_status', 'n_intervals'),)
-def check_job_status(n):
-    trigger_id = dash.callback_context.triggered[0]["prop_id"].split(".")[0]
-    print(f"check_job_status: {trigger_id} {job_tracker.status}")
-    if trigger_id == "check_job_status":
-        return f"Job Status: {job_tracker.status} (Elapsed: {n} seconds)"
-
-    return dash.no_update
+    if job_tracker.state == "DONE":
+        job_tracker.state = "READY"
+        print(f"check_job_status 8: {job_tracker.status}")
+        return False, True, 0.1*1000, 0
 
 @app.callback(
     Output('tour_graph', 'figure'),

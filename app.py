@@ -11,8 +11,7 @@ from pprint import pprint
 import time
 
 from tour_planning import job_submission, tour
-from tour_planning import build_cqm, get_solver, upload_cqm
-# from dwave.system import LeapHybridCQMSampler
+from tour_planning import build_cqm
 
 from dwave.cloud.hybrid import Client  # remove later
 
@@ -179,7 +178,6 @@ job_bar = {'WAITING': [0, 'light'],
            'CANCELLED': [100, 'info'],
            'FAILED': [100, 'danger'], }
 
-
 @app.callback(
     Output('btn_solve_cqm', 'disabled'),
     Output('check_job_status', 'disabled'),
@@ -204,11 +202,11 @@ def submit_cqm(n_clicks, n_intervals):
         job_tracker.state = "SUBMITTED"
         job_tracker.computation = None
         tour.cqm = build_cqm(tour)   # to move
-        job_tracker.problem_data_id = upload_cqm(tour.cqm, job_tracker.solver_name)
         job_tracker.client = Client.from_config(profile="test")
-        solver = job_tracker.client.get_solver(name=job_tracker.solver_name)
+        solver = job_tracker.client.get_solver(supported_problem_types__issubset={"cqm"})
+        job_tracker.problem_data_id = solver.upload_cqm(tour.cqm).result()
         job_tracker.computation = solver.sample_cqm(job_tracker.problem_data_id,
-                    label="no context manager", time_limit=10)
+                    label="Examples - Tour Planning", time_limit=10)
 
         print(f"check_job_status 3: {job_tracker.computation}")
         return True, False, 1*1000, 0, job_bar['SUBMITTED'][0], job_bar['SUBMITTED'][1]
@@ -231,6 +229,7 @@ def submit_cqm(n_clicks, n_intervals):
         if job_tracker.status in ['COMPLETED', 'CANCELLED', 'FAILED']:
             print(f"check_job_status 7: {job_tracker.status}")
             job_tracker.state = "DONE"
+            job_tracker.result = job_tracker.computation.result()
             return True, False, 1*1000, 0, job_bar[job_tracker.status][0], job_bar[job_tracker.status][1]
 
     if job_tracker.state == "DONE":

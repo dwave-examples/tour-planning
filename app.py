@@ -263,12 +263,47 @@ def update_graph(color, n_clicks):
         fig = px.bar(df_legs, x="Length", y='Tour', color="Slope", orientation="h",
                      color_continuous_scale=px.colors.diverging.Geyser, text=fake_sol)
 
+        if len(fake_sol) < 15:
+            full_length = df_legs["Length"].sum()
+            x_pos = 0
+            for leg, icon in enumerate(fake_sol):
+                fig.add_layout_image(
+                        dict(
+                            source=f"assets/{icon}.png",
+                            xref="paper",
+                            yref="paper",
+                            x=x_pos,
+                            y=0.65,
+                            sizex=0.1,
+                            sizey=0.1,
+                            opacity=1,
+                            layer="above"))
+                x_pos += df_legs["Length"][leg]/full_length
+
+
     if "job_status_progress" == trigger_id:
         if color == "success":
             sampleset_feasible = job_tracker.result.filter(lambda row: row.is_feasible)
             first = sorted({int(key.split('_')[1]): key.split('_')[0] for key,val in sampleset_feasible.first.sample.items() if val==1.0}.items())
             fig = px.bar(df_legs, x="Length", y='Tour', color="Slope", orientation="h",
                          color_continuous_scale=px.colors.diverging.Geyser, text=[transport for leg,transport in first])
+
+            if len(first) < 15:
+                full_length = df_legs["Length"].sum()
+                x_pos = 0
+                for leg, icon in enumerate(first):
+                    fig.add_layout_image(
+                            dict(
+                                source=f"assets/{icon}.png",
+                                xref="paper",
+                                yref="paper",
+                                x=x_pos,
+                                y=0.65,
+                                sizex=0.1,
+                                sizey=0.1,
+                                opacity=1,
+                                layer="above"))
+                    x_pos += 0.5*df_legs["Length"][leg]/full_length
 
     fig.add_layout_image(
             dict(

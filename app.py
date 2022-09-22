@@ -237,9 +237,13 @@ def submit_cqm(n_clicks, n_intervals):
 
 @app.callback(
     Output('tour_graph', 'figure'),
+    Input('num_legs', 'value'),
+    Input('max_leg_length', 'value'),
+    Input('min_leg_length', 'value'),
+    Input('max_leg_slope', 'value'),
     Input('job_status_progress', 'color'),
     Input('btn_update_cqm', 'n_clicks'),)
-def update_graph(color, n_clicks):
+def update_graph(num_legs, max_leg_length, min_leg_length, max_leg_slope, color, n_clicks):
     """Build tour
 
     Args:
@@ -257,6 +261,7 @@ def update_graph(color, n_clicks):
                  color_continuous_scale=px.colors.diverging.Geyser)
 
     trigger_id = dash.callback_context.triggered[0]["prop_id"].split(".")[0]
+
 
     if "btn_update_cqm" == trigger_id:
         fake_sol = [np.random.choice(["walk", "cycle", "car", "bus"], 1)[0] for i in range(len(tour.legs))]
@@ -279,7 +284,6 @@ def update_graph(color, n_clicks):
                             opacity=1,
                             layer="above"))
                 x_pos += df_legs["Length"][leg]/full_length
-
 
     if "job_status_progress" == trigger_id:
         if color == "success":

@@ -17,6 +17,7 @@ class job_submission():
         self.status = "WAITING"
         self.result = None
         self.state = "READY"
+        self.submission_time = None
 
 class tour():
     """

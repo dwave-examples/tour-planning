@@ -81,8 +81,8 @@ solver_card = dbc.Card([
     dbc.Col([
         dbc.Button("Solve CQM", id="btn_solve_cqm", color="primary", className="me-1"),
         dcc.Interval(id='check_job_status', interval=None, n_intervals=0, disabled=True, max_intervals=1),
-        html.P(id='job_status', children=''),
-        dbc.Progress(id="job_status_progress", value=0, color="info", className="mb-3"),]),],
+        dbc.Progress(id="job_status_progress", value=0, color="info", className="mb-3"),
+        html.P(id='job_status', children=''),]),],
     color="secondary")
 
 app.layout = dbc.Container([
@@ -131,7 +131,6 @@ def update_tour(num_legs, max_leg_length, min_leg_length, max_leg_slope):
         DiscreteQuadraticModel
     """
     trigger = dash.callback_context.triggered
-    print(f"update_tour {trigger}")
     trigger_id = trigger[0]["prop_id"].split(".")[0]
     if "num_legs" == trigger_id:
         tour.num_legs = num_legs
@@ -185,18 +184,18 @@ job_bar = {'WAITING': [0, 'light'],
     Output('check_job_status', 'n_intervals'),
     Output('job_status_progress', 'value'),
     Output('job_status_progress', 'color'),
+    Output('job_status', 'children'),
     Input('btn_solve_cqm', 'n_clicks'),
     Input('check_job_status', 'n_intervals'),)
 def submit_cqm(n_clicks, n_intervals):
 
     trigger_id = dash.callback_context.triggered[0]["prop_id"].split(".")[0]
     if not trigger_id in ["btn_solve_cqm", "check_job_status"]:
-        print(f"check_job_status 1: {trigger_id}")
-        return dash.no_update, dash.no_update, dash.no_update, dash.no_update, dash.no_update, dash.no_update
+        return dash.no_update, dash.no_update, dash.no_update, dash.no_update, dash.no_update, dash.no_update, dash.no_update
 
     if trigger_id == "btn_solve_cqm":
-        print(f"press_btn_solve_cqm 2: {trigger_id}")
-        return True, False, 0.1*1000, 0, job_bar['WAITING'][0], job_bar['WAITING'][1]
+        job_tracker.submission_time = time.time()
+        return True, False, 0.1*1000, 0, job_bar['WAITING'][0], job_bar['WAITING'][1], dash.no_update
 
     if job_tracker.state == "READY":
         job_tracker.state = "SUBMITTED"
@@ -208,132 +207,39 @@ def submit_cqm(n_clicks, n_intervals):
         job_tracker.computation = solver.sample_cqm(job_tracker.problem_data_id,
                     label="Examples - Tour Planning", time_limit=10)
 
-        print(f"check_job_status 3: {job_tracker.computation}")
-        return True, False, 1*1000, 0, job_bar['SUBMITTED'][0], job_bar['SUBMITTED'][1]
+        elapsed_time = round(time.time() - job_tracker.submission_time)
+        return True, False, 1*1000, 0, job_bar['SUBMITTED'][0], job_bar['SUBMITTED'][1], html.P([f"Status: {job_tracker.status}",html.Br(),f"Elapsed: {elapsed_time} sec."])
 
     if job_tracker.state in ["SUBMITTED", "RUNNING"]:
         job_tracker.status = job_tracker.computation.remote_status
-        print(f"check_job_status 4: {job_tracker.status}")
 
         if job_tracker.status == None:   # First few checks
-            print(f"check_job_status 5: None")
             job_tracker.state = "SUBMITTED"
-            return True, False, 0.5*1000, 0, job_bar['SUBMITTED'][0], job_bar['SUBMITTED'][1]
+            elapsed_time = round(time.time() - job_tracker.submission_time)
+            return True, False, 0.5*1000, 0, job_bar['SUBMITTED'][0], job_bar['SUBMITTED'][1], html.P([f"Status: {job_tracker.status}",html.Br(),f"Elapsed: {elapsed_time} sec."])
 
         if job_tracker.status in ['PENDING', 'IN_PROGRESS']:
-            print(f"check_job_status 6: {job_tracker.status}")
             job_tracker.state = "RUNNING"
-            return True, False, 1*1000, 0, job_bar[job_tracker.status][0], job_bar[job_tracker.status][1]
-
+            elapsed_time = round(time.time() - job_tracker.submission_time)
+            return True, False, 1*1000, 0, job_bar[job_tracker.status][0], job_bar[job_tracker.status][1], html.P([f"Status: {job_tracker.status}",html.Br(),f"Elapsed: {elapsed_time} sec."])
 
         if job_tracker.status in ['COMPLETED', 'CANCELLED', 'FAILED']:
-            print(f"check_job_status 7: {job_tracker.status}")
             job_tracker.state = "DONE"
-            job_tracker.result = job_tracker.computation.result()
-            return True, False, 1*1000, 0, job_bar[job_tracker.status][0], job_bar[job_tracker.status][1]
+            if job_tracker.status == 'COMPLETED':
+                job_tracker.result = job_tracker.computation.result()
+            elapsed_time = round(time.time() - job_tracker.submission_time)
+            return True, False, 1*1000, 0, job_bar[job_tracker.status][0], job_bar[job_tracker.status][1], html.P([f"Status: {job_tracker.status}",html.Br(),f"Elapsed: {elapsed_time} sec."])
 
     if job_tracker.state == "DONE":
         job_tracker.state = "READY"
-        print(f"check_job_status 8: {job_tracker.status}")
-        return False, True, 0.1*1000, 0, dash.no_update, dash.no_update
-
-#
-# @app.callback(
-#     Output('btn_solve_cqm', 'disabled'),
-#     Output('check_job_status', 'disabled'),
-#     Output('job_status_progress', 'value'),
-#     Output('job_status_progress', 'color'),
-#     Input('btn_solve_cqm', 'n_clicks'),
-#     Input('job_status', 'children'),)
-# def submit_cqm(btn_solve_cqm_clicks, job_status):
-#     """Solve the CQM
-#
-#     Args:
-#         G (networkx Graph)
-#         k (int):
-#             Maximum number of communities.
-#
-#     Returns:
-#         DiscreteQuadraticModel
-#     """
-#     trigger_id = dash.callback_context.triggered[0]["prop_id"].split(".")[0]
-#
-#     if trigger_id == "btn_solve_cqm":
-#         job_tracker.status = "SUBMITTED"
-#         job_tracker.computation = None
-#         solve_button_disabled = True
-#         timer_disabled = False
-#         print(f"submit_cqm button pressed/tested: {trigger_id}")
-#         tour.cqm = build_cqm(tour)   # to move
-#         job_tracker.problem_data_id = upload_cqm(tour.cqm, job_tracker.solver_name)
-#         #job_tracker.computation = solve_cqm(job_tracker.problem_data_id, time_limit=5, solver_name=job_tracker.solver_name)
-#         job_tracker.client = Client.from_config(profile="test")
-#         solver = job_tracker.client.get_solver(name=job_tracker.solver_name)
-#         job_tracker.computation = solver.sample_cqm(job_tracker.problem_data_id,
-#                     label="no context manager", time_limit=10)
-#
-#         status_bar_val = status_bar_state[job_tracker.status][0]
-#         status_bar_color = status_bar_state[job_tracker.status][1]
-#
-#         print(f"trigger_id == btn_solve_cqm: {solve_button_disabled}, {timer_disabled}, {status_bar_val}, {status_bar_color}")
-#         return solve_button_disabled, timer_disabled, status_bar_val, status_bar_color
-#
-#     if trigger_id == "job_status":
-#         solve_button_disabled = True
-#         timer_disabled = False
-#
-#         if not job_tracker.client:  # post submission trigger from watchdog
-#             solve_button_disabled = False
-#             timer_disabled = True
-#
-#             status_bar_val = status_bar_state[job_tracker.status][0]
-#             status_bar_color = status_bar_state[job_tracker.status][1]
-#
-#             print(f"trigger_id == btn_solve_cqm and not job_tracker.client: {solve_button_disabled}, {timer_disabled}, {status_bar_val}, {status_bar_color}")
-#             return solve_button_disabled, timer_disabled, status_bar_val, status_bar_color
-#
-#         job_tracker.status = job_tracker.computation.remote_status
-#         print(f"submit_cqm: {trigger_id} {job_tracker.status} {job_tracker.computation}")
-#
-#         if job_tracker.status == 'COMPLETED' or job_tracker.status == 'CANCELLED' or job_tracker.status == 'FAILED':
-#             solve_button_disabled = False
-#             timer_disabled = True
-#             job_tracker.result = job_tracker.computation.result()
-#             print(f"RESULT: {len(job_tracker.result)}")
-#             job_tracker.client(close)
-#             job_tracker.client = None
-#
-#             status_bar_val = status_bar_state[job_tracker.status][0]
-#             status_bar_color = status_bar_state[job_tracker.status][1]
-#
-#             print(f"trigger_id == btn_solve_cqm and TERMINATED: {solve_button_disabled}, {timer_disabled}, {status_bar_val}, {status_bar_color}")
-#             return solve_button_disabled, timer_disabled, status_bar_val, status_bar_color
-#
-#         if job_tracker.status == None:   # First few checks
-#             job_tracker.status = "SUBMITTED"
-#         if job_tracker.status in ['PENDING', 'IN_PROGRESS']:   # temp will remove
-#             print(f"submit_cqm in pending/progress: {trigger_id} {job_tracker.status} {job_tracker.computation}")
-#
-#         status_bar_val = status_bar_state[job_tracker.status][0]
-#         status_bar_color = status_bar_state[job_tracker.status][1]
-#
-#         print(f"trigger_id == btn_solve_cqm and In progress: {solve_button_disabled}, {timer_disabled}, {status_bar_val}, {status_bar_color}")
-#         return solve_button_disabled, timer_disabled, status_bar_val, status_bar_color
-#
-#     solve_button_disabled = False
-#     timer_disabled = True
-#
-#     status_bar_val = status_bar_state[job_tracker.status][0]
-#     status_bar_color = status_bar_state[job_tracker.status][1]
-#
-#     print(f"NO TRIGGER: {solve_button_disabled}, {timer_disabled}, {status_bar_val}, {status_bar_color}")
-#     return solve_button_disabled, timer_disabled, status_bar_val, status_bar_color
-#
+        elapsed_time = round(time.time() - job_tracker.submission_time)
+        return False, True, 0.1*1000, 0, dash.no_update, dash.no_update, html.P([f"Status: {job_tracker.status}",html.Br(),f"Elapsed: {elapsed_time} sec."])
 
 @app.callback(
     Output('tour_graph', 'figure'),
+    Input('job_status_progress', 'color'),
     Input('btn_update_cqm', 'n_clicks'),)
-def update_graph(btn_update_cqm):
+def update_graph(color, n_clicks):
     """Build tour
 
     Args:
@@ -351,10 +257,18 @@ def update_graph(btn_update_cqm):
                  color_continuous_scale=px.colors.diverging.Geyser)
 
     trigger_id = dash.callback_context.triggered[0]["prop_id"].split(".")[0]
+
     if "btn_update_cqm" == trigger_id:
         fake_sol = [np.random.choice(["walk", "cycle", "car", "bus"], 1)[0] for i in range(len(tour.legs))]
         fig = px.bar(df_legs, x="Length", y='Tour', color="Slope", orientation="h",
                      color_continuous_scale=px.colors.diverging.Geyser, text=fake_sol)
+
+    if "job_status_progress" == trigger_id:
+        if color == "success":
+            fake_sol = [np.random.choice(["walk", "cycle", "car", "bus"], 1)[0] for i in range(len(tour.legs))]
+            fig = px.bar(df_legs, x="Length", y='Tour', color="Slope", orientation="h",
+                         color_continuous_scale=px.colors.diverging.Geyser, text=fake_sol)
+
     fig.add_layout_image(
             dict(
                 source="assets/map.png",

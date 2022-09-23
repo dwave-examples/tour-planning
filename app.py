@@ -233,6 +233,7 @@ def submit_cqm(n_clicks, n_intervals):
     if job_tracker.state == "DONE":
         job_tracker.state = "READY"
         elapsed_time = round(time.time() - job_tracker.submission_time)
+        job_tracker.client.close()
         return False, True, 0.1*1000, 0, dash.no_update, dash.no_update, html.P([f"Status: {job_tracker.status}",html.Br(),f"Elapsed: {elapsed_time} sec."])
 
 @app.callback(
@@ -267,7 +268,6 @@ def update_graph(num_legs, max_leg_length, min_leg_length, max_leg_slope, color,
         fake_sol = [np.random.choice(["walk", "cycle", "drive", "bus"], 1)[0] for i in range(len(tour.legs))]
         fig = px.bar(df_legs, x="Length", y='Tour', color="Slope", orientation="h",
                      color_continuous_scale=px.colors.diverging.Geyser, text=fake_sol)
-        print(df_legs["Length"])
 
         x_pos = 0
         for leg, icon in enumerate(fake_sol):
@@ -288,7 +288,6 @@ def update_graph(num_legs, max_leg_length, min_leg_length, max_leg_slope, color,
         if color == "success":
             sampleset_feasible = job_tracker.result.filter(lambda row: row.is_feasible)
             first = sorted({int(key.split('_')[1]): key.split('_')[0] for key,val in sampleset_feasible.first.sample.items() if val==1.0}.items())
-            print(first)
             fig = px.bar(df_legs, x="Length", y='Tour', color="Slope", orientation="h",
                          color_continuous_scale=px.colors.diverging.Geyser, text=[transport for leg,transport in first])
 
@@ -320,8 +319,24 @@ def update_graph(num_legs, max_leg_length, min_leg_length, max_leg_slope, color,
                 opacity=0.75,
                 layer="below"))
 
-    fig.update_xaxes(showticklabels=True, title=None)
-    fig.update_yaxes(showticklabels=True, title=None, range=(-0.5, 0.5),)
+    x_pos = 0
+    for indx, leg in enumerate(tour.legs):
+        if leg['toll']:
+            fig.add_layout_image(
+                    dict(
+                        source=f"assets/toll.png",
+                        xref="x",
+                        yref="y",
+                        x=x_pos,
+                        y=0.2,
+                        sizex=2,
+                        sizey=2,
+                        opacity=1,
+                        layer="above"))
+        x_pos += df_legs["Length"][indx]
+
+    fig.update_xaxes(showticklabels=True, title="Distance")
+    fig.update_yaxes(showticklabels=False, title=None, range=(-0.5, 0.5),)
     fig.update_traces(width=.1)
     fig.update_layout(template="plotly_white")
 

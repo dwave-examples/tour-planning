@@ -110,7 +110,7 @@ app.layout = dbc.Container([
                 target="min_leg_length",),
     dbc.Tooltip("Maximum elevation for a single leg.",
                 target="max_leg_slope",),],
-    fluid=True, style={"backgroundColor": "black", "color": "#f37820"})
+    fluid=True, style={"backgroundColor": "black", "color": "rgb(6, 236, 220)"})
 
 @app.callback(
     Output('max_leg_length', 'value'),
@@ -336,9 +336,11 @@ def update_graph(num_legs, max_leg_length, min_leg_length, max_leg_slope, color,
         x_pos += df_legs["Length"][indx]
 
     fig.update_xaxes(showticklabels=True, title="Distance")
-    fig.update_yaxes(showticklabels=False, title=None, range=(-0.5, 0.5),)
+    fig.update_yaxes(showticklabels=False, title=None, range=(-0.5, 0.5))
     fig.update_traces(width=.1)
     fig.update_layout(template="plotly_white")
+    fig.update_layout(margin=dict(l=20, r=20, t=20, b=20), paper_bgcolor="rgba(0,0,0,0)")
+    fig.update_layout(font_color="rgb(6, 236, 220)",)
 
     return fig
 

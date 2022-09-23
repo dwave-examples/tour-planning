@@ -33,7 +33,6 @@ class tour():
             'cycle': {'Speed': 3, 'Cost': 2, 'Exercise': 2},
              'bus': {'Speed': 4, 'Cost': 3, 'Exercise': 0},
              'drive': {'Speed': 7, 'Cost': 5, 'Exercise': 0}}
-        self.cqm = None
         self.update_config()
 
     def update_config(self):
@@ -47,6 +46,15 @@ class tour():
         self.modes = self.transport.keys()
         self.num_modes = len(self.modes)
 
+class model():
+    """
+
+    """
+    def __init__(self):
+        self.cqm = None
+        self.weight_cost = 100
+        self.weight_time = 30
+        self.weight_slope = 150
 
 def calculate_total(t, measure, tour):
     if measure == 'Exercise':
@@ -56,7 +64,7 @@ def calculate_total(t, measure, tour):
     else:
         return dimod.quicksum(t[i]*tour.transport[t[i].variables[0].split('_')[0]][measure]*tour.legs[i//tour.num_modes]['length'] for i in range(tour.num_modes*tour.num_legs))
 
-def build_cqm(tour):
+def build_cqm(tour, model):
     """Build DQM for maximizing modularity.
 
     Args:
@@ -74,8 +82,8 @@ def build_cqm(tour):
 
     for leg in range(tour.num_legs):
         cqm.add_constraint(dimod.quicksum(t[tour.num_modes*leg:tour.num_modes*leg+tour.num_modes]) == 1, label=f"One-hot leg{leg}")
-    cqm.add_constraint(calculate_total(t, "Cost", tour) <= tour.max_cost, label="Total cost", weight=100, penalty='quadratic')
-    cqm.add_constraint(calculate_total(t, "Time", tour) <= tour.max_time, label="Total time", weight=30, penalty='linear')
+    cqm.add_constraint(calculate_total(t, "Cost", tour) <= tour.max_cost, label="Total cost", weight=model.weight_cost, penalty='quadratic')
+    cqm.add_constraint(calculate_total(t, "Time", tour) <= tour.max_time, label="Total time", weight=model.weight_time, penalty='linear')
 
     drive_index = list(tour.modes).index('drive')
     cycle_index = list(tour.modes).index('cycle')
@@ -83,6 +91,6 @@ def build_cqm(tour):
          if tour.legs[leg]['toll']:
              cqm.add_constraint(t[tour.num_modes*leg:tour.num_modes*leg+tour.num_modes][drive_index] == 0, label=f"Toll to drive on leg {leg}")
          if tour.legs[leg]['uphill'] > tour.max_elevation/2:
-             cqm.add_constraint(t[tour.num_modes*leg:tour.num_modes*leg+tour.num_modes][cycle_index] == 0, label=f"Too steep to cycle on leg {leg}", weight=150)
+             cqm.add_constraint(t[tour.num_modes*leg:tour.num_modes*leg+tour.num_modes][cycle_index] == 0, label=f"Too steep to cycle on leg {leg}", weight=model.weight_slope)
 
     return cqm

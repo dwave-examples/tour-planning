@@ -10,7 +10,7 @@ import numpy as np
 from pprint import pprint
 import time
 
-from tour_planning import job_submission, tour
+from tour_planning import job_submission, tour, model
 from tour_planning import build_cqm
 
 from dwave.cloud.hybrid import Client  # remove later
@@ -21,26 +21,33 @@ app = dash.Dash(__name__, external_stylesheets=[dbc.themes.BOOTSTRAP])
 # 'drive_2': 0.0, 'drive_3': 0.0, 'drive_4': 0.0, 'drive_5': 0.0, 'drive_6': 0.0, 'drive_7': 0.0, 'drive_8': 0.0, 'drive_9': 0.0, 'walk_0': 0.0, 'walk_1': 0.0, 'walk_2': 0.0, 'walk_3': 0.0, 'walk_4': 1.0, 'walk_5': 1.0, 'walk_6': 0.0, 'walk_7': 0.0, 'walk_8': 0.0, 'walk_9': 1.0}, -227.57000000000036, 1, -227.57000000000036, True,
 # np.array([ True,  True,  True,  True,  True,  True,  True,  True,  True, True,  True,  True,  True,  True,  True,  True])]
 
-
+model = model()
 tour = tour()
 job_tracker = job_submission(profile='test')
 
 cqm_config = dbc.Card(
     [html.H4("CQM Settings", className="card-title"),
-     html.Div([dbc.Label("X variable"),
-               dcc.Dropdown(id="x-variable",
-                   options=[{"label": str(col), "value": col} for col in [1, 3, 5, 7]],
-                   value=3,),]),
-     html.Div([dbc.Label("Y variable"),
-               dcc.Dropdown(id="y-variable",
-                   options=[{"label": col, "value": col} for col in ["abc", "def"]],
-                   value="sepal length (cm)",),]),
-     html.Br(),
-     html.Label('Slider'),
-     dcc.Slider(min=0, max=9, step=None, marks={i: f'{str(i)}' for i in range(0, 9)},
-                value=5, id='slider1'),
-     html.Label('Text Input'),
-     dcc.Input(id="test2", value='MTL', type='text'),],
+     html.Div([dbc.Label("Cost Weight"),
+               html.Div([dcc.Input(id='weight_cost_input', type='number', min=0,
+                    max=10000, step=1, value=100)],
+               style=dict(display='flex', justifyContent='right')),
+               dcc.Slider(0, 10000, id='weight_cost_slider',
+                     marks={0: {"label": "Soft", "style": {'color': 'white'}},
+                            10000: {"label": "Hard", "style": {'color': 'white'}}}, value=100,),]),
+     html.Div([dbc.Label("Time Weight"),
+               html.Div([dcc.Input(id='weight_time_input', type='number', min=0,
+                    max=10000, step=1, value=30)],
+               style=dict(display='flex', justifyContent='right')),
+               dcc.Slider(0, 10000, id='weight_time_slider',
+                     marks={0: {"label": "Soft", "style": {'color': 'white'}},
+                            10000: {"label": "Hard", "style": {'color': 'white'}}}, value=30,),]),
+     html.Div([dbc.Label("Slope Weight"),
+               html.Div([dcc.Input(id='weight_slope_input', type='number', min=0,
+                    max=10000, step=1, value=150)],
+               style=dict(display='flex', justifyContent='right')),
+               dcc.Slider(0, 10000, id='weight_slope_slider',
+                     marks={0: {"label": "Soft", "style": {'color': 'white'}},
+                            10000: {"label": "Hard", "style": {'color': 'white'}}}, value=150,),]),],
     body=True, color="secondary")
 
 tour_config = dbc.Card(
@@ -55,11 +62,11 @@ tour_config = dbc.Card(
             html.B("Leg Description"),
             dbc.Row([
                 "Max. Length:",
-                dcc.Input(id='max_leg_length', type='number', min=1, max=20,
+                dcc.Input(id='max_leg_length', type='number', min=2, max=20,
                           step=1, value=10),],),
             dbc.Row([
                "Min. Length:",
-               dcc.Input(id='min_leg_length', type='number', min=1, max=20,
+               dcc.Input(id='min_leg_length', type='number', min=1, max=19,
                          step=1, value=2),]),
             dbc.Row([
                "Max. Slope:",
@@ -136,12 +143,12 @@ def update_tour(num_legs, max_leg_length, min_leg_length, max_leg_slope):
         tour.num_legs = num_legs
     elif 'max_leg_length' == trigger_id:
         tour.max_length = max_leg_length
-        if max_leg_length < tour.min_length:
-            tour.min_length = tour.max_length
+        if max_leg_length < tour.min_length + 1:
+            tour.min_length = tour.max_length - 1
     elif 'min_leg_length' == trigger_id:
         tour.min_length = min_leg_length
-        if min_leg_length > tour.max_length:
-            tour.max_length = tour.min_length
+        if min_leg_length > tour.max_length - 1:
+            tour.max_length = tour.min_length + 1
     elif 'max_leg_slope' == trigger_id:
         tour.max_elevation = max_leg_slope
 
@@ -150,24 +157,50 @@ def update_tour(num_legs, max_leg_length, min_leg_length, max_leg_slope):
 
 @app.callback(
     Output('cqm_print', 'value'),
-    Input('btn_update_cqm', 'n_clicks'),)
-def update_cqm(btn_update_cqm):
+    Output('weight_cost_slider', 'value'),
+    Output('weight_cost_input', 'value'),
+    Output('weight_time_slider', 'value'),
+    Output('weight_time_input', 'value'),
+    Output('weight_slope_slider', 'value'),
+    Output('weight_slope_input', 'value'),
+    Input('btn_update_cqm', 'n_clicks'),
+    Input('weight_cost_slider', 'value'),
+    Input('weight_cost_input', 'value'),
+    Input('weight_time_slider', 'value'),
+    Input('weight_time_input', 'value'),
+    Input('weight_slope_slider', 'value'),
+    Input('weight_slope_input', 'value'),)
+def update_cqm(btn_update_cqm, weight_cost_slider, weight_cost_input,
+               weight_time_slider, weight_time_input,
+               weight_slope_slider, weight_slope_input):
     """Build tour
-
-    Args:
-        G (networkx Graph)
-        k (int):
-            Maximum number of communities.
-
-    Returns:
-        DiscreteQuadraticModel
     """
     trigger_id = dash.callback_context.triggered[0]["prop_id"].split(".")[0]
     # value = input_value if trigger_id == "input-circular" else slider_value
     # changed_id = [p['prop_id'] for p in dash.callback_context.triggered][0]
-    if "btn_update_cqm" == trigger_id:
-        tour.cqm = build_cqm(tour)
-        return tour.cqm.__str__()
+    if trigger_id not in ["btn_update_cqm",
+                          "weight_cost_slider", "weight_cost_input",
+                          "weight_time_slider", "weight_time_input",
+                          "weight_slope_slider", "weight_slope_input",]:
+        return dash.no_update, dash.no_update, dash.no_update, dash.no_update, dash.no_update, dash.no_update, dash.no_update
+
+    if trigger_id == "weight_cost_slider":
+        model.weight_cost = weight_cost_slider
+    if trigger_id == "weight_cost_input":
+        model.weight_cost = weight_cost_input
+
+    if trigger_id == "weight_time_slider":
+        model.weight_time = weight_time_slider
+    if trigger_id == "weight_time_input":
+        model.weight_time = weight_time_input
+
+    if trigger_id == "weight_slope_slider":
+        model.weight_slope = weight_slope_slider
+    if trigger_id == "weight_slope_input":
+        model.weight_slope = weight_slope_input
+
+    model.cqm = build_cqm(tour, model)
+    return model.cqm.__str__(), model.weight_cost, model.weight_cost, model.weight_time, model.weight_time, model.weight_slope, model.weight_slope
 
 job_bar = {'WAITING': [0, 'light'],
            'SUBMITTED': [25, 'info'],
@@ -200,10 +233,10 @@ def submit_cqm(n_clicks, n_intervals):
     if job_tracker.state == "READY":
         job_tracker.state = "SUBMITTED"
         job_tracker.computation = None
-        tour.cqm = build_cqm(tour)   # to move
+        model.cqm = build_cqm(tour, model)   # to move
         job_tracker.client = Client.from_config(profile="test")
         solver = job_tracker.client.get_solver(supported_problem_types__issubset={"cqm"})
-        job_tracker.problem_data_id = solver.upload_cqm(tour.cqm).result()
+        job_tracker.problem_data_id = solver.upload_cqm(model.cqm).result()
         job_tracker.computation = solver.sample_cqm(job_tracker.problem_data_id,
                     label="Examples - Tour Planning", time_limit=5)
 

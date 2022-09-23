@@ -205,7 +205,7 @@ def submit_cqm(n_clicks, n_intervals):
         solver = job_tracker.client.get_solver(supported_problem_types__issubset={"cqm"})
         job_tracker.problem_data_id = solver.upload_cqm(tour.cqm).result()
         job_tracker.computation = solver.sample_cqm(job_tracker.problem_data_id,
-                    label="Examples - Tour Planning", time_limit=10)
+                    label="Examples - Tour Planning", time_limit=5)
 
         elapsed_time = round(time.time() - job_tracker.submission_time)
         return True, False, 1*1000, 0, job_bar['SUBMITTED'][0], job_bar['SUBMITTED'][1], html.P([f"Status: {job_tracker.status}",html.Br(),f"Elapsed: {elapsed_time} sec."])
@@ -264,66 +264,64 @@ def update_graph(num_legs, max_leg_length, min_leg_length, max_leg_slope, color,
 
 
     if "btn_update_cqm" == trigger_id:
-        fake_sol = [np.random.choice(["walk", "cycle", "car", "bus"], 1)[0] for i in range(len(tour.legs))]
+        fake_sol = [np.random.choice(["walk", "cycle", "drive", "bus"], 1)[0] for i in range(len(tour.legs))]
         fig = px.bar(df_legs, x="Length", y='Tour', color="Slope", orientation="h",
                      color_continuous_scale=px.colors.diverging.Geyser, text=fake_sol)
+        print(df_legs["Length"])
 
-        if len(fake_sol) < 15:
-            full_length = df_legs["Length"].sum()
-            x_pos = 0
-            for leg, icon in enumerate(fake_sol):
-                fig.add_layout_image(
-                        dict(
-                            source=f"assets/{icon}.png",
-                            xref="paper",
-                            yref="paper",
-                            x=x_pos,
-                            y=0.65,
-                            sizex=0.1,
-                            sizey=0.1,
-                            opacity=1,
-                            layer="above"))
-                x_pos += df_legs["Length"][leg]/full_length
+        x_pos = 0
+        for leg, icon in enumerate(fake_sol):
+            fig.add_layout_image(
+                    dict(
+                        source=f"assets/{icon}.png",
+                        xref="x",
+                        yref="y",
+                        x=x_pos,
+                        y=-0.1,
+                        sizex=2,
+                        sizey=2,
+                        opacity=1,
+                        layer="above"))
+            x_pos += df_legs["Length"][leg]
 
     if "job_status_progress" == trigger_id:
         if color == "success":
             sampleset_feasible = job_tracker.result.filter(lambda row: row.is_feasible)
             first = sorted({int(key.split('_')[1]): key.split('_')[0] for key,val in sampleset_feasible.first.sample.items() if val==1.0}.items())
+            print(first)
             fig = px.bar(df_legs, x="Length", y='Tour', color="Slope", orientation="h",
                          color_continuous_scale=px.colors.diverging.Geyser, text=[transport for leg,transport in first])
 
-            if len(first) < 15:
-                full_length = df_legs["Length"].sum()
-                x_pos = 0
-                for leg, icon in enumerate(first):
-                    fig.add_layout_image(
-                            dict(
-                                source=f"assets/{icon}.png",
-                                xref="paper",
-                                yref="paper",
-                                x=x_pos,
-                                y=0.65,
-                                sizex=0.1,
-                                sizey=0.1,
-                                opacity=1,
-                                layer="above"))
-                    x_pos += 0.5*df_legs["Length"][leg]/full_length
+            x_pos = 0
+            for leg, icon in first:
+                fig.add_layout_image(
+                        dict(
+                            source=f"assets/{icon}.png",
+                            xref="x",
+                            yref="y",
+                            x=x_pos,
+                            y=-0.1,
+                            sizex=2,
+                            sizey=2,
+                            opacity=1,
+                            layer="above"))
+                x_pos += df_legs["Length"][leg]
 
     fig.add_layout_image(
             dict(
                 source="assets/map.png",
-                xref="paper",
-                yref="paper",
+                xref="x",
+                yref="y",
                 x=0,
-                y=1,
-                sizex=1,
+                y=0.5,
+                sizex=df_legs["Length"].sum(),
                 sizey=1,
                 sizing="stretch",
                 opacity=0.75,
                 layer="below"))
 
-    fig.update_xaxes(showticklabels=False, title=None)
-    fig.update_yaxes(showticklabels=False, title=None)
+    fig.update_xaxes(showticklabels=True, title=None)
+    fig.update_yaxes(showticklabels=True, title=None, range=(-0.5, 0.5),)
     fig.update_traces(width=.1)
     fig.update_layout(template="plotly_white")
 

@@ -1,2 +1,2 @@
-icons: https://unsplash.com/
+icons: https://uxwing.com/
 map: google maps (temp)

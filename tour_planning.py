@@ -29,9 +29,6 @@ class tour():
             'cycle': {'Speed': 3, 'Cost': 2, 'Exercise': 2},
              'bus': {'Speed': 4, 'Cost': 3, 'Exercise': 0},
              'drive': {'Speed': 7, 'Cost': 5, 'Exercise': 0}}
-        self.update_config()
-
-    def update_config(self):
         self.legs = [{'length': round((self.max_length - self.min_length)*random.random() + self.min_length, 1),
                  'uphill': round(self.max_leg_slope*random.random(), 1),
                  'toll': np.random.choice([True, False], 1, p=[0.2, 0.8])[0]} for i in range(self.num_legs)]
@@ -43,6 +40,19 @@ class tour():
         self.max_time_max = round(sum(l["length"] for l in self.legs)/min(s["Speed"] for s in self.transport.values()))
         self.max_time_min = round(sum(l["length"] for l in self.legs)/max(s["Speed"] for s in self.transport.values()))
         self.max_time = round(np.mean([self.max_time_min, self.max_time_max]))
+
+        self.update_config()
+
+    def update_config(self):
+        self.legs = [{'length': round((self.max_length - self.min_length)*random.random() + self.min_length, 1),
+                 'uphill': round(self.max_leg_slope*random.random(), 1),
+                 'toll': np.random.choice([True, False], 1, p=[0.2, 0.8])[0]} for i in range(self.num_legs)]
+
+        self.max_cost_min = round(sum(l["length"] for l in self.legs)*min([c["Cost"] for c in self.transport.values()]))
+        self.max_cost_max = round(sum(l["length"] for l in self.legs)*max([c["Cost"] for c in self.transport.values()]))
+
+        self.max_time_max = round(sum(l["length"] for l in self.legs)/min(s["Speed"] for s in self.transport.values()))
+        self.max_time_min = round(sum(l["length"] for l in self.legs)/max(s["Speed"] for s in self.transport.values()))
 
         self.modes = self.transport.keys()
         self.num_modes = len(self.modes)

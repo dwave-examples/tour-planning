@@ -124,7 +124,8 @@ for func in ["num_legs", "max_leg_slope"]:
 @app.callback(
     Output('{func}', 'value'),
     Input('{func}', 'value'),)
-def {func}({func}):
+def tour_{func}({func}):
+    'Update some tour inputs.'
     tour.{func} = {func}
     tour.update_config()
     return tour.{func}
@@ -135,15 +136,15 @@ def {func}({func}):
     Output('min_leg_length', 'value'),
     Input('max_leg_length', 'value'),
     Input('min_leg_length', 'value'),)
-def leg_length(max_leg_length, min_leg_length):
-    """Update leg length."""
+def tour_leg_length(max_leg_length, min_leg_length):
+    """Update tour leg length."""
     trigger = dash.callback_context.triggered
     trigger_id = trigger[0]["prop_id"].split(".")[0]
     if 'max_leg_length' == trigger_id:
         tour.max_length = max_leg_length
         if max_leg_length < tour.min_length + 1:
             tour.min_length = tour.max_length - 1
-    elif 'min_leg_length' == trigger_id:
+    else:
         tour.min_length = min_leg_length
         if min_leg_length > tour.max_length - 1:
             tour.max_length = tour.min_length + 1
@@ -158,13 +159,14 @@ for func in ["cost", "time", "slope"]:
     Output('weight_{func}_input', 'value'),
     Input('weight_{func}_slider', 'value'),
     Input('weight_{func}_input', 'value'),)
-def update_cqm_{func}(weight_{func}_slider, weight_{func}_input):
+def cqm_{func}(weight_{func}_slider, weight_{func}_input):
+    'Update some cqm inputs.'
 
     trigger_id = dash.callback_context.triggered[0]['prop_id'].split('.')[0]
 
     if trigger_id == 'weight_{func}_slider':
         model.weight_{func} = weight_{func}_slider
-    if trigger_id == 'weight_{func}_input':
+    else:
         model.weight_{func} = weight_{func}_input
 
     model.cqm = build_cqm(tour, model)
@@ -174,9 +176,8 @@ def update_cqm_{func}(weight_{func}_slider, weight_{func}_input):
 @app.callback(
     Output('cqm_print', 'value'),
     Input('btn_update_cqm', 'n_clicks'),)
-def update_cqm(btn_update_cqm):
-    """Build tour
-    """
+def cqm_print(btn_update_cqm):
+    """Print CQM."""
     trigger_id = dash.callback_context.triggered[0]["prop_id"].split(".")[0]
     if trigger_id not in ["btn_update_cqm"]:
         return dash.no_update
@@ -202,8 +203,8 @@ job_bar = {'WAITING': [0, 'light'],
     Output('job_status', 'children'),
     Input('btn_solve_cqm', 'n_clicks'),
     Input('check_job_status', 'n_intervals'),)
-def submit_cqm(n_clicks, n_intervals):
-
+def cqm_submit(n_clicks, n_intervals):
+    """SM for job submission."""
     trigger_id = dash.callback_context.triggered[0]["prop_id"].split(".")[0]
     if not trigger_id in ["btn_solve_cqm", "check_job_status"]:
         return dash.no_update, dash.no_update, dash.no_update, dash.no_update, dash.no_update, dash.no_update, dash.no_update
@@ -259,17 +260,8 @@ def submit_cqm(n_clicks, n_intervals):
     Input('max_leg_slope', 'value'),
     Input('job_status_progress', 'color'),
     Input('btn_update_cqm', 'n_clicks'),)
-def update_graph(num_legs, max_leg_length, min_leg_length, max_leg_slope, color, n_clicks):
-    """Build tour
-
-    Args:
-        G (networkx Graph)
-        k (int):
-            Maximum number of communities.
-
-    Returns:
-        DiscreteQuadraticModel
-    """
+def graph(num_legs, max_leg_length, min_leg_length, max_leg_slope, color, n_clicks):
+    """Update graph of tour."""
     df_legs = pd.DataFrame({'Length': [l['length'] for l in tour.legs],
                             'Slope': [s['uphill'] for s in tour.legs]})
     df_legs["Tour"] = 0
@@ -278,7 +270,7 @@ def update_graph(num_legs, max_leg_length, min_leg_length, max_leg_slope, color,
 
     trigger_id = dash.callback_context.triggered[0]["prop_id"].split(".")[0]
 
-
+    # TODO remove
     if "btn_update_cqm" == trigger_id:
         fake_sol = [np.random.choice(["walk", "cycle", "drive", "bus"], 1)[0] for i in range(len(tour.legs))]
         fig = px.bar(df_legs, x="Length", y='Tour', color="Slope", orientation="h",
@@ -286,17 +278,8 @@ def update_graph(num_legs, max_leg_length, min_leg_length, max_leg_slope, color,
 
         x_pos = 0
         for leg, icon in enumerate(fake_sol):
-            fig.add_layout_image(
-                    dict(
-                        source=f"assets/{icon}.png",
-                        xref="x",
-                        yref="y",
-                        x=x_pos,
-                        y=-0.1,
-                        sizex=2,
-                        sizey=2,
-                        opacity=1,
-                        layer="above"))
+            fig.add_layout_image(dict(source=f"assets/{icon}.png", xref="x", yref="y",
+                x=x_pos, y=-0.1, sizex=2, sizey=2, opacity=1, layer="above"))
             x_pos += df_legs["Length"][leg]
 
     if "job_status_progress" == trigger_id:
@@ -308,55 +291,28 @@ def update_graph(num_legs, max_leg_length, min_leg_length, max_leg_slope, color,
 
             x_pos = 0
             for leg, icon in first:
-                fig.add_layout_image(
-                        dict(
-                            source=f"assets/{icon}.png",
-                            xref="x",
-                            yref="y",
-                            x=x_pos,
-                            y=-0.1,
-                            sizex=2,
-                            sizey=2,
-                            opacity=1,
-                            layer="above"))
+                fig.add_layout_image(dict(source=f"assets/{icon}.png", xref="x",
+                    yref="y", x=x_pos, y=-0.1, sizex=2, sizey=2, opacity=1,
+                    layer="above"))
                 x_pos += df_legs["Length"][leg]
 
     fig.add_layout_image(
-            dict(
-                source="assets/map.png",
-                xref="x",
-                yref="y",
-                x=0,
-                y=0.5,
-                sizex=df_legs["Length"].sum(),
-                sizey=1,
-                sizing="stretch",
-                opacity=0.75,
-                layer="below"))
+            dict(source="assets/map.png", xref="x", yref="y", x=0, y=0.5,
+                 sizex=df_legs["Length"].sum(), sizey=1, sizing="stretch",
+                 opacity=0.75, layer="below"))
 
     x_pos = 0
     for indx, leg in enumerate(tour.legs):
         if leg['toll']:
-            fig.add_layout_image(
-                    dict(
-                        source=f"assets/toll.png",
-                        xref="x",
-                        yref="y",
-                        x=x_pos,
-                        y=0.2,
-                        sizex=2,
-                        sizey=2,
-                        opacity=1,
-                        layer="above"))
+            fig.add_layout_image(dict(source=f"assets/toll.png", xref="x",
+                yref="y", x=x_pos, y=0.2, sizex=2, sizey=2, opacity=1, layer="above"))
         x_pos += df_legs["Length"][indx]
 
     fig.update_xaxes(showticklabels=True, title="Distance")
     fig.update_yaxes(showticklabels=False, title=None, range=(-0.5, 0.5))
     fig.update_traces(width=.1)
-    fig.update_layout(template="plotly_white")
-    fig.update_layout(margin=dict(l=20, r=20, t=20, b=20), paper_bgcolor="rgba(0,0,0,0)")
-    fig.update_layout(font_color="rgb(6, 236, 220)",)
-
+    fig.update_layout(font_color="rgb(6, 236, 220)", margin=dict(l=20, r=20, t=20, b=20),
+                      paper_bgcolor="rgba(0,0,0,0)")
     return fig
 
 if __name__ == "__main__":

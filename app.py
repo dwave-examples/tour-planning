@@ -155,52 +155,43 @@ def update_tour(num_legs, max_leg_length, min_leg_length, max_leg_slope):
     tour.update_config()
     return tour.max_length, tour.min_length
 
+for func in ["cost", "time", "slope"]:
+    exec(f"""
+@app.callback(
+    Output('weight_{func}_slider', 'value'),
+    Output('weight_{func}_input', 'value'),
+    Input('weight_{func}_slider', 'value'),
+    Input('weight_{func}_input', 'value'),)
+def update_cqm_{func}(weight_{func}_slider, weight_{func}_input):
+
+    trigger_id = dash.callback_context.triggered[0]['prop_id'].split('.')[0]
+
+    if trigger_id not in ['weight_{func}_slider', 'weight_{func}_input',]:
+        return dash.no_update, dash.no_update
+
+    if trigger_id == 'weight_{func}_slider':
+        model.weight_{func} = weight_{func}_slider
+    if trigger_id == 'weight_{func}_input':
+        model.weight_{func} = weight_{func}_input
+
+    model.cqm = build_cqm(tour, model)
+    return model.weight_{func}, model.weight_{func}
+""".format(func))
+
 @app.callback(
     Output('cqm_print', 'value'),
-    Output('weight_cost_slider', 'value'),
-    Output('weight_cost_input', 'value'),
-    Output('weight_time_slider', 'value'),
-    Output('weight_time_input', 'value'),
-    Output('weight_slope_slider', 'value'),
-    Output('weight_slope_input', 'value'),
-    Input('btn_update_cqm', 'n_clicks'),
-    Input('weight_cost_slider', 'value'),
-    Input('weight_cost_input', 'value'),
-    Input('weight_time_slider', 'value'),
-    Input('weight_time_input', 'value'),
-    Input('weight_slope_slider', 'value'),
-    Input('weight_slope_input', 'value'),)
-def update_cqm(btn_update_cqm, weight_cost_slider, weight_cost_input,
-               weight_time_slider, weight_time_input,
-               weight_slope_slider, weight_slope_input):
+    Input('btn_update_cqm', 'n_clicks'),)
+def update_cqm(btn_update_cqm):
     """Build tour
     """
     trigger_id = dash.callback_context.triggered[0]["prop_id"].split(".")[0]
     # value = input_value if trigger_id == "input-circular" else slider_value
     # changed_id = [p['prop_id'] for p in dash.callback_context.triggered][0]
-    if trigger_id not in ["btn_update_cqm",
-                          "weight_cost_slider", "weight_cost_input",
-                          "weight_time_slider", "weight_time_input",
-                          "weight_slope_slider", "weight_slope_input",]:
-        return dash.no_update, dash.no_update, dash.no_update, dash.no_update, dash.no_update, dash.no_update, dash.no_update
-
-    if trigger_id == "weight_cost_slider":
-        model.weight_cost = weight_cost_slider
-    if trigger_id == "weight_cost_input":
-        model.weight_cost = weight_cost_input
-
-    if trigger_id == "weight_time_slider":
-        model.weight_time = weight_time_slider
-    if trigger_id == "weight_time_input":
-        model.weight_time = weight_time_input
-
-    if trigger_id == "weight_slope_slider":
-        model.weight_slope = weight_slope_slider
-    if trigger_id == "weight_slope_input":
-        model.weight_slope = weight_slope_input
+    if trigger_id not in ["btn_update_cqm"]:
+        return dash.no_update
 
     model.cqm = build_cqm(tour, model)
-    return model.cqm.__str__(), model.weight_cost, model.weight_cost, model.weight_time, model.weight_time, model.weight_slope, model.weight_slope
+    return model.cqm.__str__()
 
 job_bar = {'WAITING': [0, 'light'],
            'SUBMITTED': [25, 'info'],

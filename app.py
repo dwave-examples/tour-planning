@@ -126,25 +126,23 @@ app.layout = dbc.Container([
     dbc.Row([
         dbc.Col([
             dbc.Button(
-                "View CQM", id="collapse-button", className="mb-3",
+                "View CQM", id="btn_view_cqm", className="mb-3",
                     color="light", n_clicks=0,),]),]),
     dbc.Row([
         dbc.Col([
             dbc.Collapse(
                 dbc.Card(
-                    dbc.CardBody(
-                        "my_cqm")),
-                            id="collapse", is_open=False,),])]),
+                    dbc.CardBody([
+                        dcc.Textarea(id="cqm_print", value='Your CQM',
+                            style={'width': '100%'}, rows=20)])),
+                            id="collapse", is_open=False,)]),]),
 
     dbc.Row([
         graph_card],
         justify="left",),
     dbc.Row([
         dbc.Col([
-            dbc.Button("Make CQM", id="btn_update_cqm", color="primary", className="me-1"),
-            html.Label('CQM:'),
-            dcc.Textarea(id="cqm_print", value='Your CQM',
-                style={'width': '50%', 'height': 100}),],),],
+            "Empty row"],),],
         justify="left",),
     dbc.Tooltip("Number of legs for the tour.",
                 target="num_legs",),
@@ -158,15 +156,16 @@ app.layout = dbc.Container([
 
 @app.callback(
     Output("collapse", "is_open"),
-    [Input("collapse-button", "n_clicks")],
+    Output("cqm_print", "value"),
+    [Input("btn_view_cqm", "n_clicks")],
     [State("collapse", "is_open")],
 )
 def toggle_collapse(n, is_open):
     if n:
-        return not is_open
-    return is_open
+        return not is_open, dash.no_update
+    return is_open, model.cqm.__str__()
 
-for func in ["num_legs", "max_leg_slope"]:
+for func in ["num_legs", "max_leg_slope", "max_cost", "max_time"]:
     exec(f"""
 @app.callback(
     Output('{func}', 'value'),
@@ -175,6 +174,7 @@ def tour_{func}({func}):
     'Update some tour inputs.'
     tour.{func} = {func}
     tour.update_config()
+    model.cqm = build_cqm(tour, model)
     return tour.{func}
 """.format(func))
 
@@ -197,6 +197,7 @@ def tour_leg_length(max_leg_length, min_leg_length):
             tour.max_length = tour.min_length + 1
 
     tour.update_config()
+    model.cqm = build_cqm(tour, model)
     return tour.max_length, tour.min_length
 
 for func in ["cost", "time", "slope"]:
@@ -220,17 +221,17 @@ def cqm_{func}(weight_{func}_slider, weight_{func}_input):
     return model.weight_{func}, model.weight_{func}
 """.format(func))
 
-@app.callback(
-    Output('cqm_print', 'value'),
-    Input('btn_update_cqm', 'n_clicks'),)
-def cqm_print(btn_update_cqm):
-    """Print CQM."""
-    trigger_id = dash.callback_context.triggered[0]["prop_id"].split(".")[0]
-    if trigger_id not in ["btn_update_cqm"]:
-        return dash.no_update
-
-    model.cqm = build_cqm(tour, model)
-    return model.cqm.__str__()
+# @app.callback(
+#     Output('cqm_print', 'value'),
+#     Input('btn_update_cqm', 'n_clicks'),)
+# def cqm_print(btn_update_cqm):
+#     """Print CQM."""
+#     trigger_id = dash.callback_context.triggered[0]["prop_id"].split(".")[0]
+#     if trigger_id not in ["btn_update_cqm"]:
+#         return dash.no_update
+#
+#     model.cqm = build_cqm(tour, model)
+#     return model.cqm.__str__()
 
 job_bar = {'WAITING': [0, 'light'],
            'SUBMITTED': [25, 'info'],
@@ -263,7 +264,7 @@ def cqm_submit(n_clicks, n_intervals):
     if job_tracker.state == "READY":
         job_tracker.state = "SUBMITTED"
         job_tracker.computation = None
-        model.cqm = build_cqm(tour, model)   # to move
+        #model.cqm = build_cqm(tour, model)   # verify can be deleted
         job_tracker.client = Client.from_config(profile="test")
         solver = job_tracker.client.get_solver(supported_problem_types__issubset={"cqm"})
         job_tracker.problem_data_id = solver.upload_cqm(model.cqm).result()
@@ -306,8 +307,9 @@ def cqm_submit(n_clicks, n_intervals):
     Input('min_leg_length', 'value'),
     Input('max_leg_slope', 'value'),
     Input('job_status_progress', 'color'),
-    Input('btn_update_cqm', 'n_clicks'),)
-def graph(num_legs, max_leg_length, min_leg_length, max_leg_slope, color, n_clicks):
+    # Input('btn_update_cqm', 'n_clicks'),
+    )
+def graph(num_legs, max_leg_length, min_leg_length, max_leg_slope, color):
     """Update graph of tour."""
     df_legs = pd.DataFrame({'Length': [l['length'] for l in tour.legs],
                             'Slope': [s['uphill'] for s in tour.legs]})
@@ -318,16 +320,16 @@ def graph(num_legs, max_leg_length, min_leg_length, max_leg_slope, color, n_clic
     trigger_id = dash.callback_context.triggered[0]["prop_id"].split(".")[0]
 
     # TODO remove
-    if "btn_update_cqm" == trigger_id:
-        fake_sol = [np.random.choice(["walk", "cycle", "drive", "bus"], 1)[0] for i in range(len(tour.legs))]
-        fig = px.bar(df_legs, x="Length", y='Tour', color="Slope", orientation="h",
-                     color_continuous_scale=px.colors.diverging.Geyser, text=fake_sol)
-
-        x_pos = 0
-        for leg, icon in enumerate(fake_sol):
-            fig.add_layout_image(dict(source=f"assets/{icon}.png", xref="x", yref="y",
-                x=x_pos, y=-0.1, sizex=2, sizey=2, opacity=1, layer="above"))
-            x_pos += df_legs["Length"][leg]
+    # if "btn_update_cqm" == trigger_id:
+    #     fake_sol = [np.random.choice(["walk", "cycle", "drive", "bus"], 1)[0] for i in range(len(tour.legs))]
+    #     fig = px.bar(df_legs, x="Length", y='Tour', color="Slope", orientation="h",
+    #                  color_continuous_scale=px.colors.diverging.Geyser, text=fake_sol)
+    #
+    #     x_pos = 0
+    #     for leg, icon in enumerate(fake_sol):
+    #         fig.add_layout_image(dict(source=f"assets/{icon}.png", xref="x", yref="y",
+    #             x=x_pos, y=-0.1, sizex=2, sizey=2, opacity=1, layer="above"))
+    #         x_pos += df_legs["Length"][leg]
 
     if "job_status_progress" == trigger_id:
         if color == "success":

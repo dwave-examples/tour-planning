@@ -52,29 +52,36 @@ cqm_config = dbc.Card(
 
 tour_config = dbc.Card(
     [dbc.Row([
-        html.H4("Tour Settings", className="card-title"),
+        html.H4("Tour Settings", className="card-title")]),
+     dbc.Row([
         dbc.Col([
-            html.B("Legs"),
-            html.Br(),
+            html.B("Legs")]),
+        dbc.Col([
+            html.B("Leg Defintion"),]),]),
+     dbc.Row([
+        dbc.Col([
             dcc.Input(id='num_legs', type='number', min=5, max=100, step=1, value=10)],
         width=5),
         dbc.Col([
-            html.B("Leg Description"),
             dbc.Row([
-                "Max. Length:",
+                "Max. Length:",]),
+            dbc.Row([
                 dcc.Input(id='max_leg_length', type='number', min=2, max=20,
-                          step=1, value=10),],),
+                          step=1, value=10),]),
             dbc.Row([
-               "Min. Length:",
+                "Min. Length:"]),
+            dbc.Row([
                dcc.Input(id='min_leg_length', type='number', min=1, max=19,
                          step=1, value=2),]),
             dbc.Row([
-               "Max. Slope:",
+               "Max. Slope:",]),
+            dbc.Row([
                dcc.Slider(min=0, max=10, step=1,
-                          marks={i: f'{str(i)}' for i in range(0, 11)},
+                          marks={i: {"label": f'{str(i)}',
+                                     "style": {'color': 'white'}} for i in range(0, 11, 2)},
                           value=8, id='max_leg_slope'),]),],
         width=6,),],
-        justify="left")],
+    justify="left")],
     body=True, color="secondary")
 
 graph_card = dbc.Card([

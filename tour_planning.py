@@ -44,9 +44,6 @@ class tour():
         self.max_time_min = round(sum(l["length"] for l in self.legs)/max(s["Speed"] for s in self.transport.values()))
         self.max_time = round(np.mean([self.max_time_min, self.max_time_max]))
 
-        print("time: ", self.max_time, self.max_time_min, self.max_time_max)
-        print("cost: ", self.max_cost, self.max_cost_min, self.max_cost_max)
-
         self.modes = self.transport.keys()
         self.num_modes = len(self.modes)
 

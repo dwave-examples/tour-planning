@@ -2,7 +2,7 @@
 
 import dash
 import dash_bootstrap_components as dbc
-from dash import dcc, html, Input, Output
+from dash import dcc, html, Input, Output, State
 import plotly.express as px
 import pandas as pd
 import random
@@ -112,10 +112,30 @@ solver_card = dbc.Card([
 app.layout = dbc.Container([
     html.H1("Tour Planner"),
     dbc.Row([
-        dbc.Col(tour_config, width=4),
-        dbc.Col(cqm_config, width=3),
-        dbc.Col(solver_card, width=3),],
-        justify="left",),
+        dbc.Col(
+            tour_config, width=4),
+        dbc.Col(
+            cqm_config, width=2),
+        dbc.Col([
+            dbc.Row([
+                dbc.Col([
+                    solver_card])]),
+            ], width=2)],
+        justify="left"),
+
+    dbc.Row([
+        dbc.Col([
+            dbc.Button(
+                "View CQM", id="collapse-button", className="mb-3",
+                    color="light", n_clicks=0,),]),]),
+    dbc.Row([
+        dbc.Col([
+            dbc.Collapse(
+                dbc.Card(
+                    dbc.CardBody(
+                        "my_cqm")),
+                            id="collapse", is_open=False,),])]),
+
     dbc.Row([
         graph_card],
         justify="left",),
@@ -135,6 +155,16 @@ app.layout = dbc.Container([
     dbc.Tooltip("Maximum elevation for a single leg.",
                 target="max_leg_slope",),],
     fluid=True, style={"backgroundColor": "black", "color": "rgb(6, 236, 220)"})
+
+@app.callback(
+    Output("collapse", "is_open"),
+    [Input("collapse-button", "n_clicks")],
+    [State("collapse", "is_open")],
+)
+def toggle_collapse(n, is_open):
+    if n:
+        return not is_open
+    return is_open
 
 for func in ["num_legs", "max_leg_slope"]:
     exec(f"""

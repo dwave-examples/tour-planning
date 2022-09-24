@@ -135,7 +135,7 @@ app.layout = dbc.Container([
                     dbc.CardBody([
                         dcc.Textarea(id="cqm_print", value='Your CQM',
                             style={'width': '100%'}, rows=20)])),
-                            id="collapse", is_open=False,)]),]),
+                            id="collapse_cqm_view", is_open=False,)]),]),
 
     dbc.Row([
         graph_card],
@@ -155,15 +155,24 @@ app.layout = dbc.Container([
     fluid=True, style={"backgroundColor": "black", "color": "rgb(6, 236, 220)"})
 
 @app.callback(
-    Output("collapse", "is_open"),
-    Output("cqm_print", "value"),
+    Output("collapse_cqm_view", "is_open"),
     [Input("btn_view_cqm", "n_clicks")],
-    [State("collapse", "is_open")],
+    [State("collapse_cqm_view", "is_open")],
 )
-def toggle_collapse(n, is_open):
+def toggle_cqm_view(n, is_open):
     if n:
-        return not is_open, dash.no_update
-    return is_open, model.cqm.__str__()
+        return not is_open
+    return is_open
+
+@app.callback(
+    Output("cqm_print", "value"),
+    Input("btn_view_cqm", "n_clicks"),
+    Input('num_legs', 'value'))
+def cqm_view(n, num_legs):
+    trigger = dash.callback_context.triggered
+    trigger_id = trigger[0]["prop_id"].split(".")[0]
+    if trigger_id in ["btn_view_cqm", 'num_legs']:
+           return model.cqm.__str__()
 
 for func in ["num_legs", "max_leg_slope", "max_cost", "max_time"]:
     exec(f"""

@@ -36,8 +36,16 @@ class tour():
                  'uphill': round(self.max_leg_slope*random.random(), 1),
                  'toll': np.random.choice([True, False], 1, p=[0.2, 0.8])[0]} for i in range(self.num_legs)]
 
-        self.max_cost = sum(l["length"] for l in self.legs)*np.mean([c["Cost"] for c in self.transport.values()])
-        self.max_time = 0.5*sum(l["length"] for l in self.legs)/min(s["Speed"] for s in self.transport.values())
+        self.max_cost_min = round(sum(l["length"] for l in self.legs)*min([c["Cost"] for c in self.transport.values()]))
+        self.max_cost_max = round(sum(l["length"] for l in self.legs)*max([c["Cost"] for c in self.transport.values()]))
+        self.max_cost = round(np.mean([self.max_cost_min, self.max_cost_max]))
+
+        self.max_time_max = round(sum(l["length"] for l in self.legs)/min(s["Speed"] for s in self.transport.values()))
+        self.max_time_min = round(sum(l["length"] for l in self.legs)/max(s["Speed"] for s in self.transport.values()))
+        self.max_time = round(np.mean([self.max_time_min, self.max_time_max]))
+
+        print("time: ", self.max_time, self.max_time_min, self.max_time_max)
+        print("cost: ", self.max_cost, self.max_cost_min, self.max_cost_max)
 
         self.modes = self.transport.keys()
         self.num_modes = len(self.modes)

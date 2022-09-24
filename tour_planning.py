@@ -6,9 +6,7 @@ import dimod
 from dwave.cloud.hybrid import Client
 
 class job_submission():
-    """
-
-    """
+    """Class that tracks a submission to a Leap solver."""
     def __init__(self, profile):
         self.client = None
         self.problem_data_id = ''
@@ -20,9 +18,7 @@ class job_submission():
         self.submission_time = None
 
 class tour():
-    """
-
-    """
+    """Class that maintains tour configuration."""
     def __init__(self):
         self.num_legs = 10
         self.max_length = 10
@@ -47,9 +43,7 @@ class tour():
         self.num_modes = len(self.modes)
 
 class model():
-    """
-
-    """
+    """Class that maintains the CQM configuration."""
     def __init__(self):
         self.cqm = None
         self.weight_cost = 100
@@ -65,15 +59,14 @@ def calculate_total(t, measure, tour):
         return dimod.quicksum(t[i]*tour.transport[t[i].variables[0].split('_')[0]][measure]*tour.legs[i//tour.num_modes]['length'] for i in range(tour.num_modes*tour.num_legs))
 
 def build_cqm(tour, model):
-    """Build DQM for maximizing modularity.
+    """Build CQM for maximizing exercise.
 
     Args:
-        G (networkx Graph)
-        k (int):
-            Maximum number of communities.
+        tour (tour class): Tour.
+        model (model class): CQM.
 
     Returns:
-        DiscreteQuadraticModel
+        Constrained Quadratic Model.
     """
     t= [dimod.Binary(f'{mode}_{i}') for i in range(tour.num_legs) for mode in tour.transport.keys()]
 

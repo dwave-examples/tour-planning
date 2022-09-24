@@ -27,7 +27,7 @@ class tour():
         self.num_legs = 10
         self.max_length = 10
         self.min_length = 2
-        self.max_elevation = 8
+        self.max_leg_slope = 8
         self.transport = {
             'walk': {'Speed': 1, 'Cost': 0, 'Exercise': 1},
             'cycle': {'Speed': 3, 'Cost': 2, 'Exercise': 2},
@@ -37,7 +37,7 @@ class tour():
 
     def update_config(self):
         self.legs = [{'length': round((self.max_length - self.min_length)*random.random() + self.min_length, 1),
-                 'uphill': round(self.max_elevation*random.random(), 1),
+                 'uphill': round(self.max_leg_slope*random.random(), 1),
                  'toll': np.random.choice([True, False], 1, p=[0.2, 0.8])[0]} for i in range(self.num_legs)]
 
         self.max_cost = sum(l["length"] for l in self.legs)*np.mean([c["Cost"] for c in self.transport.values()])
@@ -90,7 +90,7 @@ def build_cqm(tour, model):
     for leg in range(tour.num_legs):
          if tour.legs[leg]['toll']:
              cqm.add_constraint(t[tour.num_modes*leg:tour.num_modes*leg+tour.num_modes][drive_index] == 0, label=f"Toll to drive on leg {leg}")
-         if tour.legs[leg]['uphill'] > tour.max_elevation/2:
+         if tour.legs[leg]['uphill'] > tour.max_leg_slope/2:
              cqm.add_constraint(t[tour.num_modes*leg:tour.num_modes*leg+tour.num_modes][cycle_index] == 0, label=f"Too steep to cycle on leg {leg}", weight=model.weight_slope)
 
     return cqm

@@ -119,29 +119,27 @@ app.layout = dbc.Container([
                 target="max_leg_slope",),],
     fluid=True, style={"backgroundColor": "black", "color": "rgb(6, 236, 220)"})
 
+for func in ["num_legs", "max_leg_slope"]:
+    exec(f"""
+@app.callback(
+    Output('{func}', 'value'),
+    Input('{func}', 'value'),)
+def {func}({func}):
+    tour.{func} = {func}
+    tour.update_config()
+    return tour.{func}
+""".format(func))
+
 @app.callback(
     Output('max_leg_length', 'value'),
     Output('min_leg_length', 'value'),
-    Input('num_legs', 'value'),
     Input('max_leg_length', 'value'),
-    Input('min_leg_length', 'value'),
-    Input('max_leg_slope', 'value'),)
-def update_tour(num_legs, max_leg_length, min_leg_length, max_leg_slope):
-    """Build tour
-
-    Args:
-        G (networkx Graph)
-        k (int):
-            Maximum number of communities.
-
-    Returns:
-        DiscreteQuadraticModel
-    """
+    Input('min_leg_length', 'value'),)
+def leg_length(max_leg_length, min_leg_length):
+    """Update leg length."""
     trigger = dash.callback_context.triggered
     trigger_id = trigger[0]["prop_id"].split(".")[0]
-    if "num_legs" == trigger_id:
-        tour.num_legs = num_legs
-    elif 'max_leg_length' == trigger_id:
+    if 'max_leg_length' == trigger_id:
         tour.max_length = max_leg_length
         if max_leg_length < tour.min_length + 1:
             tour.min_length = tour.max_length - 1
@@ -149,8 +147,6 @@ def update_tour(num_legs, max_leg_length, min_leg_length, max_leg_slope):
         tour.min_length = min_leg_length
         if min_leg_length > tour.max_length - 1:
             tour.max_length = tour.min_length + 1
-    elif 'max_leg_slope' == trigger_id:
-        tour.max_elevation = max_leg_slope
 
     tour.update_config()
     return tour.max_length, tour.min_length
@@ -165,9 +161,6 @@ for func in ["cost", "time", "slope"]:
 def update_cqm_{func}(weight_{func}_slider, weight_{func}_input):
 
     trigger_id = dash.callback_context.triggered[0]['prop_id'].split('.')[0]
-
-    if trigger_id not in ['weight_{func}_slider', 'weight_{func}_input',]:
-        return dash.no_update, dash.no_update
 
     if trigger_id == 'weight_{func}_slider':
         model.weight_{func} = weight_{func}_slider
@@ -185,8 +178,6 @@ def update_cqm(btn_update_cqm):
     """Build tour
     """
     trigger_id = dash.callback_context.triggered[0]["prop_id"].split(".")[0]
-    # value = input_value if trigger_id == "input-circular" else slider_value
-    # changed_id = [p['prop_id'] for p in dash.callback_context.triggered][0]
     if trigger_id not in ["btn_update_cqm"]:
         return dash.no_update
 

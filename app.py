@@ -57,11 +57,12 @@ tour_config = dbc.Card(
         dbc.Col([
             html.B("Legs")]),
         dbc.Col([
-            html.B("Leg Defintion"),]),]),
+            html.B("Leg Defintion"),]),
+        dbc.Col([
+            html.B("Budget"),]),]),
      dbc.Row([
         dbc.Col([
-            dcc.Input(id='num_legs', type='number', min=5, max=100, step=1, value=10)],
-        width=5),
+            dcc.Input(id='num_legs', type='number', min=5, max=100, step=1, value=10)],),
         dbc.Col([
             dbc.Row([
                 "Max. Length:",]),
@@ -79,9 +80,18 @@ tour_config = dbc.Card(
                dcc.Slider(min=0, max=10, step=1,
                           marks={i: {"label": f'{str(i)}',
                                      "style": {'color': 'white'}} for i in range(0, 11, 2)},
-                          value=8, id='max_leg_slope'),]),],
-        width=6,),],
-    justify="left")],
+                          value=8, id='max_leg_slope'),]),],),
+        dbc.Col([
+            dbc.Row([
+                "Max. Cost:",]),
+            dbc.Row([
+               dcc.Input(id='max_cost', type='number', min=tour.max_cost_min,
+                    max=tour.max_cost_max, step=1, value=tour.max_cost),]),
+            dbc.Row([
+                "Max. Time:",]),
+            dbc.Row([
+               dcc.Input(id='max_time', type='number', min=tour.max_time_min,
+                    max=tour.max_time_max, step=1, value=tour.max_time),]),]),],)],
     body=True, color="secondary")
 
 graph_card = dbc.Card([
@@ -102,7 +112,7 @@ solver_card = dbc.Card([
 app.layout = dbc.Container([
     html.H1("Tour Planner"),
     dbc.Row([
-        dbc.Col(tour_config, width=3),
+        dbc.Col(tour_config, width=4),
         dbc.Col(cqm_config, width=3),
         dbc.Col(solver_card, width=3),],
         justify="left",),

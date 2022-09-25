@@ -1,2 +1,3 @@
 icons: https://uxwing.com/
 map: google maps (temp)
+    https://www.freeworldmaps.net/about.html (Europe)

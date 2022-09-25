@@ -49,8 +49,8 @@ def budgets(legs):
     return [max_cost_min, max_cost_max, max_cost], [max_time_min, max_time_max, max_time]
 
 init_inputs = {'num_legs': [5, 100, 10],
-    'max_leg_length': [2, 20, 10],
-    'min_leg_length': [1, 19, 2],
+    'max_leg_length': [1, 20, 10],
+    'min_leg_length': [1, 20, 2],
     'max_leg_slope': [0, 10, 8],}
 
 init_tour = {'legs': set_legs(init_inputs['num_legs'][2],
@@ -147,6 +147,22 @@ solver_card = dbc.Card([
         html.P(id='job_status', children=''),]),],
     color="secondary")
 
+problem_viewer = dbc.Tabs([
+    dbc.Tab(dbc.Card([
+                dbc.Row([
+                    dbc.Col([
+                        dcc.Textarea(id="problem_print_human", value='Human Readable',
+                            style={'width': '100%'}, rows=20)])]),]), label="Human Readable",
+                                tab_id="tab_problem_print_human",
+                                label_style={"color": "white", "backgroundColor": "black"},),
+    dbc.Tab(dbc.Card([
+                dbc.Row([
+                    dbc.Col([
+                        dcc.Textarea(id="problem_print_code", value='Computer Readable',
+                            style={'width': '100%'}, rows=20)])]),]), label="Computer Readable",
+                                tab_id="tab_problem_print_code",
+                                label_style={"color": "white", "backgroundColor": "black"},),])
+
 cqm_viewer = dbc.Tabs([
     dbc.Tab(dbc.Card([
                 dbc.Row([
@@ -167,12 +183,6 @@ solutions_viewer = dbc.Card([
     dbc.Row([
         dbc.Col([
             dcc.Textarea(id="solutions_print", value='Your solutions',
-                style={'width': '100%'}, rows=20)])]),]),
-
-problem_viewer = dbc.Card([
-    dbc.Row([
-        dbc.Col([
-            dcc.Textarea(id="problem_print", value='Your problem',
                 style={'width': '100%'}, rows=20)])]),]),
 
 inputs_viewer = dbc.Card([
@@ -234,14 +244,14 @@ def calculate_total(t, measure, legs, num_legs):
 
 @app.callback(
     Output('tour_graph', 'figure'),
-    Output('problem_print', 'value'),
+    Output('problem_print_code', 'value'),
     Output('cqm_print_code', 'value'),
     Output('cqm_print_human', 'value'),
     Output('solutions_print', 'value'),
     Output('input_print', 'value'),
     # Output('num_legs', 'value'),
-    # Output('max_leg_length', 'value'),
-    # Output('min_leg_length', 'value'),
+    Output('max_leg_length', 'value'),
+    Output('min_leg_length', 'value'),
     # Output('max_leg_slope', 'value'),
     # Output('max_cost', 'value'),
     # Output('max_time', 'value'),
@@ -263,7 +273,7 @@ def calculate_total(t, measure, legs, num_legs):
     Input('weight_time_input', 'value'),
     Input('weight_slope_slider', 'value'),
     Input('weight_slope_input', 'value'),
-    Input('problem_print', 'value'),
+    Input('problem_print_code', 'value'),
     Input('job_status_progress', 'color'),)
 def display(num_legs, max_leg_length, min_leg_length, max_leg_slope, max_cost,
     max_time, weight_cost_slider, weight_cost_input, weight_time_slider,
@@ -275,10 +285,10 @@ def display(num_legs, max_leg_length, min_leg_length, max_leg_slope, max_cost,
     trigger = dash.callback_context.triggered
     trigger_id = trigger[0]["prop_id"].split(".")[0]
 
-    if trigger_id == 'max_leg_length' and max_leg_length < min_leg_length + 1:
-        min_leg_length = max_leg_length - 1
-    if trigger_id == 'min_leg_length' and min_leg_length > max_leg_length - 1:
-        max_leg_length = min_leg_length + 1
+    if trigger_id == 'max_leg_length' and max_leg_length <= min_leg_length:
+        min_leg_length = max_leg_length
+    if trigger_id == 'min_leg_length' and min_leg_length >= max_leg_length:
+        max_leg_length = min_leg_length
 
     for weight in ["cost", "time", "slope"]:
         exec(f"""
@@ -293,7 +303,7 @@ else:
     if not trigger_id or trigger_id in tour_inputs:
         legs = set_legs(num_legs, [min_leg_length, max_leg_length], max_leg_slope)
     else:
-        legs = json.loads(problem_print)
+        legs = json.loads(problem_print_code)
 
     max_cost_min = round(sum(l["length"] for l in legs)*min([c["Cost"] for c in transport.values()]))
     max_cost_max = round(sum(l["length"] for l in legs)*max([c["Cost"] for c in transport.values()]))
@@ -333,9 +343,9 @@ else:
                 x_pos += df_legs["Length"][leg]
 
     fig.add_layout_image(
-            dict(source="assets/map.png", xref="x", yref="y", x=0, y=0.5,
+            dict(source="assets/europe.png", xref="x", yref="y", x=0, y=0.5,
                  sizex=df_legs["Length"].sum(), sizey=1, sizing="stretch",
-                 opacity=0.75, layer="below"))
+                 opacity=0.5, layer="below"))
 
     x_pos = 0
     for indx, leg in enumerate(legs):
@@ -350,7 +360,7 @@ else:
     fig.update_layout(font_color="rgb(6, 236, 220)", margin=dict(l=20, r=20, t=20, b=20),
                       paper_bgcolor="rgba(0,0,0,0)")
     return fig, json.dumps(legs), cqm.__str__(), "CQM", "solutions printed here", \
-        json.dumps(inputs_copy), weight_cost_slider, \
+        json.dumps(inputs_copy), max_leg_length, min_leg_length, weight_cost_slider, \
         weight_cost_input, weight_time_slider, weight_time_input, weight_slope_slider, \
         weight_slope_input
 

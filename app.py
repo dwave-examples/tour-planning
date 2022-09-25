@@ -118,19 +118,16 @@ solver_card = dbc.Card([
     color="secondary")
 
 cqm_viewer = dbc.Card([
-    # dbc.Row([
-    #     dbc.Col([
-    #         dbc.Button(
-    #             "View CQM", id="btn_view_cqm", className="mb-3",
-    #                 color="light", n_clicks=0,),]),]),
     dbc.Row([
         dbc.Col([
-            dbc.Collapse(
-                dbc.Card(
-                    dbc.CardBody([
-                        dcc.Textarea(id="cqm_print", value='Your CQM',
-                            style={'width': '100%'}, rows=20)])),
-                            id="collapse_cqm_view", is_open=False,)]),]),]),
+            dcc.Textarea(id="cqm_print", value='Your CQM',
+                style={'width': '100%'}, rows=20)])]),]),
+
+solutions_viewer = dbc.Card([
+    dbc.Row([
+        dbc.Col([
+            dcc.Textarea(id="solutions_print", value='Your solutions',
+                style={'width': '100%'}, rows=20)])]),]),
 
 app.layout = dbc.Container([
     html.H1("Tour Planner", style={'textAlign': 'left'}),
@@ -151,7 +148,7 @@ app.layout = dbc.Container([
                 label_style={"color": "rgb(6, 236, 220)", "backgroundColor": "black"},),
             dbc.Tab(cqm_viewer, label="CQM", tab_id="tab_cqm",
                 label_style={"color": "rgb(6, 236, 220)", "backgroundColor": "black"}),
-            dbc.Tab("TODO", label="Solutions", tab_id="tab_solutions",
+            dbc.Tab(solutions_viewer, label="Solutions", tab_id="tab_solutions",
                 label_style={"color": "rgb(6, 236, 220)", "backgroundColor": "black"}),],
             id="tabs", active_tab="tab_graph"),
 

@@ -25,7 +25,16 @@ import time
 from tour_planning import job_submission, tour, model
 from tour_planning import build_cqm
 
-from dwave.cloud.hybrid import Client  # remove later
+import dimod
+from dwave.cloud.hybrid import Client
+
+transport = {
+    'walk': {'Speed': 1, 'Cost': 0, 'Exercise': 1},
+    'cycle': {'Speed': 3, 'Cost': 2, 'Exercise': 2},
+     'bus': {'Speed': 4, 'Cost': 3, 'Exercise': 0},
+     'drive': {'Speed': 7, 'Cost': 5, 'Exercise': 0}}
+modes = transport.keys()  # global
+num_modes = len(modes)
 
 app = dash.Dash(__name__, external_stylesheets=[dbc.themes.BOOTSTRAP])
 
@@ -162,93 +171,139 @@ app.layout = dbc.Container([
                 target="max_leg_slope",),],
     fluid=True, style={"backgroundColor": "black", "color": "rgb(6, 236, 220)"})
 
-# @app.callback(
-#     Output("collapse_cqm_view", "is_open"),
-#     [Input("btn_view_cqm", "n_clicks")],
-#     [State("collapse_cqm_view", "is_open")],
-# )
-# def toggle_cqm_view(n, is_open):
-#     if n:
-#         return not is_open
-#     return is_open
-#
-# @app.callback(
-#     Output("cqm_print", "value"),    # Move to next callback instead
-#     Input("btn_view_cqm", "n_clicks"),
-#     Input('num_legs', 'value'))
-# def cqm_view(n, num_legs):
-#     trigger = dash.callback_context.triggered
-#     trigger_id = trigger[0]["prop_id"].split(".")[0]
-#     if trigger_id in ["btn_view_cqm", 'num_legs']:
-#            return model.cqm.__str__()
-
-for func in ["num_legs", "max_leg_slope", "max_cost", "max_time"]:
-    exec(f"""
-@app.callback(
-    Output('{func}', 'value'),
-    Input('{func}', 'value'),)
-def tour_{func}({func}):
-    'Update some tour inputs.'
-    tour.{func} = {func}
-    tour.update_config()
-    model.cqm = build_cqm(tour, model)
-    return tour.{func}
-""".format(func))
+def calculate_total(t, measure, legs, num_legs):
+    if measure == 'Exercise':
+        return dimod.quicksum(t[i]*transport[t[i].variables[0].split('_')[0]]['Exercise']*legs[i//num_modes]['length']*legs[i//num_modes]['uphill'] for i in range(num_modes*num_legs))
+    elif measure == 'Time':
+        return dimod.quicksum(t[i]*legs[i//num_modes]['length']/transport[t[i].variables[0].split('_')[0]]['Speed'] for i in range(num_modes*num_legs))
+    else:
+        return dimod.quicksum(t[i]*transport[t[i].variables[0].split('_')[0]][measure]*legs[i//num_modes]['length'] for i in range(num_modes*num_legs))
 
 @app.callback(
-    Output('max_leg_length', 'value'),
-    Output('min_leg_length', 'value'),
+    Output('tour_graph', 'figure'),
+    Output('cqm_print', 'value'),
+    Output('solutions_print', 'value'),
+    # Output('num_legs', 'value'),
+    # Output('max_leg_length', 'value'),
+    # Output('min_leg_length', 'value'),
+    # Output('max_leg_slope', 'value'),
+    # Output('max_cost', 'value'),
+    # Output('max_time', 'value'),
+    Output('weight_cost_slider', 'value'),
+    Output('weight_cost_input', 'value'),
+    Output('weight_time_slider', 'value'),
+    Output('weight_time_input', 'value'),
+    Output('weight_slope_slider', 'value'),
+    Output('weight_slope_input', 'value'),
+    Input('num_legs', 'value'),
     Input('max_leg_length', 'value'),
-    Input('min_leg_length', 'value'),)
-def tour_leg_length(max_leg_length, min_leg_length):
-    """Update tour leg length."""
+    Input('min_leg_length', 'value'),
+    Input('max_leg_slope', 'value'),
+    Input('max_cost', 'value'),
+    Input('max_time', 'value'),
+    Input('weight_cost_slider', 'value'),
+    Input('weight_cost_input', 'value'),
+    Input('weight_time_slider', 'value'),
+    Input('weight_time_input', 'value'),
+    Input('weight_slope_slider', 'value'),
+    Input('weight_slope_input', 'value'),
+    Input('job_status_progress', 'color'),)
+def display(num_legs, max_leg_length, min_leg_length, max_leg_slope, max_cost,
+    max_time, weight_cost_slider, weight_cost_input, weight_time_slider,
+    weight_time_input, weight_slope_slider, weight_slope_input, job_status_progress):
+    """
+
+    """
     trigger = dash.callback_context.triggered
     trigger_id = trigger[0]["prop_id"].split(".")[0]
-    if 'max_leg_length' == trigger_id:
-        tour.max_length = max_leg_length
-        if max_leg_length < tour.min_length + 1:
-            tour.min_length = tour.max_length - 1
-    else:
-        tour.min_length = min_leg_length
-        if min_leg_length > tour.max_length - 1:
-            tour.max_length = tour.min_length + 1
 
-    tour.update_config()
-    model.cqm = build_cqm(tour, model)
-    return tour.max_length, tour.min_length
+    if trigger_id == 'max_leg_length' and max_leg_length < min_leg_length + 1:
+        min_leg_length = max_leg_length - 1
+    if trigger_id == 'min_leg_length' and min_leg_length > max_leg_length - 1:
+        max_leg_length = min_leg_length + 1
 
-for func in ["cost", "time", "slope"]:
-    exec(f"""
-@app.callback(
-    Output('weight_{func}_slider', 'value'),
-    Output('weight_{func}_input', 'value'),
-    Input('weight_{func}_slider', 'value'),
-    Input('weight_{func}_input', 'value'),)
-def cqm_{func}(weight_{func}_slider, weight_{func}_input):
-    'Update some cqm inputs.'
+    for weight in ["cost", "time", "slope"]:
+        exec(f"""
+if trigger_id == 'weight_{weight}_slider':
+        weight_{weight} = weight_{weight}_slider
+else:
+    weight_{weight} = weight_{weight}_input
+""".format(weight))
 
-    trigger_id = dash.callback_context.triggered[0]['prop_id'].split('.')[0]
+    # Calculate tour
 
-    if trigger_id == 'weight_{func}_slider':
-        model.weight_{func} = weight_{func}_slider
-    else:
-        model.weight_{func} = weight_{func}_input
+    legs = [{'length': round((max_leg_length - min_leg_length)*random.random() + min_leg_length, 1),
+             'uphill': round(max_leg_slope*random.random(), 1),
+             'toll': np.random.choice([True, False], 1, p=[0.2, 0.8])[0]} for i in range(num_legs)]
 
-    model.cqm = build_cqm(tour, model)
-    return model.weight_{func}, model.weight_{func}
-""".format(func))
+    max_cost_min = round(sum(l["length"] for l in legs)*min([c["Cost"] for c in transport.values()]))
+    max_cost_max = round(sum(l["length"] for l in legs)*max([c["Cost"] for c in transport.values()]))
 
-# @app.callback(
-#     Output('cqm_print', 'value'),
-#     Input('btn_update_cqm', 'n_clicks'),)
-# def cqm_print(btn_update_cqm):
-#     """Print CQM."""
-#     trigger_id = dash.callback_context.triggered[0]["prop_id"].split(".")[0]
-#     if trigger_id not in ["btn_update_cqm"]:
-#         return dash.no_update
-#
-#     model.cqm = build_cqm(tour, model)
-#     return model.cqm.__str__()
+    max_time_max = round(sum(l["length"] for l in legs)/min(s["Speed"] for s in transport.values()))
+    max_time_min = round(sum(l["length"] for l in legs)/max(s["Speed"] for s in transport.values()))
+
+    # Calculate CQM
+
+    t= [dimod.Binary(f'{mode}_{i}') for i in range(num_legs) for mode in transport.keys()]
+
+    cqm = dimod.ConstrainedQuadraticModel()
+    cqm.set_objective(-calculate_total(t, "Exercise", legs, num_legs))
+
+    for leg in range(num_legs):
+        cqm.add_constraint(dimod.quicksum(t[num_modes*leg:num_modes*leg+num_modes]) == 1, label=f"One-hot leg{leg}")
+    cqm.add_constraint(calculate_total(t, "Cost", legs, num_legs) <= max_cost, label="Total cost", weight=weight_cost_input, penalty='quadratic')
+    cqm.add_constraint(calculate_total(t, "Time", legs, num_legs) <= max_time, label="Total time", weight=weight_time_input, penalty='linear')
+
+    drive_index = list(modes).index('drive')
+    cycle_index = list(modes).index('cycle')
+    for leg in range(num_legs):
+         if legs[leg]['toll']:
+             cqm.add_constraint(t[num_modes*leg:num_modes*leg+num_modes][drive_index] == 0, label=f"Toll to drive on leg {leg}")
+         if legs[leg]['uphill'] > max_leg_slope/2:
+             cqm.add_constraint(t[num_modes*leg:num_modes*leg+num_modes][cycle_index] == 0, label=f"Too steep to cycle on leg {leg}", weight=weight_slope_input)
+
+    # Create graph
+
+    df_legs = pd.DataFrame({'Length': [l['length'] for l in legs],
+                            'Slope': [s['uphill'] for s in legs]})
+    df_legs["Tour"] = 0
+    fig = px.bar(df_legs, x="Length", y='Tour', color="Slope", orientation="h",
+                 color_continuous_scale=px.colors.diverging.Geyser)
+
+    if "job_status_progress" == trigger_id:
+        if color == "success":
+            sampleset_feasible = job_tracker.result.filter(lambda row: row.is_feasible)
+            first = sorted({int(key.split('_')[1]): key.split('_')[0] for key,val in sampleset_feasible.first.sample.items() if val==1.0}.items())
+            fig = px.bar(df_legs, x="Length", y='Tour', color="Slope", orientation="h",
+                         color_continuous_scale=px.colors.diverging.Geyser, text=[transport for leg,transport in first])
+
+            x_pos = 0
+            for leg, icon in first:
+                fig.add_layout_image(dict(source=f"assets/{icon}.png", xref="x",
+                    yref="y", x=x_pos, y=-0.1, sizex=2, sizey=2, opacity=1,
+                    layer="above"))
+                x_pos += df_legs["Length"][leg]
+
+    fig.add_layout_image(
+            dict(source="assets/map.png", xref="x", yref="y", x=0, y=0.5,
+                 sizex=df_legs["Length"].sum(), sizey=1, sizing="stretch",
+                 opacity=0.75, layer="below"))
+
+    x_pos = 0
+    for indx, leg in enumerate(tour.legs):
+        if leg['toll']:
+            fig.add_layout_image(dict(source=f"assets/toll.png", xref="x",
+                yref="y", x=x_pos, y=0.2, sizex=2, sizey=2, opacity=1, layer="above"))
+        x_pos += df_legs["Length"][indx]
+
+    fig.update_xaxes(showticklabels=True, title="Distance")
+    fig.update_yaxes(showticklabels=False, title=None, range=(-0.5, 0.5))
+    fig.update_traces(width=.1)
+    fig.update_layout(font_color="rgb(6, 236, 220)", margin=dict(l=20, r=20, t=20, b=20),
+                      paper_bgcolor="rgba(0,0,0,0)")
+    return fig, cqm.__str__(), "solutions printed here",weight_cost_slider, \
+        weight_cost_input, weight_time_slider, weight_time_input, weight_slope_slider, \
+        weight_slope_input
 
 job_bar = {'WAITING': [0, 'light'],
            'SUBMITTED': [25, 'info'],
@@ -281,7 +336,6 @@ def cqm_submit(n_clicks, n_intervals):
     if job_tracker.state == "READY":
         job_tracker.state = "SUBMITTED"
         job_tracker.computation = None
-        #model.cqm = build_cqm(tour, model)   # verify can be deleted
         job_tracker.client = Client.from_config(profile="test")
         solver = job_tracker.client.get_solver(supported_problem_types__issubset={"cqm"})
         job_tracker.problem_data_id = solver.upload_cqm(model.cqm).result()
@@ -316,70 +370,6 @@ def cqm_submit(n_clicks, n_intervals):
         elapsed_time = round(time.time() - job_tracker.submission_time)
         job_tracker.client.close()
         return False, True, 0.1*1000, 0, dash.no_update, dash.no_update, html.P([f"Status: {job_tracker.status}",html.Br(),f"Elapsed: {elapsed_time} sec."])
-
-@app.callback(
-    Output('tour_graph', 'figure'),
-    Input('num_legs', 'value'),
-    Input('max_leg_length', 'value'),
-    Input('min_leg_length', 'value'),
-    Input('max_leg_slope', 'value'),
-    Input('job_status_progress', 'color'),
-    # Input('btn_update_cqm', 'n_clicks'),
-    )
-def graph(num_legs, max_leg_length, min_leg_length, max_leg_slope, color):
-    """Update graph of tour."""
-    df_legs = pd.DataFrame({'Length': [l['length'] for l in tour.legs],
-                            'Slope': [s['uphill'] for s in tour.legs]})
-    df_legs["Tour"] = 0
-    fig = px.bar(df_legs, x="Length", y='Tour', color="Slope", orientation="h",
-                 color_continuous_scale=px.colors.diverging.Geyser)
-
-    trigger_id = dash.callback_context.triggered[0]["prop_id"].split(".")[0]
-
-    # TODO remove
-    # if "btn_update_cqm" == trigger_id:
-    #     fake_sol = [np.random.choice(["walk", "cycle", "drive", "bus"], 1)[0] for i in range(len(tour.legs))]
-    #     fig = px.bar(df_legs, x="Length", y='Tour', color="Slope", orientation="h",
-    #                  color_continuous_scale=px.colors.diverging.Geyser, text=fake_sol)
-    #
-    #     x_pos = 0
-    #     for leg, icon in enumerate(fake_sol):
-    #         fig.add_layout_image(dict(source=f"assets/{icon}.png", xref="x", yref="y",
-    #             x=x_pos, y=-0.1, sizex=2, sizey=2, opacity=1, layer="above"))
-    #         x_pos += df_legs["Length"][leg]
-
-    if "job_status_progress" == trigger_id:
-        if color == "success":
-            sampleset_feasible = job_tracker.result.filter(lambda row: row.is_feasible)
-            first = sorted({int(key.split('_')[1]): key.split('_')[0] for key,val in sampleset_feasible.first.sample.items() if val==1.0}.items())
-            fig = px.bar(df_legs, x="Length", y='Tour', color="Slope", orientation="h",
-                         color_continuous_scale=px.colors.diverging.Geyser, text=[transport for leg,transport in first])
-
-            x_pos = 0
-            for leg, icon in first:
-                fig.add_layout_image(dict(source=f"assets/{icon}.png", xref="x",
-                    yref="y", x=x_pos, y=-0.1, sizex=2, sizey=2, opacity=1,
-                    layer="above"))
-                x_pos += df_legs["Length"][leg]
-
-    fig.add_layout_image(
-            dict(source="assets/map.png", xref="x", yref="y", x=0, y=0.5,
-                 sizex=df_legs["Length"].sum(), sizey=1, sizing="stretch",
-                 opacity=0.75, layer="below"))
-
-    x_pos = 0
-    for indx, leg in enumerate(tour.legs):
-        if leg['toll']:
-            fig.add_layout_image(dict(source=f"assets/toll.png", xref="x",
-                yref="y", x=x_pos, y=0.2, sizex=2, sizey=2, opacity=1, layer="above"))
-        x_pos += df_legs["Length"][indx]
-
-    fig.update_xaxes(showticklabels=True, title="Distance")
-    fig.update_yaxes(showticklabels=False, title=None, range=(-0.5, 0.5))
-    fig.update_traces(width=.1)
-    fig.update_layout(font_color="rgb(6, 236, 220)", margin=dict(l=20, r=20, t=20, b=20),
-                      paper_bgcolor="rgba(0,0,0,0)")
-    return fig
 
 if __name__ == "__main__":
     app.run_server(debug=True)

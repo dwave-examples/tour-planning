@@ -1,4 +1,16 @@
-# http://127.0.0.1:8050/
+# Copyright 2022 D-Wave Systems Inc.
+#
+#    Licensed under the Apache License, Version 2.0 (the "License");
+#    you may not use this file except in compliance with the License.
+#    You may obtain a copy of the License at
+#
+#        http://www.apache.org/licenses/LICENSE-2.0
+#
+#    Unless required by applicable law or agreed to in writing, software
+#    distributed under the License is distributed on an "AS IS" BASIS,
+#    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#    See the License for the specific language governing permissions and
+#    limitations under the License.
 
 import dash
 import dash_bootstrap_components as dbc
@@ -16,10 +28,6 @@ from tour_planning import build_cqm
 from dwave.cloud.hybrid import Client  # remove later
 
 app = dash.Dash(__name__, external_stylesheets=[dbc.themes.BOOTSTRAP])
-
-# imported_data = [{'bus_0': 0.0, 'bus_1': 1.0, 'bus_2': 0.0, 'bus_3': 0.0, 'bus_4': 0.0, 'bus_5': 0.0, 'bus_6': 0.0, 'bus_7': 0.0, 'bus_8': 0.0, 'bus_9': 0.0, 'cycle_0': 1.0, 'cycle_1': 0.0, 'cycle_2': 1.0, 'cycle_3': 1.0, 'cycle_4': 0.0, 'cycle_5': 0.0, 'cycle_6': 1.0, 'cycle_7': 1.0, 'cycle_8': 1.0, 'cycle_9': 0.0, 'drive_0': 0.0, 'drive_1': 0.0,
-# 'drive_2': 0.0, 'drive_3': 0.0, 'drive_4': 0.0, 'drive_5': 0.0, 'drive_6': 0.0, 'drive_7': 0.0, 'drive_8': 0.0, 'drive_9': 0.0, 'walk_0': 0.0, 'walk_1': 0.0, 'walk_2': 0.0, 'walk_3': 0.0, 'walk_4': 1.0, 'walk_5': 1.0, 'walk_6': 0.0, 'walk_7': 0.0, 'walk_8': 0.0, 'walk_9': 1.0}, -227.57000000000036, 1, -227.57000000000036, True,
-# np.array([ True,  True,  True,  True,  True,  True,  True,  True,  True, True,  True,  True,  True,  True,  True,  True])]
 
 model = model()
 tour = tour()
@@ -52,46 +60,46 @@ cqm_config = dbc.Card(
 
 tour_config = dbc.Card(
     [dbc.Row([
-        html.H4("Tour Settings", className="card-title")]),
+        html.H4("Tour Settings", className="card-title", style={'textAlign': 'left'})]),
      dbc.Row([
         dbc.Col([
-            html.B("Legs")]),
+            html.B("Set Legs", style={"text-decoration": "underline"},)]),
         dbc.Col([
-            html.B("Leg Defintion"),]),
-        dbc.Col([
-            html.B("Budget"),]),]),
+            html.B("Set Budget", style={"text-decoration": "underline"}),]),]),
      dbc.Row([
-        dbc.Col([
-            dcc.Input(id='num_legs', type='number', min=5, max=100, step=1, value=10)],),
         dbc.Col([
             dbc.Row([
-                "Max. Length:",]),
+                "How Many:",]),
+            dbc.Row([
+                dcc.Input(id='num_legs', type='number', min=5, max=100, step=1, value=10)],),
+            dbc.Row([
+                "Longest Leg:",]),
             dbc.Row([
                 dcc.Input(id='max_leg_length', type='number', min=2, max=20,
                           step=1, value=10),]),
             dbc.Row([
-                "Min. Length:"]),
+                "Shortest Leg:"]),
             dbc.Row([
                dcc.Input(id='min_leg_length', type='number', min=1, max=19,
                          step=1, value=2),]),
             dbc.Row([
-               "Max. Slope:",]),
+               "Steepest Leg:",]),
             dbc.Row([
                dcc.Slider(min=0, max=10, step=1,
                           marks={i: {"label": f'{str(i)}',
                                      "style": {'color': 'white'}} for i in range(0, 11, 2)},
-                          value=8, id='max_leg_slope'),]),],),
+                          value=8, id='max_leg_slope'),]),], style={'margin-right': '20px'}),
         dbc.Col([
             dbc.Row([
-                "Max. Cost:",]),
+                "Highest Cost:",]),
             dbc.Row([
                dcc.Input(id='max_cost', type='number', min=tour.max_cost_min,
                     max=tour.max_cost_max, step=1, value=tour.max_cost),]),
             dbc.Row([
-                "Max. Time:",]),
+                "Longest Time:",]),
             dbc.Row([
                dcc.Input(id='max_time', type='number', min=tour.max_time_min,
-                    max=tour.max_time_max, step=1, value=tour.max_time),]),]),],)],
+                    max=tour.max_time_max, step=1, value=tour.max_time),]),], style={'margin-left': '20px'}),],)],
     body=True, color="secondary")
 
 graph_card = dbc.Card([
@@ -109,8 +117,23 @@ solver_card = dbc.Card([
         html.P(id='job_status', children=''),]),],
     color="secondary")
 
+cqm_viewer = dbc.Card([
+    # dbc.Row([
+    #     dbc.Col([
+    #         dbc.Button(
+    #             "View CQM", id="btn_view_cqm", className="mb-3",
+    #                 color="light", n_clicks=0,),]),]),
+    dbc.Row([
+        dbc.Col([
+            dbc.Collapse(
+                dbc.Card(
+                    dbc.CardBody([
+                        dcc.Textarea(id="cqm_print", value='Your CQM',
+                            style={'width': '100%'}, rows=20)])),
+                            id="collapse_cqm_view", is_open=False,)]),]),]),
+
 app.layout = dbc.Container([
-    html.H1("Tour Planner"),
+    html.H1("Tour Planner", style={'textAlign': 'left'}),
     dbc.Row([
         dbc.Col(
             tour_config, width=4),
@@ -123,27 +146,15 @@ app.layout = dbc.Container([
             ], width=2)],
         justify="left"),
 
-    dbc.Row([
-        dbc.Col([
-            dbc.Button(
-                "View CQM", id="btn_view_cqm", className="mb-3",
-                    color="light", n_clicks=0,),]),]),
-    dbc.Row([
-        dbc.Col([
-            dbc.Collapse(
-                dbc.Card(
-                    dbc.CardBody([
-                        dcc.Textarea(id="cqm_print", value='Your CQM',
-                            style={'width': '100%'}, rows=20)])),
-                            id="collapse_cqm_view", is_open=False,)]),]),
+    dbc.Tabs([
+            dbc.Tab(graph_card, label="Graph", tab_id="tab_graph",
+                label_style={"color": "rgb(6, 236, 220)", "backgroundColor": "black"},),
+            dbc.Tab(cqm_viewer, label="CQM", tab_id="tab_cqm",
+                label_style={"color": "rgb(6, 236, 220)", "backgroundColor": "black"}),
+            dbc.Tab("TODO", label="Solutions", tab_id="tab_solutions",
+                label_style={"color": "rgb(6, 236, 220)", "backgroundColor": "black"}),],
+            id="tabs", active_tab="tab_graph"),
 
-    dbc.Row([
-        graph_card],
-        justify="left",),
-    dbc.Row([
-        dbc.Col([
-            "Empty row"],),],
-        justify="left",),
     dbc.Tooltip("Number of legs for the tour.",
                 target="num_legs",),
     dbc.Tooltip("Maximum length for a single leg.",
@@ -154,25 +165,25 @@ app.layout = dbc.Container([
                 target="max_leg_slope",),],
     fluid=True, style={"backgroundColor": "black", "color": "rgb(6, 236, 220)"})
 
-@app.callback(
-    Output("collapse_cqm_view", "is_open"),
-    [Input("btn_view_cqm", "n_clicks")],
-    [State("collapse_cqm_view", "is_open")],
-)
-def toggle_cqm_view(n, is_open):
-    if n:
-        return not is_open
-    return is_open
-
-@app.callback(
-    Output("cqm_print", "value"),
-    Input("btn_view_cqm", "n_clicks"),
-    Input('num_legs', 'value'))
-def cqm_view(n, num_legs):
-    trigger = dash.callback_context.triggered
-    trigger_id = trigger[0]["prop_id"].split(".")[0]
-    if trigger_id in ["btn_view_cqm", 'num_legs']:
-           return model.cqm.__str__()
+# @app.callback(
+#     Output("collapse_cqm_view", "is_open"),
+#     [Input("btn_view_cqm", "n_clicks")],
+#     [State("collapse_cqm_view", "is_open")],
+# )
+# def toggle_cqm_view(n, is_open):
+#     if n:
+#         return not is_open
+#     return is_open
+#
+# @app.callback(
+#     Output("cqm_print", "value"),    # Move to next callback instead
+#     Input("btn_view_cqm", "n_clicks"),
+#     Input('num_legs', 'value'))
+# def cqm_view(n, num_legs):
+#     trigger = dash.callback_context.triggered
+#     trigger_id = trigger[0]["prop_id"].split(".")[0]
+#     if trigger_id in ["btn_view_cqm", 'num_legs']:
+#            return model.cqm.__str__()
 
 for func in ["num_legs", "max_leg_slope", "max_cost", "max_time"]:
     exec(f"""

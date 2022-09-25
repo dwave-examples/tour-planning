@@ -15,6 +15,7 @@
 import dash
 import dash_bootstrap_components as dbc
 from dash import dcc, html, Input, Output, State
+import json
 import plotly.express as px
 import pandas as pd
 import random
@@ -22,25 +23,41 @@ import numpy as np
 from pprint import pprint
 import time
 
-from tour_planning import job_submission, tour, model
+from tour_planning import job_submission, set_legs, model, transport # remove some
 from tour_planning import build_cqm
 
 import dimod
 from dwave.cloud.hybrid import Client
 
-transport = {
-    'walk': {'Speed': 1, 'Cost': 0, 'Exercise': 1},
-    'cycle': {'Speed': 3, 'Cost': 2, 'Exercise': 2},
-     'bus': {'Speed': 4, 'Cost': 3, 'Exercise': 0},
-     'drive': {'Speed': 7, 'Cost': 5, 'Exercise': 0}}
 modes = transport.keys()  # global
 num_modes = len(modes)
 
 app = dash.Dash(__name__, external_stylesheets=[dbc.themes.BOOTSTRAP])
 
 model = model()
-tour = tour()
 job_tracker = job_submission(profile='test')
+
+def budgets(legs):
+    max_cost_min = round(sum(l["length"] for l in legs)*min([c["Cost"] for c in transport.values()]))
+    max_cost_max = round(sum(l["length"] for l in legs)*max([c["Cost"] for c in transport.values()]))
+    max_cost = round(np.mean([max_cost_min, max_cost_max]))
+
+    max_time_max = round(sum(l["length"] for l in legs)/min(s["Speed"] for s in transport.values()))
+    max_time_min = round(sum(l["length"] for l in legs)/max(s["Speed"] for s in transport.values()))
+    max_time = round(np.mean([max_time_min, max_time_max]))
+
+    return [max_cost_min, max_cost_max, max_cost], [max_time_min, max_time_max, max_time]
+
+init_inputs = {'num_legs': [5, 100, 10],
+    'max_leg_length': [2, 20, 10],
+    'min_leg_length': [1, 19, 2],
+    'max_leg_slope': [0, 10, 8],}
+
+init_tour = {'legs': set_legs(init_inputs['num_legs'][2],
+    [init_inputs['min_leg_length'][2], init_inputs['max_leg_length'][2]],
+    init_inputs['max_leg_slope'][2])}
+
+init_inputs['max_cost'], init_inputs['max_time'] = budgets(init_tour['legs'])
 
 cqm_config = dbc.Card(
     [html.H4("CQM Settings", className="card-title"),
@@ -80,35 +97,39 @@ tour_config = dbc.Card(
             dbc.Row([
                 "How Many:",]),
             dbc.Row([
-                dcc.Input(id='num_legs', type='number', min=5, max=100, step=1, value=10)],),
+                dcc.Input(id='num_legs', type='number', min=init_inputs['num_legs'][0],
+                    max=init_inputs['num_legs'][1], step=1, value=init_inputs['num_legs'][2])],),
             dbc.Row([
                 "Longest Leg:",]),
             dbc.Row([
-                dcc.Input(id='max_leg_length', type='number', min=2, max=20,
-                          step=1, value=10),]),
+                dcc.Input(id='max_leg_length', type='number', min=init_inputs['max_leg_length'][0],
+                    max=init_inputs['max_leg_length'][1], step=1, value=init_inputs['max_leg_length'][2]),]),
             dbc.Row([
                 "Shortest Leg:"]),
             dbc.Row([
-               dcc.Input(id='min_leg_length', type='number', min=1, max=19,
-                         step=1, value=2),]),
+               dcc.Input(id='min_leg_length', type='number', min=init_inputs['min_leg_length'][0],
+                    max=init_inputs['min_leg_length'][1], step=1,
+                    value=init_inputs['min_leg_length'][2]),]),
             dbc.Row([
                "Steepest Leg:",]),
             dbc.Row([
                dcc.Slider(min=0, max=10, step=1,
-                          marks={i: {"label": f'{str(i)}',
-                                     "style": {'color': 'white'}} for i in range(0, 11, 2)},
-                          value=8, id='max_leg_slope'),]),], style={'margin-right': '20px'}),
+                    marks={i: {"label": f'{str(i)}', "style": {'color': 'white'}} for i in
+                    range(init_inputs['max_leg_slope'][0], init_inputs['max_leg_slope'][1] + 1, 2)},
+                    value=init_inputs['max_leg_slope'][2], id='max_leg_slope'),]),],
+                    style={'margin-right': '20px'}),
         dbc.Col([
             dbc.Row([
                 "Highest Cost:",]),
             dbc.Row([
-               dcc.Input(id='max_cost', type='number', min=tour.max_cost_min,
-                    max=tour.max_cost_max, step=1, value=tour.max_cost),]),
+               dcc.Input(id='max_cost', type='number', min=init_inputs['max_cost'][0],
+                    max=init_inputs['max_cost'][1], step=1, value=init_inputs['max_cost'][2]),]),
             dbc.Row([
                 "Longest Time:",]),
             dbc.Row([
-               dcc.Input(id='max_time', type='number', min=tour.max_time_min,
-                    max=tour.max_time_max, step=1, value=tour.max_time),]),], style={'margin-left': '20px'}),],)],
+               dcc.Input(id='max_time', type='number', min=init_inputs['max_time'][0],
+                    max=init_inputs['max_time'][1], step=1, value=init_inputs['max_time'][2]),]),],
+                    style={'margin-left': '20px'}),],)],
     body=True, color="secondary")
 
 graph_card = dbc.Card([
@@ -138,6 +159,18 @@ solutions_viewer = dbc.Card([
             dcc.Textarea(id="solutions_print", value='Your solutions',
                 style={'width': '100%'}, rows=20)])]),]),
 
+problem_viewer = dbc.Card([
+    dbc.Row([
+        dbc.Col([
+            dcc.Textarea(id="problem_print", value='Your problem',
+                style={'width': '100%'}, rows=20)])]),]),
+
+inputs_viewer = dbc.Card([
+    dbc.Row([
+        dbc.Col([
+            dcc.Textarea(id="input_print", value='Some inputs have dynamically set boundaries\n',
+                style={'width': '100%'}, rows=20)])]),]),
+
 app.layout = dbc.Container([
     html.H1("Tour Planner", style={'textAlign': 'left'}),
     dbc.Row([
@@ -155,9 +188,13 @@ app.layout = dbc.Container([
     dbc.Tabs([
             dbc.Tab(graph_card, label="Graph", tab_id="tab_graph",
                 label_style={"color": "rgb(6, 236, 220)", "backgroundColor": "black"},),
+            dbc.Tab(problem_viewer, label="Problem", tab_id="tab_problem",
+                label_style={"color": "rgb(6, 236, 220)", "backgroundColor": "black"}),
             dbc.Tab(cqm_viewer, label="CQM", tab_id="tab_cqm",
                 label_style={"color": "rgb(6, 236, 220)", "backgroundColor": "black"}),
             dbc.Tab(solutions_viewer, label="Solutions", tab_id="tab_solutions",
+                label_style={"color": "rgb(6, 236, 220)", "backgroundColor": "black"}),
+            dbc.Tab(inputs_viewer, label="Input Ranges", tab_id="tab_inputs",
                 label_style={"color": "rgb(6, 236, 220)", "backgroundColor": "black"}),],
             id="tabs", active_tab="tab_graph"),
 
@@ -171,6 +208,8 @@ app.layout = dbc.Container([
                 target="max_leg_slope",),],
     fluid=True, style={"backgroundColor": "black", "color": "rgb(6, 236, 220)"})
 
+tour_inputs = ['num_legs', 'max_leg_length', 'min_leg_length', 'max_leg_slope',]
+
 def calculate_total(t, measure, legs, num_legs):
     if measure == 'Exercise':
         return dimod.quicksum(t[i]*transport[t[i].variables[0].split('_')[0]]['Exercise']*legs[i//num_modes]['length']*legs[i//num_modes]['uphill'] for i in range(num_modes*num_legs))
@@ -181,8 +220,10 @@ def calculate_total(t, measure, legs, num_legs):
 
 @app.callback(
     Output('tour_graph', 'figure'),
+    Output('problem_print', 'value'),
     Output('cqm_print', 'value'),
     Output('solutions_print', 'value'),
+    Output('input_print', 'value'),
     # Output('num_legs', 'value'),
     # Output('max_leg_length', 'value'),
     # Output('min_leg_length', 'value'),
@@ -207,10 +248,12 @@ def calculate_total(t, measure, legs, num_legs):
     Input('weight_time_input', 'value'),
     Input('weight_slope_slider', 'value'),
     Input('weight_slope_input', 'value'),
+    Input('problem_print', 'value'),
     Input('job_status_progress', 'color'),)
 def display(num_legs, max_leg_length, min_leg_length, max_leg_slope, max_cost,
     max_time, weight_cost_slider, weight_cost_input, weight_time_slider,
-    weight_time_input, weight_slope_slider, weight_slope_input, job_status_progress):
+    weight_time_input, weight_slope_slider, weight_slope_input, problem_print,
+    job_status_progress):
     """
 
     """
@@ -232,9 +275,10 @@ else:
 
     # Calculate tour
 
-    legs = [{'length': round((max_leg_length - min_leg_length)*random.random() + min_leg_length, 1),
-             'uphill': round(max_leg_slope*random.random(), 1),
-             'toll': np.random.choice([True, False], 1, p=[0.2, 0.8])[0]} for i in range(num_legs)]
+    if not trigger_id or trigger_id in tour_inputs:
+        legs = set_legs(num_legs, [min_leg_length, max_leg_length], max_leg_slope)
+    else:
+        legs = json.loads(problem_print)
 
     max_cost_min = round(sum(l["length"] for l in legs)*min([c["Cost"] for c in transport.values()]))
     max_cost_max = round(sum(l["length"] for l in legs)*max([c["Cost"] for c in transport.values()]))
@@ -242,25 +286,14 @@ else:
     max_time_max = round(sum(l["length"] for l in legs)/min(s["Speed"] for s in transport.values()))
     max_time_min = round(sum(l["length"] for l in legs)/max(s["Speed"] for s in transport.values()))
 
+    inputs_copy = init_inputs
+    inputs_copy['max_cost'] = [max_cost_min, max_cost_max, round(np.mean([max_cost_min, max_cost_max]))]
+    inputs_copy['time'] = [max_time_min, max_time_max, max_time]
+
     # Calculate CQM
 
-    t= [dimod.Binary(f'{mode}_{i}') for i in range(num_legs) for mode in transport.keys()]
-
-    cqm = dimod.ConstrainedQuadraticModel()
-    cqm.set_objective(-calculate_total(t, "Exercise", legs, num_legs))
-
-    for leg in range(num_legs):
-        cqm.add_constraint(dimod.quicksum(t[num_modes*leg:num_modes*leg+num_modes]) == 1, label=f"One-hot leg{leg}")
-    cqm.add_constraint(calculate_total(t, "Cost", legs, num_legs) <= max_cost, label="Total cost", weight=weight_cost_input, penalty='quadratic')
-    cqm.add_constraint(calculate_total(t, "Time", legs, num_legs) <= max_time, label="Total time", weight=weight_time_input, penalty='linear')
-
-    drive_index = list(modes).index('drive')
-    cycle_index = list(modes).index('cycle')
-    for leg in range(num_legs):
-         if legs[leg]['toll']:
-             cqm.add_constraint(t[num_modes*leg:num_modes*leg+num_modes][drive_index] == 0, label=f"Toll to drive on leg {leg}")
-         if legs[leg]['uphill'] > max_leg_slope/2:
-             cqm.add_constraint(t[num_modes*leg:num_modes*leg+num_modes][cycle_index] == 0, label=f"Too steep to cycle on leg {leg}", weight=weight_slope_input)
+    cqm = build_cqm(legs, modes, max_cost, max_time, weight_cost_input,
+                    weight_time_input, max_leg_slope, weight_slope_input)
 
     # Create graph
 
@@ -290,7 +323,7 @@ else:
                  opacity=0.75, layer="below"))
 
     x_pos = 0
-    for indx, leg in enumerate(tour.legs):
+    for indx, leg in enumerate(legs):
         if leg['toll']:
             fig.add_layout_image(dict(source=f"assets/toll.png", xref="x",
                 yref="y", x=x_pos, y=0.2, sizex=2, sizey=2, opacity=1, layer="above"))
@@ -301,7 +334,8 @@ else:
     fig.update_traces(width=.1)
     fig.update_layout(font_color="rgb(6, 236, 220)", margin=dict(l=20, r=20, t=20, b=20),
                       paper_bgcolor="rgba(0,0,0,0)")
-    return fig, cqm.__str__(), "solutions printed here",weight_cost_slider, \
+    return fig, json.dumps(legs), cqm.__str__(), "solutions printed here", \
+        json.dumps(inputs_copy), weight_cost_slider, \
         weight_cost_input, weight_time_slider, weight_time_input, weight_slope_slider, \
         weight_slope_input
 

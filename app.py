@@ -147,11 +147,21 @@ solver_card = dbc.Card([
         html.P(id='job_status', children=''),]),],
     color="secondary")
 
-cqm_viewer = dbc.Card([
-    dbc.Row([
-        dbc.Col([
-            dcc.Textarea(id="cqm_print", value='Your CQM',
-                style={'width': '100%'}, rows=20)])]),]),
+cqm_viewer = dbc.Tabs([
+    dbc.Tab(dbc.Card([
+                dbc.Row([
+                    dbc.Col([
+                        dcc.Textarea(id="cqm_print_human", value='Human Readable',
+                            style={'width': '100%'}, rows=20)])]),]), label="Human Readable",
+                                tab_id="tab_cqm_print_human",
+                                label_style={"color": "white", "backgroundColor": "black"},),
+    dbc.Tab(dbc.Card([
+                dbc.Row([
+                    dbc.Col([
+                        dcc.Textarea(id="cqm_print_code", value='Computer Readable',
+                            style={'width': '100%'}, rows=20)])]),]), label="Computer Readable",
+                                tab_id="tab_cqm_print_code",
+                                label_style={"color": "white", "backgroundColor": "black"},),])
 
 solutions_viewer = dbc.Card([
     dbc.Row([
@@ -172,7 +182,11 @@ inputs_viewer = dbc.Card([
                 style={'width': '100%'}, rows=20)])]),]),
 
 app.layout = dbc.Container([
-    html.H1("Tour Planner", style={'textAlign': 'left'}),
+    dbc.Row([
+        dbc.Col([
+            html.H1("Tour Planner", style={'textAlign': 'left'})], width=10),
+        dbc.Col([
+            html.Img(src="assets/ocean.png", height="50px", style={'textAlign': 'right'})], width=2)]),
     dbc.Row([
         dbc.Col(
             tour_config, width=4),
@@ -221,7 +235,8 @@ def calculate_total(t, measure, legs, num_legs):
 @app.callback(
     Output('tour_graph', 'figure'),
     Output('problem_print', 'value'),
-    Output('cqm_print', 'value'),
+    Output('cqm_print_code', 'value'),
+    Output('cqm_print_human', 'value'),
     Output('solutions_print', 'value'),
     Output('input_print', 'value'),
     # Output('num_legs', 'value'),
@@ -334,7 +349,7 @@ else:
     fig.update_traces(width=.1)
     fig.update_layout(font_color="rgb(6, 236, 220)", margin=dict(l=20, r=20, t=20, b=20),
                       paper_bgcolor="rgba(0,0,0,0)")
-    return fig, json.dumps(legs), cqm.__str__(), "solutions printed here", \
+    return fig, json.dumps(legs), cqm.__str__(), "CQM", "solutions printed here", \
         json.dumps(inputs_copy), weight_cost_slider, \
         weight_cost_input, weight_time_slider, weight_time_input, weight_slope_slider, \
         weight_slope_input

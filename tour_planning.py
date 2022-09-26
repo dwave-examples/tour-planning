@@ -17,7 +17,7 @@ import numpy as np
 import pandas as pd
 
 import dimod
-from dwave.cloud.hybrid import Client
+from dwave.cloud.hybrid import Client     # TODO: move the client function to this file
 
 transport = {
     'walk': {'Speed': 1, 'Cost': 0, 'Exercise': 1},
@@ -32,18 +32,6 @@ def set_legs(num_legs, leg_length_range, max_leg_slope):
         + leg_length_range[0], 1),
              'uphill': round(max_leg_slope*random.random(), 1),
              'toll': bool(np.random.choice([True, False], 1, p=[0.2, 0.8])[0])} for i in range(num_legs)]
-
-class job_submission():
-    """Class that tracks a submission to a Leap solver."""
-    def __init__(self, profile):
-        self.client = None
-        self.problem_data_id = ''
-        self.computation = None
-        self.submission_id = ''
-        self.status = "WAITING"
-        self.result = None
-        self.state = "READY"
-        self.submission_time = None
 
 def calculate_total(t, measure, legs):
     """Helper function for building CQM.

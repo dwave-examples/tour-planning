@@ -144,7 +144,9 @@ solver_card = dbc.Card([
         dbc.Button("Solve CQM", id="btn_solve_cqm", color="primary", className="me-1"),
         dcc.Interval(id='check_job_status', interval=None, n_intervals=0, disabled=True, max_intervals=1),
         dbc.Progress(id="job_status_progress", value=0, color="info", className="mb-3"),
-        html.P(id='job_status', children=''),]),],
+        html.P(id='job_status', children=''),
+        dbc.Button("Cancel Job", id="btn_cancel", color="warning", className="me-1",
+            style = dict(display='none')),]),],
     color="secondary")
 
 problem_viewer = dbc.Tabs([
@@ -191,6 +193,12 @@ inputs_viewer = dbc.Card([
             dcc.Textarea(id="input_print", value='Some inputs have dynamically set boundaries\n',
                 style={'width': '100%'}, rows=20)])]),]),
 
+transport_viewer = dbc.Card([
+    dbc.Row([
+        dbc.Col([
+            dcc.Textarea(id="transport_print", value='Here will be the modes of transport',
+                style={'width': '100%'}, rows=20)])]),]),
+
 app.layout = dbc.Container([
     dbc.Row([
         dbc.Col([
@@ -219,7 +227,9 @@ app.layout = dbc.Container([
             dbc.Tab(solutions_viewer, label="Solutions", tab_id="tab_solutions",
                 label_style={"color": "rgb(6, 236, 220)", "backgroundColor": "black"}),
             dbc.Tab(inputs_viewer, label="Input Ranges", tab_id="tab_inputs",
-                label_style={"color": "rgb(6, 236, 220)", "backgroundColor": "black"}),],
+                label_style={"color": "rgb(6, 236, 220)", "backgroundColor": "black"}),
+            dbc.Tab(transport_viewer, label="Transport", tab_id="tab_transport",
+                label_style={"color": "rgb(6, 236, 220)", "backgroundColor": "black"})],
             id="tabs", active_tab="tab_graph"),
 
     dbc.Tooltip("Number of legs for the tour.",
@@ -370,6 +380,7 @@ job_bar = {'WAITING': [0, 'light'],
 
 @app.callback(
     Output('btn_solve_cqm', 'disabled'),
+    Output('btn_cancel', component_property='style'),
     Output('check_job_status', 'disabled'),
     Output('check_job_status', 'interval'),
     Output('check_job_status', 'n_intervals'),
@@ -394,11 +405,11 @@ def cqm_submit(n_clicks, n_intervals, max_leg_slope, max_cost, max_time, weight_
     """SM for job submission."""
     trigger_id = dash.callback_context.triggered[0]["prop_id"].split(".")[0]
     if not trigger_id in ["btn_solve_cqm", "check_job_status"]:
-        return dash.no_update, dash.no_update, dash.no_update, dash.no_update, dash.no_update, dash.no_update, dash.no_update
+        return dash.no_update, dash.no_update, dash.no_update, dash.no_update, dash.no_update, dash.no_update, dash.no_update, dash.no_update
 
     if trigger_id == "btn_solve_cqm":
         job_tracker.submission_time = time.time()
-        return True, False, 0.1*1000, 0, job_bar['WAITING'][0], job_bar['WAITING'][1], dash.no_update
+        return True, dict(), False, 0.1*1000, 0, job_bar['WAITING'][0], job_bar['WAITING'][1], dash.no_update
 
     if job_tracker.state == "READY":
         job_tracker.state = "SUBMITTED"
@@ -413,7 +424,7 @@ def cqm_submit(n_clicks, n_intervals, max_leg_slope, max_cost, max_time, weight_
                     label="Examples - Tour Planning", time_limit=5)
 
         elapsed_time = round(time.time() - job_tracker.submission_time)
-        return True, False, 1*1000, 0, job_bar['SUBMITTED'][0], job_bar['SUBMITTED'][1], html.P([f"Status: {job_tracker.status}",html.Br(),f"Elapsed: {elapsed_time} sec."])
+        return True, dict(), False, 1*1000, 0, job_bar['SUBMITTED'][0], job_bar['SUBMITTED'][1], html.P([f"Status: {job_tracker.status}",html.Br(),f"Elapsed: {elapsed_time} sec."])
 
     if job_tracker.state in ["SUBMITTED", "RUNNING"]:
         job_tracker.status = job_tracker.computation.remote_status
@@ -421,25 +432,25 @@ def cqm_submit(n_clicks, n_intervals, max_leg_slope, max_cost, max_time, weight_
         if job_tracker.status == None:   # First few checks
             job_tracker.state = "SUBMITTED"
             elapsed_time = round(time.time() - job_tracker.submission_time)
-            return True, False, 0.5*1000, 0, job_bar['SUBMITTED'][0], job_bar['SUBMITTED'][1], html.P([f"Status: {job_tracker.status}",html.Br(),f"Elapsed: {elapsed_time} sec."])
+            return True, dict(), False, 0.5*1000, 0, job_bar['SUBMITTED'][0], job_bar['SUBMITTED'][1], html.P([f"Status: {job_tracker.status}",html.Br(),f"Elapsed: {elapsed_time} sec."])
 
         if job_tracker.status in ['PENDING', 'IN_PROGRESS']:
             job_tracker.state = "RUNNING"
             elapsed_time = round(time.time() - job_tracker.submission_time)
-            return True, False, 1*1000, 0, job_bar[job_tracker.status][0], job_bar[job_tracker.status][1], html.P([f"Status: {job_tracker.status}",html.Br(),f"Elapsed: {elapsed_time} sec."])
+            return True, dict(), False, 1*1000, 0, job_bar[job_tracker.status][0], job_bar[job_tracker.status][1], html.P([f"Status: {job_tracker.status}",html.Br(),f"Elapsed: {elapsed_time} sec."])
 
         if job_tracker.status in ['COMPLETED', 'CANCELLED', 'FAILED']:
             job_tracker.state = "DONE"
             if job_tracker.status == 'COMPLETED':
                 job_tracker.result = job_tracker.computation.sampleset
             elapsed_time = round(time.time() - job_tracker.submission_time)
-            return True, False, 1*1000, 0, job_bar[job_tracker.status][0], job_bar[job_tracker.status][1], html.P([f"Status: {job_tracker.status}",html.Br(),f"Elapsed: {elapsed_time} sec."])
+            return True, dict(), False, 1*1000, 0, job_bar[job_tracker.status][0], job_bar[job_tracker.status][1], html.P([f"Status: {job_tracker.status}",html.Br(),f"Elapsed: {elapsed_time} sec."])
 
     if job_tracker.state == "DONE":
         job_tracker.state = "READY"
         elapsed_time = round(time.time() - job_tracker.submission_time)
         job_tracker.client.close()
-        return False, True, 0.1*1000, 0, dash.no_update, dash.no_update, html.P([f"Status: {job_tracker.status}",html.Br(),f"Elapsed: {elapsed_time} sec."])
+        return False, dict(display='none'), True, 0.1*1000, 0, dash.no_update, dash.no_update, html.P([f"Status: {job_tracker.status}",html.Br(),f"Elapsed: {elapsed_time} sec."])
 
 if __name__ == "__main__":
     app.run_server(debug=True)

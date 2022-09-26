@@ -21,10 +21,10 @@ import pandas as pd
 import random
 import numpy as np
 from pprint import pprint
-import time
+import time, datetime
 
-from tour_planning import job_submission, set_legs, transport # remove some
-from tour_planning import build_cqm
+from tour_planning import build_cqm, set_legs, transport
+from tour_planning import job_submission  # TODO: remove
 
 import dimod
 from dwave.cloud.hybrid import Client
@@ -35,6 +35,11 @@ num_modes = len(modes)
 app = dash.Dash(__name__, external_stylesheets=[dbc.themes.BOOTSTRAP])
 
 job_tracker = job_submission(profile='test')  # last stateful class to get rid of
+
+try:
+    client = Client.from_config(profile="test")
+except Exception as client_err:
+    client = None
 
 def budgets(legs):
     legs_total = sum(l["length"] for l in legs)
@@ -153,7 +158,9 @@ solver_card = dbc.Card([
         dbc.Button("Solve CQM", id="btn_solve_cqm", color="primary", className="me-1"),
         dcc.Interval(id='check_job_status', interval=None, n_intervals=0, disabled=True, max_intervals=1),
         dbc.Progress(id="job_status_progress", value=0, color="info", className="mb-3"),
-        html.P(id='job_status', children=''),
+        html.P(id='job_submit_state', children='READY'),   # if no client change ready
+        html.P(id='job_submit_time', children='Mon Sep 26 07:39:20 2022'),
+        html.P(id='job_elapsed_time', children=f"Elapsed: 5 sec"),
         dbc.Button("Cancel Job", id="btn_cancel", color="warning", className="me-1",
             style = dict(display='none')),]),],
     color="secondary")
@@ -383,7 +390,9 @@ job_bar = {'WAITING': [0, 'light'],
     Output('check_job_status', 'n_intervals'),
     Output('job_status_progress', 'value'),
     Output('job_status_progress', 'color'),
-    Output('job_status', 'children'),
+    Output('job_submit_state', 'children'),
+    Output('job_submit_time', 'children'),
+    Output('job_elapsed_time', 'children'),
     Input('btn_solve_cqm', 'n_clicks'),
     Input('check_job_status', 'n_intervals'),
     State('max_leg_slope', 'value'),
@@ -395,24 +404,30 @@ job_bar = {'WAITING': [0, 'light'],
     State('weight_time_input', 'value'),
     State('weight_slope_slider', 'value'),
     State('weight_slope_input', 'value'),
-    State('problem_print_code', 'value'),)
+    State('problem_print_code', 'value'),
+    State('job_submit_state', 'children'),
+    State('job_submit_time', 'children'),)
 def cqm_submit(n_clicks, n_intervals, max_leg_slope, max_cost, max_time, weight_cost_slider, \
     weight_cost_input, weight_time_slider, weight_time_input, weight_slope_slider, \
-    weight_slope_input, problem_print_code):
+    weight_slope_input, problem_print_code, job_submit_state, job_submit_time):
     """SM for job submission."""
     trigger_id = dash.callback_context.triggered[0]["prop_id"].split(".")[0]
+
     if not trigger_id in ["btn_solve_cqm", "check_job_status"]:
-        return dash.no_update, dash.no_update, dash.no_update, dash.no_update, dash.no_update, dash.no_update, dash.no_update, dash.no_update
+        return dash.no_update, dash.no_update, dash.no_update, dash.no_update, \
+            dash.no_update, dash.no_update, dash.no_update, dash.no_update, \
+            dash.no_update, dash.no_update
 
     if trigger_id == "btn_solve_cqm":
         job_tracker.submission_time = time.time()
-        return True, dict(), False, 0.1*1000, 0, job_bar['WAITING'][0], job_bar['WAITING'][1], dash.no_update
 
-    if job_tracker.state == "READY":
-        job_tracker.state = "SUBMITTED"
+        return True, dict(), False, 0.1*1000, 0, job_bar['WAITING'][0], \
+            job_bar['WAITING'][1], "START", datetime.datetime.now().strftime("%c"), 0
+
+    if job_submit_state == "START":
+        job_submit_state = "SUBMITTED"
         job_tracker.computation = None
-        job_tracker.client = Client.from_config(profile="test")
-        solver = job_tracker.client.get_solver(supported_problem_types__issubset={"cqm"})
+        solver = client.get_solver(supported_problem_types__issubset={"cqm"})
         legs = json.loads(problem_print_code)
         cqm = build_cqm(legs, modes, max_cost, max_time, weight_cost_input,
                             weight_time_input, max_leg_slope, weight_slope_input)
@@ -420,34 +435,47 @@ def cqm_submit(n_clicks, n_intervals, max_leg_slope, max_cost, max_time, weight_
         job_tracker.computation = solver.sample_cqm(job_tracker.problem_data_id,
                     label="Examples - Tour Planning", time_limit=5)
 
-        elapsed_time = round(time.time() - job_tracker.submission_time)
-        return True, dict(), False, 1*1000, 0, job_bar['SUBMITTED'][0], job_bar['SUBMITTED'][1], html.P([f"Status: {job_tracker.status}",html.Br(),f"Elapsed: {elapsed_time} sec."])
+        elapsed_time = (datetime.datetime.now() - datetime.datetime.strptime(job_submit_time, "%c")).seconds
 
-    if job_tracker.state in ["SUBMITTED", "RUNNING"]:
+        return True, dict(), False, 1*1000, 0, job_bar['SUBMITTED'][0], \
+            job_bar['SUBMITTED'][1], job_submit_state, \
+            dash.no_update, f"Elapsed: {elapsed_time} sec."
+
+    if job_submit_state == "SUBMITTED":
         job_tracker.status = job_tracker.computation.remote_status
 
         if job_tracker.status == None:   # First few checks
-            job_tracker.state = "SUBMITTED"
-            elapsed_time = round(time.time() - job_tracker.submission_time)
-            return True, dict(), False, 0.5*1000, 0, job_bar['SUBMITTED'][0], job_bar['SUBMITTED'][1], html.P([f"Status: {job_tracker.status}",html.Br(),f"Elapsed: {elapsed_time} sec."])
+            job_submit_state = "SUBMITTED"
+        else:
+            job_submit_state = job_tracker.status
 
-        if job_tracker.status in ['PENDING', 'IN_PROGRESS']:
-            job_tracker.state = "RUNNING"
-            elapsed_time = round(time.time() - job_tracker.submission_time)
-            return True, dict(), False, 1*1000, 0, job_bar[job_tracker.status][0], job_bar[job_tracker.status][1], html.P([f"Status: {job_tracker.status}",html.Br(),f"Elapsed: {elapsed_time} sec."])
+        elapsed_time = (datetime.datetime.now() - datetime.datetime.strptime(job_submit_time, "%c")).seconds
 
-        if job_tracker.status in ['COMPLETED', 'CANCELLED', 'FAILED']:
-            job_tracker.state = "DONE"
-            if job_tracker.status == 'COMPLETED':
-                job_tracker.result = job_tracker.computation.sampleset
-            elapsed_time = round(time.time() - job_tracker.submission_time)
-            return True, dict(), False, 1*1000, 0, job_bar[job_tracker.status][0], job_bar[job_tracker.status][1], html.P([f"Status: {job_tracker.status}",html.Br(),f"Elapsed: {elapsed_time} sec."])
+        return True, dict(), False, 0.5*1000, 0, job_bar['SUBMITTED'][0], \
+            job_bar['SUBMITTED'][1], job_submit_state, \
+            dash.no_update, f"Elapsed: {elapsed_time} sec."
 
-    if job_tracker.state == "DONE":
-        job_tracker.state = "READY"
-        elapsed_time = round(time.time() - job_tracker.submission_time)
-        job_tracker.client.close()
-        return False, dict(display='none'), True, 0.1*1000, 0, dash.no_update, dash.no_update, html.P([f"Status: {job_tracker.status}",html.Br(),f"Elapsed: {elapsed_time} sec."])
+    if job_submit_state in ['PENDING', 'IN_PROGRESS']:
+        job_tracker.status = job_tracker.computation.remote_status
+        job_submit_state = job_tracker.status
+
+        # Move dict(display='none') to in-progress
+        if job_tracker.status == 'COMPLETED':
+            job_tracker.result = job_tracker.computation.sampleset
+
+        elapsed_time = (datetime.datetime.now() - datetime.datetime.strptime(job_submit_time, "%c")).seconds
+
+        return True, dict(), False, 1*1000, 0, job_bar[job_tracker.status][0], \
+            job_bar[job_tracker.status][1], job_submit_state, \
+            dash.no_update, f"Elapsed: {elapsed_time} sec."
+
+    if job_submit_state in ['COMPLETED', 'CANCELLED', 'FAILED']:
+
+        elapsed_time = (datetime.datetime.now() - datetime.datetime.strptime(job_submit_time, "%c")).seconds
+
+        return False, dict(display='none'), True, 0.1*1000, 0, dash.no_update, \
+            dash.no_update, dash.no_update, \
+            dash.no_update, f"Elapsed: {elapsed_time} sec."
 
 if __name__ == "__main__":
     app.run_server(debug=True)

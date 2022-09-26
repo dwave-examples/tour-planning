@@ -45,14 +45,6 @@ class job_submission():
         self.state = "READY"
         self.submission_time = None
 
-class model():
-    """Class that maintains the CQM configuration."""
-    def __init__(self):
-        self.cqm = None
-        self.weight_cost = 100
-        self.weight_time = 30
-        self.weight_slope = 150
-
 def calculate_total(t, measure, legs):
     """Helper function for building CQM.
 

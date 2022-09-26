@@ -24,7 +24,6 @@ from pprint import pprint
 import time, datetime
 
 from tour_planning import build_cqm, set_legs, transport
-from tour_planning import job_submission  # TODO: remove
 
 import dimod
 from dwave.cloud.hybrid import Client
@@ -34,8 +33,6 @@ modes = transport.keys()  # global
 num_modes = len(modes)
 
 app = dash.Dash(__name__, external_stylesheets=[dbc.themes.BOOTSTRAP])
-
-job_tracker = job_submission(profile='test')  # last stateful class to get rid of
 
 try:
     client = Client.from_config(profile="test")
@@ -198,11 +195,21 @@ cqm_viewer = dbc.Tabs([
                                 tab_id="tab_cqm_print_code",
                                 label_style={"color": "white", "backgroundColor": "black"},),])
 
-solutions_viewer = dbc.Card([
-    dbc.Row([
-        dbc.Col([
-            dcc.Textarea(id="solutions_print", value='Your solutions',
-                style={'width': '100%'}, rows=20)])]),]),
+solutions_viewer = dbc.Tabs([
+    dbc.Tab(dbc.Card([
+                dbc.Row([
+                    dbc.Col([
+                        dcc.Textarea(id="solutions_print_human", value='Your solutions',
+                            style={'width': '100%'}, rows=20)])]),]), label="Human Readable",
+                                tab_id="tab_solutions_print_human",
+                                label_style={"color": "white", "backgroundColor": "black"},),
+    dbc.Tab(dbc.Card([
+                dbc.Row([
+                    dbc.Col([
+                        dcc.Textarea(id="solutions_print_code", value='Computer Readable',
+                            style={'width': '100%'}, rows=20)])]),]), label="Computer Readable",
+                                tab_id="tab_solutions_print_code",
+                                label_style={"color": "white", "backgroundColor": "black"},),])
 
 inputs_viewer = dbc.Card([
     dbc.Row([
@@ -296,11 +303,11 @@ def calculate_total(t, measure, legs, num_legs):
     Input('weight_slope_input', 'value'),
     Input('problem_print_code', 'value'),
     Input('job_submit_state', 'children'),
-    State('solutions_print', 'value'),)
+    State('solutions_print_code', 'value'),)
 def display(num_legs, max_leg_length, min_leg_length, max_leg_slope, max_cost,
     max_time, weight_cost_slider, weight_cost_input, weight_time_slider,
     weight_time_input, weight_slope_slider, weight_slope_input, problem_print_code,
-    job_submit_state, solutions_print):
+    job_submit_state, solutions_print_code):
     """
 
     """
@@ -343,7 +350,7 @@ else:
     if "job_submit_state" == trigger_id:
         if job_submit_state == "COMPLETED":
 
-            result = dimod.SampleSet.from_serializable(json.loads(solutions_print))
+            result = dimod.SampleSet.from_serializable(json.loads(solutions_print_code))
             sampleset_feasible = result.filter(lambda row: row.is_feasible)
             first = sorted({int(key.split('_')[1]): key.split('_')[0] for key,val in sampleset_feasible.first.sample.items() if val==1.0}.items())
             fig = px.bar(df_legs, x="Length", y='Tour', color="Slope", orientation="h",
@@ -359,7 +366,7 @@ else:
     fig.add_layout_image(
             dict(source="assets/europe.png", xref="x", yref="y", x=0, y=0.5,
                  sizex=df_legs["Length"].sum(), sizey=1, sizing="stretch",
-                 opacity=0.5, layer="below"))
+                 opacity=0.25, layer="below"))
 
     x_pos = 0
     for indx, leg in enumerate(legs):
@@ -397,7 +404,8 @@ job_bar = {'WAITING': [0, 'light'],
     Output('job_submit_state', 'children'),
     Output('job_submit_time', 'children'),
     Output('job_elapsed_time', 'children'),
-    Output('solutions_print', 'value'),
+    Output('solutions_print_code', 'value'),
+    Output('solutions_print_human', 'value'),
     Input('btn_solve_cqm', 'n_clicks'),
     Input('check_job_status', 'n_intervals'),
     State('max_leg_slope', 'value'),
@@ -411,21 +419,23 @@ job_bar = {'WAITING': [0, 'light'],
     State('weight_slope_input', 'value'),
     State('problem_print_code', 'value'),
     State('job_submit_state', 'children'),
-    State('job_submit_time', 'children'),)
+    State('job_submit_time', 'children'),
+    State('solutions_print_human', 'value'),)
 def cqm_submit(n_clicks, n_intervals, max_leg_slope, max_cost, max_time, weight_cost_slider, \
     weight_cost_input, weight_time_slider, weight_time_input, weight_slope_slider, \
-    weight_slope_input, problem_print_code, job_submit_state, job_submit_time):
+    weight_slope_input, problem_print_code, job_submit_state, job_submit_time, solutions_print_human):
     """SM for job submission."""
     trigger_id = dash.callback_context.triggered[0]["prop_id"].split(".")[0]
 
     if not trigger_id in ["btn_solve_cqm", "check_job_status"]:
         return dash.no_update, dash.no_update, dash.no_update, dash.no_update, \
             dash.no_update, dash.no_update, dash.no_update, dash.no_update, \
-            dash.no_update, dash.no_update, dash.no_update
+            dash.no_update, dash.no_update, dash.no_update, dash.no_update
 
     if trigger_id == "btn_solve_cqm":
         return True, dict(), False, 0.1*1000, 0, job_bar['WAITING'][0], \
-            job_bar['WAITING'][1], "START", datetime.datetime.now().strftime("%c"), 0, dash.no_update
+            job_bar['WAITING'][1], "START", datetime.datetime.now().strftime("%c"), \
+            0, dash.no_update, dash.no_update
 
     if job_submit_state == "START":
         # Need to disable all buttons
@@ -441,18 +451,17 @@ def cqm_submit(n_clicks, n_intervals, max_leg_slope, max_cost, max_time, weight_
         computation = solver.sample_cqm(problem_data_id,
                     label="Examples - Tour Planning", time_limit=5)
         submission_id = computation.wait_id()
-        job_tracker.submission_id = submission_id  # temporary
         print("submission_id:",submission_id)
 
         elapsed_time = (datetime.datetime.now() - datetime.datetime.strptime(job_submit_time, "%c")).seconds
 
         return True, dash.no_update, False, 1*1000, 0, job_bar['SUBMITTED'][0], \
             job_bar['SUBMITTED'][1], job_submit_state, \
-            dash.no_update, f"Elapsed: {elapsed_time} sec.", dash.no_update
+            dash.no_update, f"Elapsed: {elapsed_time} sec.", dash.no_update, submission_id
 
     if job_submit_state == "SUBMITTED":
         p = Problems(endpoint=client.endpoint, token=client.token)
-        status = p.get_problem_status(job_tracker.submission_id).status.value
+        status = p.get_problem_status(solutions_print_human).status.value
 
         if status == None:   # First few checks
             job_submit_state = "SUBMITTED"
@@ -463,11 +472,11 @@ def cqm_submit(n_clicks, n_intervals, max_leg_slope, max_cost, max_time, weight_
 
         return True, dash.no_update, False, 0.5*1000, 0, job_bar['SUBMITTED'][0], \
             job_bar['SUBMITTED'][1], job_submit_state, \
-            dash.no_update, f"Elapsed: {elapsed_time} sec.", dash.no_update
+            dash.no_update, f"Elapsed: {elapsed_time} sec.", dash.no_update, dash.no_update
 
     if job_submit_state in ['PENDING', 'IN_PROGRESS']:
         p = Problems(endpoint=client.endpoint, token=client.token)
-        status = p.get_problem_status(job_tracker.submission_id).status.value
+        status = p.get_problem_status(solutions_print_human).status.value
         job_submit_state = status
 
         sampleset_str = "Failed maybe"
@@ -475,14 +484,14 @@ def cqm_submit(n_clicks, n_intervals, max_leg_slope, max_cost, max_time, weight_
         if status == 'IN_PROGRESS':
             hide_button = dict(display='none')
         elif status == 'COMPLETED':
-            sampleset = client.retrieve_answer(job_tracker.submission_id).sampleset
+            sampleset = client.retrieve_answer(solutions_print_human).sampleset
             sampleset_str = json.dumps(sampleset.to_serializable())
 
         elapsed_time = (datetime.datetime.now() - datetime.datetime.strptime(job_submit_time, "%c")).seconds
 
         return True, hide_button, False, 1*1000, 0, job_bar[status][0], \
             job_bar[status][1], job_submit_state, \
-            dash.no_update, f"Elapsed: {elapsed_time} sec.", sampleset_str
+            dash.no_update, f"Elapsed: {elapsed_time} sec.", sampleset_str, dash.no_update
 
     if job_submit_state in ['COMPLETED', 'CANCELLED', 'FAILED']:
         # Need to enable all buttons
@@ -490,7 +499,7 @@ def cqm_submit(n_clicks, n_intervals, max_leg_slope, max_cost, max_time, weight_
 
         return False, dash.no_update, True, 0.1*1000, 0, dash.no_update, \
             dash.no_update, dash.no_update, \
-            dash.no_update, f"Elapsed: {elapsed_time} sec.", dash.no_update
+            dash.no_update, f"Elapsed: {elapsed_time} sec.", dash.no_update, dash.no_update
 
 if __name__ == "__main__":
     app.run_server(debug=True)

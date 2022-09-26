@@ -277,7 +277,7 @@ def calculate_total(t, measure, legs, num_legs):
     Input('job_status_progress', 'color'),)
 def display(num_legs, max_leg_length, min_leg_length, max_leg_slope, max_cost,
     max_time, weight_cost_slider, weight_cost_input, weight_time_slider,
-    weight_time_input, weight_slope_slider, weight_slope_input, problem_print,
+    weight_time_input, weight_slope_slider, weight_slope_input, problem_print_code,
     job_status_progress):
     """
 
@@ -315,12 +315,8 @@ else:
     inputs_copy['max_cost'] = [max_cost_min, max_cost_max, round(np.mean([max_cost_min, max_cost_max]))]
     inputs_copy['time'] = [max_time_min, max_time_max, max_time]
 
-    # Calculate CQM
-
     cqm = build_cqm(legs, modes, max_cost, max_time, weight_cost_input,
                     weight_time_input, max_leg_slope, weight_slope_input)
-
-    # Create graph
 
     df_legs = pd.DataFrame({'Length': [l['length'] for l in legs],
                             'Slope': [s['uphill'] for s in legs]})
@@ -329,7 +325,7 @@ else:
                  color_continuous_scale=px.colors.diverging.Geyser)
 
     if "job_status_progress" == trigger_id:
-        if color == "success":
+        if job_status_progress == "success":
             sampleset_feasible = job_tracker.result.filter(lambda row: row.is_feasible)
             first = sorted({int(key.split('_')[1]): key.split('_')[0] for key,val in sampleset_feasible.first.sample.items() if val==1.0}.items())
             fig = px.bar(df_legs, x="Length", y='Tour', color="Slope", orientation="h",
@@ -381,8 +377,20 @@ job_bar = {'WAITING': [0, 'light'],
     Output('job_status_progress', 'color'),
     Output('job_status', 'children'),
     Input('btn_solve_cqm', 'n_clicks'),
-    Input('check_job_status', 'n_intervals'),)
-def cqm_submit(n_clicks, n_intervals):
+    Input('check_job_status', 'n_intervals'),
+    State('max_leg_slope', 'value'),
+    State('max_cost', 'value'),
+    State('max_time', 'value'),
+    State('weight_cost_slider', 'value'),
+    State('weight_cost_input', 'value'),
+    State('weight_time_slider', 'value'),
+    State('weight_time_input', 'value'),
+    State('weight_slope_slider', 'value'),
+    State('weight_slope_input', 'value'),
+    State('problem_print_code', 'value'),)
+def cqm_submit(n_clicks, n_intervals, max_leg_slope, max_cost, max_time, weight_cost_slider, \
+    weight_cost_input, weight_time_slider, weight_time_input, weight_slope_slider, \
+    weight_slope_input, problem_print_code):
     """SM for job submission."""
     trigger_id = dash.callback_context.triggered[0]["prop_id"].split(".")[0]
     if not trigger_id in ["btn_solve_cqm", "check_job_status"]:
@@ -397,7 +405,10 @@ def cqm_submit(n_clicks, n_intervals):
         job_tracker.computation = None
         job_tracker.client = Client.from_config(profile="test")
         solver = job_tracker.client.get_solver(supported_problem_types__issubset={"cqm"})
-        job_tracker.problem_data_id = solver.upload_cqm(model.cqm).result()
+        legs = json.loads(problem_print_code)
+        cqm = build_cqm(legs, modes, max_cost, max_time, weight_cost_input,
+                            weight_time_input, max_leg_slope, weight_slope_input)
+        job_tracker.problem_data_id = solver.upload_cqm(cqm).result()
         job_tracker.computation = solver.sample_cqm(job_tracker.problem_data_id,
                     label="Examples - Tour Planning", time_limit=5)
 

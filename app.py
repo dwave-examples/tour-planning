@@ -28,6 +28,7 @@ from tour_planning import job_submission  # TODO: remove
 
 import dimod
 from dwave.cloud.hybrid import Client
+from dwave.cloud.api import Problems
 
 modes = transport.keys()  # global
 num_modes = len(modes)
@@ -271,7 +272,7 @@ def calculate_total(t, measure, legs, num_legs):
     Output('problem_print_code', 'value'),
     Output('cqm_print_human', 'value'),
     Output('cqm_print_code', 'value'),
-    Output('solutions_print', 'value'),
+    Output('problem_print_human', 'value'),    # temp so I can use solutions_print elsewhere
     Output('input_print', 'value'),
     Output('max_leg_length', 'value'),
     Output('min_leg_length', 'value'),
@@ -294,11 +295,12 @@ def calculate_total(t, measure, legs, num_legs):
     Input('weight_slope_slider', 'value'),
     Input('weight_slope_input', 'value'),
     Input('problem_print_code', 'value'),
-    Input('job_submit_state', 'children'),)
+    Input('job_submit_state', 'children'),
+    State('solutions_print', 'value'),)
 def display(num_legs, max_leg_length, min_leg_length, max_leg_slope, max_cost,
     max_time, weight_cost_slider, weight_cost_input, weight_time_slider,
     weight_time_input, weight_slope_slider, weight_slope_input, problem_print_code,
-    job_submit_state):
+    job_submit_state, solutions_print):
     """
 
     """
@@ -340,7 +342,9 @@ else:
 
     if "job_submit_state" == trigger_id:
         if job_submit_state == "COMPLETED":
-            sampleset_feasible = job_tracker.result.filter(lambda row: row.is_feasible)
+
+            result = dimod.SampleSet.from_serializable(json.loads(solutions_print))
+            sampleset_feasible = result.filter(lambda row: row.is_feasible)
             first = sorted({int(key.split('_')[1]): key.split('_')[0] for key,val in sampleset_feasible.first.sample.items() if val==1.0}.items())
             fig = px.bar(df_legs, x="Length", y='Tour', color="Slope", orientation="h",
                          color_continuous_scale=px.colors.diverging.Geyser, text=[transport for leg,transport in first])
@@ -393,6 +397,7 @@ job_bar = {'WAITING': [0, 'light'],
     Output('job_submit_state', 'children'),
     Output('job_submit_time', 'children'),
     Output('job_elapsed_time', 'children'),
+    Output('solutions_print', 'value'),
     Input('btn_solve_cqm', 'n_clicks'),
     Input('check_job_status', 'n_intervals'),
     State('max_leg_slope', 'value'),
@@ -416,68 +421,76 @@ def cqm_submit(n_clicks, n_intervals, max_leg_slope, max_cost, max_time, weight_
     if not trigger_id in ["btn_solve_cqm", "check_job_status"]:
         return dash.no_update, dash.no_update, dash.no_update, dash.no_update, \
             dash.no_update, dash.no_update, dash.no_update, dash.no_update, \
-            dash.no_update, dash.no_update
+            dash.no_update, dash.no_update, dash.no_update
 
     if trigger_id == "btn_solve_cqm":
-        job_tracker.submission_time = time.time()
-
         return True, dict(), False, 0.1*1000, 0, job_bar['WAITING'][0], \
-            job_bar['WAITING'][1], "START", datetime.datetime.now().strftime("%c"), 0
+            job_bar['WAITING'][1], "START", datetime.datetime.now().strftime("%c"), 0, dash.no_update
 
     if job_submit_state == "START":
+        # Need to disable all buttons
         job_submit_state = "SUBMITTED"
-        job_tracker.computation = None
         solver = client.get_solver(supported_problem_types__issubset={"cqm"})
         legs = json.loads(problem_print_code)
         cqm = build_cqm(legs, modes, max_cost, max_time, weight_cost_input,
                             weight_time_input, max_leg_slope, weight_slope_input)
-        job_tracker.problem_data_id = solver.upload_cqm(cqm).result()
-        job_tracker.computation = solver.sample_cqm(job_tracker.problem_data_id,
+        problem_data_id = solver.upload_cqm(cqm).result()
+
+        print("problem_data_id:", problem_data_id)
+
+        computation = solver.sample_cqm(problem_data_id,
                     label="Examples - Tour Planning", time_limit=5)
+        submission_id = computation.wait_id()
+        job_tracker.submission_id = submission_id  # temporary
+        print("submission_id:",submission_id)
 
         elapsed_time = (datetime.datetime.now() - datetime.datetime.strptime(job_submit_time, "%c")).seconds
 
         return True, dash.no_update, False, 1*1000, 0, job_bar['SUBMITTED'][0], \
             job_bar['SUBMITTED'][1], job_submit_state, \
-            dash.no_update, f"Elapsed: {elapsed_time} sec."
+            dash.no_update, f"Elapsed: {elapsed_time} sec.", dash.no_update
 
     if job_submit_state == "SUBMITTED":
-        job_tracker.status = job_tracker.computation.remote_status
+        p = Problems(endpoint=client.endpoint, token=client.token)
+        status = p.get_problem_status(job_tracker.submission_id).status.value
 
-        if job_tracker.status == None:   # First few checks
+        if status == None:   # First few checks
             job_submit_state = "SUBMITTED"
         else:
-            job_submit_state = job_tracker.status
+            job_submit_state = status
 
         elapsed_time = (datetime.datetime.now() - datetime.datetime.strptime(job_submit_time, "%c")).seconds
 
         return True, dash.no_update, False, 0.5*1000, 0, job_bar['SUBMITTED'][0], \
             job_bar['SUBMITTED'][1], job_submit_state, \
-            dash.no_update, f"Elapsed: {elapsed_time} sec."
+            dash.no_update, f"Elapsed: {elapsed_time} sec.", dash.no_update
 
     if job_submit_state in ['PENDING', 'IN_PROGRESS']:
-        job_tracker.status = job_tracker.computation.remote_status
-        job_submit_state = job_tracker.status
+        p = Problems(endpoint=client.endpoint, token=client.token)
+        status = p.get_problem_status(job_tracker.submission_id).status.value
+        job_submit_state = status
 
+        sampleset_str = "Failed maybe"
         hide_button = dash.no_update
-        if job_tracker.status == 'IN_PROGRESS':
+        if status == 'IN_PROGRESS':
             hide_button = dict(display='none')
-        elif job_tracker.status == 'COMPLETED':
-            job_tracker.result = job_tracker.computation.sampleset
+        elif status == 'COMPLETED':
+            sampleset = client.retrieve_answer(job_tracker.submission_id).sampleset
+            sampleset_str = json.dumps(sampleset.to_serializable())
 
         elapsed_time = (datetime.datetime.now() - datetime.datetime.strptime(job_submit_time, "%c")).seconds
 
-        return True, hide_button, False, 1*1000, 0, job_bar[job_tracker.status][0], \
-            job_bar[job_tracker.status][1], job_submit_state, \
-            dash.no_update, f"Elapsed: {elapsed_time} sec."
+        return True, hide_button, False, 1*1000, 0, job_bar[status][0], \
+            job_bar[status][1], job_submit_state, \
+            dash.no_update, f"Elapsed: {elapsed_time} sec.", sampleset_str
 
     if job_submit_state in ['COMPLETED', 'CANCELLED', 'FAILED']:
-
+        # Need to enable all buttons
         elapsed_time = (datetime.datetime.now() - datetime.datetime.strptime(job_submit_time, "%c")).seconds
 
         return False, dash.no_update, True, 0.1*1000, 0, dash.no_update, \
             dash.no_update, dash.no_update, \
-            dash.no_update, f"Elapsed: {elapsed_time} sec."
+            dash.no_update, f"Elapsed: {elapsed_time} sec.", dash.no_update
 
 if __name__ == "__main__":
     app.run_server(debug=True)

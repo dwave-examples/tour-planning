@@ -294,11 +294,11 @@ def calculate_total(t, measure, legs, num_legs):
     Input('weight_slope_slider', 'value'),
     Input('weight_slope_input', 'value'),
     Input('problem_print_code', 'value'),
-    Input('job_status_progress', 'color'),)
+    Input('job_submit_state', 'children'),)
 def display(num_legs, max_leg_length, min_leg_length, max_leg_slope, max_cost,
     max_time, weight_cost_slider, weight_cost_input, weight_time_slider,
     weight_time_input, weight_slope_slider, weight_slope_input, problem_print_code,
-    job_status_progress):
+    job_submit_state):
     """
 
     """
@@ -338,8 +338,8 @@ else:
     fig = px.bar(df_legs, x="Length", y='Tour', color="Slope", orientation="h",
                  color_continuous_scale=px.colors.diverging.Geyser)
 
-    if "job_status_progress" == trigger_id:
-        if job_status_progress == "success":
+    if "job_submit_state" == trigger_id:
+        if job_submit_state == "COMPLETED":
             sampleset_feasible = job_tracker.result.filter(lambda row: row.is_feasible)
             first = sorted({int(key.split('_')[1]): key.split('_')[0] for key,val in sampleset_feasible.first.sample.items() if val==1.0}.items())
             fig = px.bar(df_legs, x="Length", y='Tour', color="Slope", orientation="h",
@@ -437,7 +437,7 @@ def cqm_submit(n_clicks, n_intervals, max_leg_slope, max_cost, max_time, weight_
 
         elapsed_time = (datetime.datetime.now() - datetime.datetime.strptime(job_submit_time, "%c")).seconds
 
-        return True, dict(), False, 1*1000, 0, job_bar['SUBMITTED'][0], \
+        return True, dash.no_update, False, 1*1000, 0, job_bar['SUBMITTED'][0], \
             job_bar['SUBMITTED'][1], job_submit_state, \
             dash.no_update, f"Elapsed: {elapsed_time} sec."
 
@@ -451,7 +451,7 @@ def cqm_submit(n_clicks, n_intervals, max_leg_slope, max_cost, max_time, weight_
 
         elapsed_time = (datetime.datetime.now() - datetime.datetime.strptime(job_submit_time, "%c")).seconds
 
-        return True, dict(), False, 0.5*1000, 0, job_bar['SUBMITTED'][0], \
+        return True, dash.no_update, False, 0.5*1000, 0, job_bar['SUBMITTED'][0], \
             job_bar['SUBMITTED'][1], job_submit_state, \
             dash.no_update, f"Elapsed: {elapsed_time} sec."
 
@@ -459,13 +459,15 @@ def cqm_submit(n_clicks, n_intervals, max_leg_slope, max_cost, max_time, weight_
         job_tracker.status = job_tracker.computation.remote_status
         job_submit_state = job_tracker.status
 
-        # Move dict(display='none') to in-progress
-        if job_tracker.status == 'COMPLETED':
+        hide_button = dash.no_update
+        if job_tracker.status == 'IN_PROGRESS':
+            hide_button = dict(display='none')
+        elif job_tracker.status == 'COMPLETED':
             job_tracker.result = job_tracker.computation.sampleset
 
         elapsed_time = (datetime.datetime.now() - datetime.datetime.strptime(job_submit_time, "%c")).seconds
 
-        return True, dict(), False, 1*1000, 0, job_bar[job_tracker.status][0], \
+        return True, hide_button, False, 1*1000, 0, job_bar[job_tracker.status][0], \
             job_bar[job_tracker.status][1], job_submit_state, \
             dash.no_update, f"Elapsed: {elapsed_time} sec."
 
@@ -473,7 +475,7 @@ def cqm_submit(n_clicks, n_intervals, max_leg_slope, max_cost, max_time, weight_
 
         elapsed_time = (datetime.datetime.now() - datetime.datetime.strptime(job_submit_time, "%c")).seconds
 
-        return False, dict(display='none'), True, 0.1*1000, 0, dash.no_update, \
+        return False, dash.no_update, True, 0.1*1000, 0, dash.no_update, \
             dash.no_update, dash.no_update, \
             dash.no_update, f"Elapsed: {elapsed_time} sec."
 

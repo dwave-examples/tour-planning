@@ -196,12 +196,6 @@ problem_viewer = dbc.Tabs([
                                 tab_id="tab_problem_print_code",
                                 label_style={"color": "white", "backgroundColor": "black"},),])
 
-cqm_viewer = dbc.Card([
-    dbc.Row([
-        dbc.Col([
-            dcc.Textarea(id="cqm_print_human", value='',
-                style={'width': '100%'}, rows=20)])]),]),
-
 solutions_viewer = dbc.Tabs([
     dbc.Tab(dbc.Card([
                 dbc.Row([
@@ -218,17 +212,15 @@ solutions_viewer = dbc.Tabs([
                                 tab_id="tab_solutions_print_code",
                                 label_style={"color": "white", "backgroundColor": "black"},),])
 
-inputs_viewer = dbc.Card([
-    dbc.Row([
-        dbc.Col([
-            dcc.Textarea(id="input_print", value='Some inputs have dynamically set boundaries\n',
-                style={'width': '100%'}, rows=20)])]),]),
-
-transport_viewer = dbc.Card([
-    dbc.Row([
-        dbc.Col([
-            dcc.Textarea(id="transport_print", value=out_transport_human(transport),
-                style={'width': '100%'}, rows=20)])]),]),
+initital_views = {"cqm": "", "input": "", "transport": out_transport_human(transport)}
+viewers = ["cqm", "input", "transport"]
+viewer_cards = {}
+for viewer in viewers:
+    viewer_cards[viewer] = dbc.Card([
+        dbc.Row([
+            dbc.Col([
+                dcc.Textarea(id=viewer + "_print", value=initital_views[viewer],
+                    style={'width': '100%'}, rows=20)])]),])
 
 app.layout = dbc.Container([
     dbc.Row([
@@ -253,13 +245,13 @@ app.layout = dbc.Container([
                 label_style={"color": "rgb(6, 236, 220)", "backgroundColor": "black"},),
             dbc.Tab(problem_viewer, label="Problem", tab_id="tab_problem",
                 label_style={"color": "rgb(6, 236, 220)", "backgroundColor": "black"}),
-            dbc.Tab(cqm_viewer, label="CQM", tab_id="tab_cqm",
+            dbc.Tab(viewer_cards["cqm"], label="CQM", tab_id="tab_cqm",
                 label_style={"color": "rgb(6, 236, 220)", "backgroundColor": "black"}),
             dbc.Tab(solutions_viewer, label="Solutions", tab_id="tab_solutions",
                 label_style={"color": "rgb(6, 236, 220)", "backgroundColor": "black"}),
-            dbc.Tab(inputs_viewer, label="Inputs", tab_id="tab_inputs",
+            dbc.Tab(viewer_cards["input"], label="Inputs", tab_id="tab_inputs",
                 label_style={"color": "rgb(6, 236, 220)", "backgroundColor": "black"}),
-            dbc.Tab(transport_viewer, label="Transport", tab_id="tab_transport",
+            dbc.Tab(viewer_cards["transport"], label="Transport", tab_id="tab_transport",
                 label_style={"color": "rgb(6, 236, 220)", "backgroundColor": "black"})],
             id="tabs", active_tab="tab_graph"),
 
@@ -287,7 +279,7 @@ def calculate_total(t, measure, legs, num_legs):
     Output('diversity_graph', 'figure'),
     Output('problem_print_code', 'value'),
     Output('solutions_print_human', 'value'),
-    Output('cqm_print_human', 'value'),
+    Output('cqm_print', 'value'),
     #Output('cqm_print_code', 'value'),
     Output('problem_print_human', 'value'),
     Output('input_print', 'value'),
@@ -328,7 +320,7 @@ def display(num_legs, max_leg_length, min_leg_length, max_leg_slope, max_cost,
         min_leg_length = max_leg_length
     if trigger_id == 'min_leg_length' and min_leg_length >= max_leg_length:
         max_leg_length = min_leg_length
-    
+
     weights = ["cost", "time", "slope"]
     weight_vals = {}
     for weight in weights:
@@ -367,7 +359,7 @@ def display(num_legs, max_leg_length, min_leg_length, max_leg_slope, max_cost,
         fig_diversity = plot_diversity(legs, transport, samples)
 
     return fig_space, fig_time, fig_diversity, out_problem_code(legs), solutions_print_human_val, cqm.__str__(), \
-        out_problem_human(legs), out_inputs_human(inputs), max_leg_length, \
+        out_problem_human(legs), out_input_human(inputs), max_leg_length, \
         min_leg_length, weight_vals["cost"], weight_vals["cost"], weight_vals["time"], \
         weight_vals["time"], weight_vals["slope"], weight_vals["slope"]
 

@@ -23,7 +23,7 @@ import numpy as np
 from pprint import pprint
 import time, datetime
 
-from formatting import out_job_submit_state, in_job_submit_state, out_problem_code, out_problem_human, in_problem_code
+from formatting import *
 from tour_planning import build_cqm, set_legs, transport
 
 import dimod
@@ -222,7 +222,7 @@ inputs_viewer = dbc.Card([
 transport_viewer = dbc.Card([
     dbc.Row([
         dbc.Col([
-            dcc.Textarea(id="transport_print", value=json.dumps(transport),
+            dcc.Textarea(id="transport_print", value=out_transport_human(transport),
                 style={'width': '100%'}, rows=20)])]),]),
 
 app.layout = dbc.Container([
@@ -279,9 +279,10 @@ def calculate_total(t, measure, legs, num_legs):
 @app.callback(
     Output('tour_graph', 'figure'),
     Output('problem_print_code', 'value'),
+    Output('solutions_print_human', 'value'),
     Output('cqm_print_human', 'value'),
     Output('cqm_print_code', 'value'),
-    Output('problem_print_human', 'value'),    # temp so I can use solutions_print elsewhere
+    Output('problem_print_human', 'value'),
     Output('input_print', 'value'),
     Output('max_leg_length', 'value'),
     Output('min_leg_length', 'value'),
@@ -329,6 +330,7 @@ else:
     weight_{weight} = weight_{weight}_input
 """.format(weight))
 
+    solutions_print_human_val = dash.no_update
     if not trigger_id:
         legs = init_legs["legs"]
     elif trigger_id in [k for k in list(init_tour.keys()) if k not in ('max_cost', 'max_time')]:
@@ -352,8 +354,8 @@ else:
     if trigger_id == "job_submit_state":
         if in_job_submit_state(job_submit_state) == "COMPLETED":
 
-            result = dimod.SampleSet.from_serializable(in_problem_code(solutions_print_code))
-            sampleset_feasible = result.filter(lambda row: row.is_feasible)
+            sampleset = dimod.SampleSet.from_serializable(in_problem_code(solutions_print_code))
+            sampleset_feasible = sampleset.filter(lambda row: row.is_feasible)
             first = sorted({int(key.split('_')[1]): key.split('_')[0] for key,val in sampleset_feasible.first.sample.items() if val==1.0}.items())
             fig = px.bar(df_legs, x="Length", y='Tour', color="Slope", orientation="h",
                          color_continuous_scale=px.colors.diverging.Geyser, text=[transport for leg,transport in first])
@@ -364,6 +366,8 @@ else:
                     yref="y", x=x_pos, y=-0.1, sizex=2, sizey=2, opacity=1,
                     layer="above"))
                 x_pos += df_legs["Length"][leg]
+
+            solutions_print_human_val = out_solutions_human(sampleset)
 
     fig.add_layout_image(
             dict(source="assets/europe.png", xref="x", yref="y", x=0, y=0.5,
@@ -383,8 +387,8 @@ else:
     fig.update_layout(font_color="rgb(6, 236, 220)", margin=dict(l=20, r=20, t=20, b=20),
                       paper_bgcolor="rgba(0,0,0,0)")
 
-    return fig, out_problem_code(legs), cqm.__str__(), "CQM", out_problem_human(legs), \
-        json.dumps(inputs), max_leg_length, min_leg_length, weight_cost_slider, \
+    return fig, out_problem_code(legs), solutions_print_human_val, cqm.__str__(), "CQM", out_problem_human(legs), \
+        out_inputs_human(inputs), max_leg_length, min_leg_length, weight_cost_slider, \
         weight_cost_input, weight_time_slider, weight_time_input, weight_slope_slider, \
         weight_slope_input
 

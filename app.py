@@ -160,7 +160,7 @@ solver_card = dbc.Card([
         html.P(id='job_submit_state', children=out_job_submit_state('READY')),   # if no client change ready
         html.P(id='job_submit_time', children='Mon Sep 26 07:39:20 2022', style = dict(display='none')),
         html.P(id='job_problem_id', children='4e07426f-a0d1-4616-8e1c-c49b3ce542d8', style = dict(display='none')),
-        html.P(id='job_elapsed_time', children=f"Elapsed: 5 sec"),
+        html.P(id='job_elapsed_time', children=f""),
         dbc.Button("Cancel Job", id="btn_cancel", color="warning", className="me-1",
             style = dict(display='none')),]),],
     color="secondary")
@@ -437,7 +437,7 @@ def cqm_submit(n_clicks, n_intervals, max_leg_slope, max_cost, max_time, weight_
     if trigger_id == "btn_solve_cqm":
         return True, dict(), False, 0.1*1000, 0, job_bar['WAITING'][0], \
             job_bar['WAITING'][1], out_job_submit_state("START"), datetime.datetime.now().strftime("%c"), \
-            0, dash.no_update, dash.no_update
+            f"Elapsed: 0 sec.", dash.no_update, dash.no_update
 
     if in_job_submit_state(job_submit_state) == "START":
         # Need to disable all buttons
@@ -448,12 +448,9 @@ def cqm_submit(n_clicks, n_intervals, max_leg_slope, max_cost, max_time, weight_
                             weight_time_input, max_leg_slope, weight_slope_input)
         problem_data_id = solver.upload_cqm(cqm).result()
 
-        print("problem_data_id:", problem_data_id)
-
         computation = solver.sample_cqm(problem_data_id,
                     label="Examples - Tour Planning", time_limit=5)
         submission_id = computation.wait_id()
-        print("submission_id:",submission_id)
 
         elapsed_time = (datetime.datetime.now() - datetime.datetime.strptime(job_submit_time, "%c")).seconds
 

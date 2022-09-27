@@ -328,14 +328,15 @@ def display(num_legs, max_leg_length, min_leg_length, max_leg_slope, max_cost,
         min_leg_length = max_leg_length
     if trigger_id == 'min_leg_length' and min_leg_length >= max_leg_length:
         max_leg_length = min_leg_length
-
-    for weight in ["cost", "time", "slope"]:
-        exec(f"""
-if trigger_id == 'weight_{weight}_slider':
-        weight_{weight} = weight_{weight}_slider
-else:
-    weight_{weight} = weight_{weight}_input
-""".format(weight))
+    
+    weights = ["cost", "time", "slope"]
+    weight_vals = {}
+    for weight in weights:
+        weight_vals[weight] = dash.no_update
+        if trigger_id == f'weight_{weight}_slider':
+            weight_vals[weight] = eval(f'weight_{weight}_slider')
+        if trigger_id == f'weight_{weight}_input':
+            weight_vals[weight] = eval(f'weight_{weight}_input')
 
     if not trigger_id:
         legs = init_legs["legs"]
@@ -367,8 +368,8 @@ else:
 
     return fig_space, fig_time, fig_diversity, out_problem_code(legs), solutions_print_human_val, cqm.__str__(), \
         out_problem_human(legs), out_inputs_human(inputs), max_leg_length, \
-        min_leg_length, weight_cost_slider, weight_cost_input, weight_time_slider, \
-        weight_time_input, weight_slope_slider, weight_slope_input
+        min_leg_length, weight_vals["cost"], weight_vals["cost"], weight_vals["time"], \
+        weight_vals["time"], weight_vals["slope"], weight_vals["slope"]
 
 job_bar = {'WAITING': [0, 'light'],
            'SUBMITTED': [25, 'info'],

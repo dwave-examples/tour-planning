@@ -146,11 +146,19 @@ tour_config = dbc.Card(
                     style={'margin-left': '20px'}),],)],
     body=True, color="secondary")
 
-graph_card = dbc.Card([
-    html.H4("Tour Legs", className="card-title"),
-    dbc.Col(
-        dcc.Graph(id='tour_graph'), width=12),],
-    color="secondary")
+graph_card = dbc.Tabs([
+    dbc.Tab(dbc.Card([
+                dbc.Row([
+                    dbc.Col(
+                        dcc.Graph(id='tour_graph'), width=12)])]), label="Space",
+                                tab_id="graph_space",
+                                label_style={"color": "white", "backgroundColor": "black"},),
+    dbc.Tab(dbc.Card([
+                dbc.Row([
+                    dbc.Col(
+                        dcc.Graph(id='time_graph'), width=12)])]), label="Time",
+                                tab_id="graph_time",
+                                label_style={"color": "white", "backgroundColor": "black"},),])
 
 solver_card = dbc.Card([
     html.H4("Job Submission", className="card-title"),
@@ -269,6 +277,7 @@ def calculate_total(t, measure, legs, num_legs):
 
 @app.callback(
     Output('tour_graph', 'figure'),
+    Output('time_graph', 'figure'),
     Output('problem_print_code', 'value'),
     Output('solutions_print_human', 'value'),
     Output('cqm_print_human', 'value'),
@@ -342,9 +351,12 @@ else:
     cqm = build_cqm(legs, modes, max_cost, max_time, weight_cost_input,
                     weight_time_input, max_leg_slope, weight_slope_input)
 
-    fig = plot_space(legs, samples)
+    fig_time = dash.no_update
+    fig_space = plot_space(legs, samples)
+    if samples:
+        fig_time = plot_time(legs, transport, samples)
 
-    return fig, out_problem_code(legs), solutions_print_human_val, cqm.__str__(), \
+    return fig_space, fig_time, out_problem_code(legs), solutions_print_human_val, cqm.__str__(), \
         out_problem_human(legs), out_inputs_human(inputs), max_leg_length, \
         min_leg_length, weight_cost_slider, weight_cost_input, weight_time_slider, \
         weight_time_input, weight_slope_slider, weight_slope_input

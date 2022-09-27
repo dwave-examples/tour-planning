@@ -82,7 +82,7 @@ def plot_time(legs, transport, samples):
 
     fig.add_layout_image(
             dict(source="assets/clock.png", xref="x", yref="y", x=0, y=0.5,
-                 sizex=df_legs["Length"].sum(), sizey=1, sizing="stretch",
+                 sizex=df_legs["Time"].sum(), sizey=1, sizing="stretch",
                  opacity=0.25, layer="below"))
 
     fig.update_xaxes(showticklabels=True, title="Time")

@@ -18,7 +18,7 @@ import plotly.express as px
 import dimod
 from formatting import *
 
-__all__ = ["get_samples", "plot_space", "plot_time"]
+__all__ = ["get_samples", "plot_space", "plot_time", "plot_diversity"]
 
 def get_samples(saved_sampleset):
     """Retrieve saved sampleset."""
@@ -103,11 +103,10 @@ def plot_time(legs, transport, samples):
 
     return fig
 
-
 def plot_diversity(legs, transport, samples):
 
     #Done only once per job submission but can move to NumPy if slow
-    data = {'Cost': [], 'Time': [], 'Energy': []}
+    data = {'Cost': [], 'Time': [], 'Energy': [], 'Feasibility': []}
     for sample, energy, feasability in samples["sampleset"].data(fields=['sample', 'energy', 'is_feasible']):
         locomotion_per_leg = sorted({int(key.split('_')[1]): key.split('_')[0] for
             key,val in sample.items() if val==1.0}.items())
@@ -118,11 +117,16 @@ def plot_diversity(legs, transport, samples):
 
     df = pd.DataFrame(data)
 
-    fig = px.scatter_3d(df, x='Time', y='Cost', z='Energy')
+    occurrences = df.groupby(df.columns.tolist(),as_index=False).size()
+    color = ["blue" if f==True else "black" for f in occurrences["Feasibility"]]
+    legend_names = {'blue':'Feasible', 'black': 'Infeasible'}
 
-    fig.update_xaxes(showticklabels=True, title="Time")
-    fig.update_yaxes(showticklabels=True, title="Cost")
-    fig.update_zaxes(showticklabels=True, title="Exercise")
+    fig = px.scatter_3d(occurrences, x='Time', y='Cost', z='Energy')
+
+    # fig.for_each_trace(lambda t: t.update(name = legend_names[t.name], legendgroup = legend_names[t.name]))
+    # fig.update_scenes(xaxis_title_text='Time',
+    #                   yaxis_title_text='Cost',
+    #                   zaxis_title_text='Exercise')
     fig.update_layout(font_color="rgb(6, 236, 220)", margin=dict(l=20, r=20, t=20, b=20),
                       paper_bgcolor="rgba(0,0,0,0)")
 

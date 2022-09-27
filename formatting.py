@@ -12,10 +12,26 @@
 #    See the License for the specific language governing permissions and
 #    limitations under the License.
 
+import pandas as pd
+import json
+
 def out_job_submit_state(code):
-    """Output status as 'Status: <status>'"""
+    """Output status as 'Status: <status>'."""
     return f"Status: {code}"
 
 def in_job_submit_state(human_readable):
     """Strip status from 'Status: <status>'"""
     return human_readable.split()[1]
+
+def out_problem_human(problem):
+    """Output problem for humans."""
+    df = pd.DataFrame(problem)
+    return df.to_string()
+
+def out_problem_code(problem):
+    """Output problem for code."""
+    return json.dumps(problem)
+
+def in_problem_code(code):
+    """Input problem from code."""
+    return json.loads(code)

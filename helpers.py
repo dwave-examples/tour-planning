@@ -121,12 +121,13 @@ def plot_diversity(legs, transport, samples):
     color = ["blue" if f==True else "black" for f in occurrences["Feasibility"]]
     legend_names = {'blue':'Feasible', 'black': 'Infeasible'}
 
-    fig = px.scatter_3d(occurrences, x='Time', y='Cost', z='Energy')
+    fig = px.scatter_3d(occurrences, x='Time', y='Cost', z='Energy', color=color,
+        size=occurrences['size'])
 
-    # fig.for_each_trace(lambda t: t.update(name = legend_names[t.name], legendgroup = legend_names[t.name]))
-    # fig.update_scenes(xaxis_title_text='Time',
-    #                   yaxis_title_text='Cost',
-    #                   zaxis_title_text='Exercise')
+    fig.for_each_trace(lambda t: t.update(name = legend_names[t.name], legendgroup = legend_names[t.name]))
+    fig.update_scenes(xaxis_title_text='Time',
+                      yaxis_title_text='Cost',
+                      zaxis_title_text='Exercise')
     fig.update_layout(font_color="rgb(6, 236, 220)", margin=dict(l=20, r=20, t=20, b=20),
                       paper_bgcolor="rgba(0,0,0,0)")
 

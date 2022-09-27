@@ -181,34 +181,24 @@ problem_viewer = dbc.Tabs([
                                 tab_id="tab_problem_print_code",
                                 label_style={"color": "white", "backgroundColor": "black"},),])
 
-cqm_viewer = dbc.Tabs([
-    dbc.Tab(dbc.Card([
-                dbc.Row([
-                    dbc.Col([
-                        dcc.Textarea(id="cqm_print_human", value='Human Readable',
-                            style={'width': '100%'}, rows=20)])]),]), label="Human Readable",
-                                tab_id="tab_cqm_print_human",
-                                label_style={"color": "white", "backgroundColor": "black"},),
-    dbc.Tab(dbc.Card([
-                dbc.Row([
-                    dbc.Col([
-                        dcc.Textarea(id="cqm_print_code", value='Computer Readable',
-                            style={'width': '100%'}, rows=20)])]),]), label="Computer Readable",
-                                tab_id="tab_cqm_print_code",
-                                label_style={"color": "white", "backgroundColor": "black"},),])
+cqm_viewer = dbc.Card([
+    dbc.Row([
+        dbc.Col([
+            dcc.Textarea(id="cqm_print_human", value='',
+                style={'width': '100%'}, rows=20)])]),]),
 
 solutions_viewer = dbc.Tabs([
     dbc.Tab(dbc.Card([
                 dbc.Row([
                     dbc.Col([
-                        dcc.Textarea(id="solutions_print_human", value='Your solutions',
+                        dcc.Textarea(id="solutions_print_human", value='Your solutions to be displayed here',
                             style={'width': '100%'}, rows=20)])]),]), label="Human Readable",
                                 tab_id="tab_solutions_print_human",
                                 label_style={"color": "white", "backgroundColor": "black"},),
     dbc.Tab(dbc.Card([
                 dbc.Row([
                     dbc.Col([
-                        dcc.Textarea(id="solutions_print_code", value='Computer Readable',
+                        dcc.Textarea(id="solutions_print_code", value='SampleSet object to be displayed here',
                             style={'width': '100%'}, rows=20)])]),]), label="Computer Readable",
                                 tab_id="tab_solutions_print_code",
                                 label_style={"color": "white", "backgroundColor": "black"},),])
@@ -281,7 +271,7 @@ def calculate_total(t, measure, legs, num_legs):
     Output('problem_print_code', 'value'),
     Output('solutions_print_human', 'value'),
     Output('cqm_print_human', 'value'),
-    Output('cqm_print_code', 'value'),
+    #Output('cqm_print_code', 'value'),
     Output('problem_print_human', 'value'),
     Output('input_print', 'value'),
     Output('max_leg_length', 'value'),
@@ -387,10 +377,10 @@ else:
     fig.update_layout(font_color="rgb(6, 236, 220)", margin=dict(l=20, r=20, t=20, b=20),
                       paper_bgcolor="rgba(0,0,0,0)")
 
-    return fig, out_problem_code(legs), solutions_print_human_val, cqm.__str__(), "CQM", out_problem_human(legs), \
-        out_inputs_human(inputs), max_leg_length, min_leg_length, weight_cost_slider, \
-        weight_cost_input, weight_time_slider, weight_time_input, weight_slope_slider, \
-        weight_slope_input
+    return fig, out_problem_code(legs), solutions_print_human_val, cqm.__str__(), \
+        out_problem_human(legs), out_inputs_human(inputs), max_leg_length, \
+        min_leg_length, weight_cost_slider, weight_cost_input, weight_time_slider, \
+        weight_time_input, weight_slope_slider, weight_slope_input
 
 job_bar = {'WAITING': [0, 'light'],
            'SUBMITTED': [25, 'info'],

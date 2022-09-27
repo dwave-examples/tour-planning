@@ -102,3 +102,28 @@ def plot_time(legs, transport, samples):
         x_pos += df_legs["Time"][leg]
 
     return fig
+
+
+def plot_diversity(legs, transport, samples):
+
+    #Done only once per job submission but can move to NumPy if slow
+    data = {'Cost': [], 'Time': [], 'Energy': []}
+    for sample, energy, feasability in samples["sampleset"].data(fields=['sample', 'energy', 'is_feasible']):
+        locomotion_per_leg = sorted({int(key.split('_')[1]): key.split('_')[0] for
+            key,val in sample.items() if val==1.0}.items())
+        data['Cost'].append(sum(transport[f[1]]['Speed'] for f in locomotion_per_leg))
+        data['Time'].append(sum(l['length']/transport[f[1]]['Speed'] for l,f in zip(legs, locomotion_per_leg)))
+        data['Energy'].append(energy)
+        data['Feasibility'].append(feasability)
+
+    df = pd.DataFrame(data)
+
+    fig = px.scatter_3d(df, x='Time', y='Cost', z='Energy')
+
+    fig.update_xaxes(showticklabels=True, title="Time")
+    fig.update_yaxes(showticklabels=True, title="Cost")
+    fig.update_zaxes(showticklabels=True, title="Exercise")
+    fig.update_layout(font_color="rgb(6, 236, 220)", margin=dict(l=20, r=20, t=20, b=20),
+                      paper_bgcolor="rgba(0,0,0,0)")
+
+    return fig

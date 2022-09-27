@@ -23,7 +23,7 @@ import numpy as np
 from pprint import pprint
 import time, datetime
 
-from formatting import out_job_submit_state, in_job_submit_state
+from formatting import out_job_submit_state, in_job_submit_state, out_problem_code, out_problem_human, in_problem_code
 from tour_planning import build_cqm, set_legs, transport
 
 import dimod
@@ -176,7 +176,7 @@ problem_viewer = dbc.Tabs([
     dbc.Tab(dbc.Card([
                 dbc.Row([
                     dbc.Col([
-                        dcc.Textarea(id="problem_print_code", value='Computer Readable',
+                        dcc.Textarea(id="problem_print_code", value=out_problem_code(init_legs),
                             style={'width': '100%'}, rows=20)])]),]), label="Computer Readable",
                                 tab_id="tab_problem_print_code",
                                 label_style={"color": "white", "backgroundColor": "black"},),])
@@ -352,7 +352,7 @@ else:
     if trigger_id == "job_submit_state":
         if in_job_submit_state(job_submit_state) == "COMPLETED":
 
-            result = dimod.SampleSet.from_serializable(json.loads(solutions_print_code))
+            result = dimod.SampleSet.from_serializable(in_problem_code(solutions_print_code))
             sampleset_feasible = result.filter(lambda row: row.is_feasible)
             first = sorted({int(key.split('_')[1]): key.split('_')[0] for key,val in sampleset_feasible.first.sample.items() if val==1.0}.items())
             fig = px.bar(df_legs, x="Length", y='Tour', color="Slope", orientation="h",
@@ -382,7 +382,8 @@ else:
     fig.update_traces(width=.1)
     fig.update_layout(font_color="rgb(6, 236, 220)", margin=dict(l=20, r=20, t=20, b=20),
                       paper_bgcolor="rgba(0,0,0,0)")
-    return fig, json.dumps(legs), cqm.__str__(), "CQM", "solutions printed here", \
+
+    return fig, out_problem_code(legs), cqm.__str__(), "CQM", out_problem_human(legs), \
         json.dumps(inputs), max_leg_length, min_leg_length, weight_cost_slider, \
         weight_cost_input, weight_time_slider, weight_time_input, weight_slope_slider, \
         weight_slope_input

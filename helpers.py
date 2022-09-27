@@ -18,7 +18,7 @@ import plotly.express as px
 import dimod
 from formatting import *
 
-__all__ = ["get_samples", "plot_space"]
+__all__ = ["get_samples", "plot_space", "plot_time"]
 
 def get_samples(saved_sampleset):
     """Retrieve saved sampleset."""
@@ -68,5 +68,37 @@ def plot_space(legs, samples=None):
                 yref="y", x=x_pos, y=-0.1, sizex=2, sizey=2, opacity=1,
                 layer="above"))
             x_pos += df_legs["Length"][leg]
+
+    return fig
+
+def plot_time(legs, transport, samples):
+
+    df_legs = pd.DataFrame({'Time': [l['length']/transport[f[1]]['Speed'] for l,f in zip(legs, samples["first"])],
+                            'Cost': [transport[f[1]]['Speed'] for f in samples["first"]]})
+    df_legs["Tour"] = 0
+
+    fig = px.bar(df_legs, x="Time", y='Tour', color="Cost", orientation="h",
+                 color_continuous_scale=px.colors.diverging.Geyser)
+
+    fig.add_layout_image(
+            dict(source="assets/clock.png", xref="x", yref="y", x=0, y=0.5,
+                 sizex=df_legs["Length"].sum(), sizey=1, sizing="stretch",
+                 opacity=0.25, layer="below"))
+
+    fig.update_xaxes(showticklabels=True, title="Time")
+    fig.update_yaxes(showticklabels=False, title=None, range=(-0.5, 0.5))
+    fig.update_traces(width=.1)
+    fig.update_layout(font_color="rgb(6, 236, 220)", margin=dict(l=20, r=20, t=20, b=20),
+                      paper_bgcolor="rgba(0,0,0,0)")
+
+    fig.update_traces(texttemplate = [transport for leg,transport in samples["first"]],
+        textposition = "inside")
+
+    x_pos = 0
+    for leg, icon in samples["first"]:
+        fig.add_layout_image(dict(source=f"assets/{icon}.png", xref="x",
+            yref="y", x=x_pos, y=-0.1, sizex=2, sizey=2, opacity=1,
+            layer="above"))
+        x_pos += df_legs["Time"][leg]
 
     return fig

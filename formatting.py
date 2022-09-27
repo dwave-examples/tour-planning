@@ -16,7 +16,7 @@ import pandas as pd
 import json
 
 __all__ = ["out_job_submit_state", "in_job_submit_state", "out_problem_human",
-    "out_problem_code", "in_problem_code", "out_inputs_human", "out_transport_human",
+    "out_problem_code", "in_problem_code", "out_input_human", "out_transport_human",
     "out_solutions_human",]
 
 def out_job_submit_state(code):
@@ -42,7 +42,7 @@ def in_problem_code(code):
     """Input problem from code."""
     return json.loads(code)
 
-def out_inputs_human(params):
+def out_input_human(params):
     """Output input ranges for humans."""
     df = pd.DataFrame(params)
     df_t = df.T

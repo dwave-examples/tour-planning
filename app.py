@@ -158,7 +158,8 @@ solver_card = dbc.Card([
         dcc.Interval(id='check_job_status', interval=None, n_intervals=0, disabled=True, max_intervals=1),
         dbc.Progress(id="job_status_progress", value=0, color="info", className="mb-3"),
         html.P(id='job_submit_state', children=out_job_submit_state('READY')),   # if no client change ready
-        html.P(id='job_submit_time', children='Mon Sep 26 07:39:20 2022'),
+        html.P(id='job_submit_time', children='Mon Sep 26 07:39:20 2022', style = dict(display='none')),
+        html.P(id='job_problem_id', children='4e07426f-a0d1-4616-8e1c-c49b3ce542d8', style = dict(display='none')),
         html.P(id='job_elapsed_time', children=f"Elapsed: 5 sec"),
         dbc.Button("Cancel Job", id="btn_cancel", color="warning", className="me-1",
             style = dict(display='none')),]),],
@@ -406,7 +407,7 @@ job_bar = {'WAITING': [0, 'light'],
     Output('job_submit_time', 'children'),
     Output('job_elapsed_time', 'children'),
     Output('solutions_print_code', 'value'),
-    Output('solutions_print_human', 'value'),
+    Output('job_problem_id', 'children'),
     Input('btn_solve_cqm', 'n_clicks'),
     Input('check_job_status', 'n_intervals'),
     State('max_leg_slope', 'value'),
@@ -421,10 +422,10 @@ job_bar = {'WAITING': [0, 'light'],
     State('problem_print_code', 'value'),
     State('job_submit_state', 'children'),
     State('job_submit_time', 'children'),
-    State('solutions_print_human', 'value'),)
+    State('job_problem_id', 'children'),)
 def cqm_submit(n_clicks, n_intervals, max_leg_slope, max_cost, max_time, weight_cost_slider, \
     weight_cost_input, weight_time_slider, weight_time_input, weight_slope_slider, \
-    weight_slope_input, problem_print_code, job_submit_state, job_submit_time, solutions_print_human):
+    weight_slope_input, problem_print_code, job_submit_state, job_submit_time, job_problem_id):
     """SM for job submission."""
     trigger_id = dash.callback_context.triggered[0]["prop_id"].split(".")[0]
 
@@ -462,7 +463,7 @@ def cqm_submit(n_clicks, n_intervals, max_leg_slope, max_cost, max_time, weight_
 
     if in_job_submit_state(job_submit_state) == "SUBMITTED":
         p = Problems(endpoint=client.endpoint, token=client.token)
-        status = p.get_problem_status(solutions_print_human).status.value
+        status = p.get_problem_status(job_problem_id).status.value
 
         if status == None:   # First few checks
             job_submit_state = "SUBMITTED"
@@ -477,7 +478,7 @@ def cqm_submit(n_clicks, n_intervals, max_leg_slope, max_cost, max_time, weight_
 
     if in_job_submit_state(job_submit_state) in ['PENDING', 'IN_PROGRESS']:
         p = Problems(endpoint=client.endpoint, token=client.token)
-        status = p.get_problem_status(solutions_print_human).status.value
+        status = p.get_problem_status(job_problem_id).status.value
         job_submit_state = status
 
         sampleset_str = "Failed maybe"
@@ -485,7 +486,7 @@ def cqm_submit(n_clicks, n_intervals, max_leg_slope, max_cost, max_time, weight_
         if status == 'IN_PROGRESS':
             hide_button = dict(display='none')
         elif status == 'COMPLETED':
-            sampleset = client.retrieve_answer(solutions_print_human).sampleset
+            sampleset = client.retrieve_answer(job_problem_id).sampleset
             sampleset_str = json.dumps(sampleset.to_serializable())
 
         elapsed_time = (datetime.datetime.now() - datetime.datetime.strptime(job_submit_time, "%c")).seconds

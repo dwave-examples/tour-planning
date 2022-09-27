@@ -23,6 +23,7 @@ import numpy as np
 from pprint import pprint
 import time, datetime
 
+from helpers import *
 from formatting import *
 from tour_planning import build_cqm, set_legs, transport
 
@@ -320,13 +321,19 @@ else:
     weight_{weight} = weight_{weight}_input
 """.format(weight))
 
-    solutions_print_human_val = dash.no_update
     if not trigger_id:
         legs = init_legs["legs"]
     elif trigger_id in [k for k in list(init_tour.keys()) if k not in ('max_cost', 'max_time')]:
         legs = set_legs(num_legs, [min_leg_length, max_leg_length], max_leg_slope)
     else:
         legs = json.loads(problem_print_code)
+
+    solutions_print_human_val = dash.no_update
+    samples = None
+    if trigger_id == "job_submit_state":
+        if in_job_submit_state(job_submit_state) == "COMPLETED":
+            samples = get_samples(solutions_print_code)
+            solutions_print_human_val = out_solutions_human(samples["sampleset"])
 
     inputs = {**init_tour, **init_cqm}
     for key in inputs.keys():
@@ -335,47 +342,7 @@ else:
     cqm = build_cqm(legs, modes, max_cost, max_time, weight_cost_input,
                     weight_time_input, max_leg_slope, weight_slope_input)
 
-    df_legs = pd.DataFrame({'Length': [l['length'] for l in legs],
-                            'Slope': [s['uphill'] for s in legs]})
-    df_legs["Tour"] = 0
-    fig = px.bar(df_legs, x="Length", y='Tour', color="Slope", orientation="h",
-                 color_continuous_scale=px.colors.diverging.Geyser)
-
-    if trigger_id == "job_submit_state":
-        if in_job_submit_state(job_submit_state) == "COMPLETED":
-
-            sampleset = dimod.SampleSet.from_serializable(in_problem_code(solutions_print_code))
-            sampleset_feasible = sampleset.filter(lambda row: row.is_feasible)
-            first = sorted({int(key.split('_')[1]): key.split('_')[0] for key,val in sampleset_feasible.first.sample.items() if val==1.0}.items())
-            fig = px.bar(df_legs, x="Length", y='Tour', color="Slope", orientation="h",
-                         color_continuous_scale=px.colors.diverging.Geyser, text=[transport for leg,transport in first])
-
-            x_pos = 0
-            for leg, icon in first:
-                fig.add_layout_image(dict(source=f"assets/{icon}.png", xref="x",
-                    yref="y", x=x_pos, y=-0.1, sizex=2, sizey=2, opacity=1,
-                    layer="above"))
-                x_pos += df_legs["Length"][leg]
-
-            solutions_print_human_val = out_solutions_human(sampleset)
-
-    fig.add_layout_image(
-            dict(source="assets/europe.png", xref="x", yref="y", x=0, y=0.5,
-                 sizex=df_legs["Length"].sum(), sizey=1, sizing="stretch",
-                 opacity=0.25, layer="below"))
-
-    x_pos = 0
-    for indx, leg in enumerate(legs):
-        if leg['toll']:
-            fig.add_layout_image(dict(source=f"assets/toll.png", xref="x",
-                yref="y", x=x_pos, y=0.2, sizex=2, sizey=2, opacity=1, layer="above"))
-        x_pos += df_legs["Length"][indx]
-
-    fig.update_xaxes(showticklabels=True, title="Distance")
-    fig.update_yaxes(showticklabels=False, title=None, range=(-0.5, 0.5))
-    fig.update_traces(width=.1)
-    fig.update_layout(font_color="rgb(6, 236, 220)", margin=dict(l=20, r=20, t=20, b=20),
-                      paper_bgcolor="rgba(0,0,0,0)")
+    fig = plot_space(legs, samples)
 
     return fig, out_problem_code(legs), solutions_print_human_val, cqm.__str__(), \
         out_problem_human(legs), out_inputs_human(inputs), max_leg_length, \

@@ -42,12 +42,26 @@ def in_problem_code(code):
     """Input problem from code."""
     return json.loads(code)
 
-def out_input_human(params):
-    """Output input ranges for humans."""
+def out_input_human(params, legs, transport):
+    """Output the input ranges."""
     df = pd.DataFrame(params)
     df_t = df.T
     df_t.columns = ["Min.", "Max.", "Current Value"]
-    return df_t.to_string()
+
+    cost_max = round(sum(l["length"] for l in legs)*max([c["Cost"] for c in
+        transport.values()]))
+    time_max = round(sum(l["length"] for l in legs)/min(s["Speed"] for s in
+        transport.values()))
+    time_min = round(sum(l["length"] for l in legs)/max(s["Speed"] for s in
+        transport.values()))
+    header = f"""For your current tour configuration:
+
+* Maximum tour cost is {cost_max}.
+* Range of tour time is {time_min} to {time_max}.
+
+Configurable parameters have supported ranges and the current settings shown below:
+"""
+    return header + df_t.to_string()
 
 def out_solutions_human(sampleset):
     """Output solutions for humans."""

@@ -46,7 +46,7 @@ def budgets(legs):
     costs = [c["Cost"] for c in transport.values()]
     speeds = [s["Speed"] for s in transport.values()]
     max_cost = round(legs_total * np.mean([min(costs), max(costs)]))
-    max_time = round(legs_total * np.mean([min(speeds), max(speeds)]))
+    max_time = round(legs_total / np.mean([min(speeds), max(speeds)]))
 
     return max_cost, max_time
 

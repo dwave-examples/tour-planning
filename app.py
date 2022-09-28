@@ -348,7 +348,7 @@ def display(num_legs, max_leg_length, min_leg_length, max_leg_slope, max_cost,
         fig_diversity = plot_diversity(legs, transport, samples)
 
     return fig_space, fig_time, fig_diversity, out_problem_code(legs), solutions_print_human_val, cqm.__str__(), \
-        out_problem_human(legs), out_input_human(inputs), max_leg_length, \
+        out_problem_human(legs), out_input_human(inputs, legs, transport), max_leg_length, \
         min_leg_length, weight_vals["cost"], weight_vals["cost"], weight_vals["time"], \
         weight_vals["time"], weight_vals["slope"], weight_vals["slope"]
 

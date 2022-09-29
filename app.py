@@ -128,7 +128,8 @@ graph_card = dbc.Tabs([
             dbc.Col(
                 dcc.Graph(id=f'{graph.lower()}_graph'), width=12)])]), label=f"{graph}",
                     tab_id=f"graph_{graph.lower()}",
-                    label_style={"color": "white", "backgroundColor": "black"},) for graph in graphs])
+                    label_style={"color": "white", "backgroundColor": "black"},)
+    for graph in graphs])
 
 solver_card = dbc.Card([
     html.H4("Job Submission", className="card-title"),
@@ -147,23 +148,18 @@ solver_card = dbc.Card([
 initital_views = {"problem": out_problem_code(init_legs),
                   "solutions": "SampleSet object to be displayed here",}
 viewers = ["problem", "solutions", ]
+readers = ["Human", "Code"]
 viewer_tabs = {}
 for viewer in viewers:
     viewer_tabs[viewer] = dbc.Tabs([
         dbc.Tab(dbc.Card([
                     dbc.Row([
                         dbc.Col([
-                            dcc.Textarea(id=f"{viewer}_print_human", value='',
-                                style={'width': '100%'}, rows=20)])]),]), label="Human Readable",
-                                    tab_id=f"tab_{viewer}_print_human",
-                                    label_style={"color": "white", "backgroundColor": "black"},),
-        dbc.Tab(dbc.Card([
-                    dbc.Row([
-                        dbc.Col([
-                            dcc.Textarea(id=f"{viewer}_print_code", value=initital_views[viewer],
-                                style={'width': '100%'}, rows=20)])]),]), label="Computer Readable",
-                                    tab_id="tab_{viewer}_print_code",
-                                    label_style={"color": "white", "backgroundColor": "black"},),])
+                            dcc.Textarea(id=f"{viewer}_print_{reader.lower()}", value='',
+                                style={'width': '100%'}, rows=20)])]),]), label=f"{reader} Readable",
+                                    tab_id=f"tab_{viewer}_print_{reader.lower()}",
+                                    label_style={"color": "white", "backgroundColor": "black"},)
+    for reader in readers])
 
 initital_views = {"cqm": "", "input": "", "transport": out_transport_human(transport)}
 viewers = ["cqm", "input", "transport"]

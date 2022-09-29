@@ -73,40 +73,31 @@ cqm_config = dbc.Card(
                 {"label": "Hard", "style": {'color': 'white'}}}, value=init_cqm['weight_slope_input'][2],),]),],
     body=True, color="secondary")
 
+tour_titles = ["Set Legs", "Set Budget"]
+leg_settings = [["How Many:", "num_legs"],["Longest Leg:", "max_leg_length"],
+                ["Shortest Leg:", "min_leg_length"]]
+leg_rows = [dbc.Row([
+    f"{leg_setting[0]}",
+    html.Br(),
+    dcc.Input(id=f"{leg_setting[1]}", type='number', min=init_tour[f"{leg_setting[1]}"][0],
+        max=init_tour[f"{leg_setting[1]}"][1], step=1,
+        value=init_tour[f"{leg_setting[1]}"][2])]) for leg_setting in leg_settings]
+leg_rows.append(dbc.Row([
+    "Steepest Leg:",
+    dash.html.Br(),
+    dcc.Slider(min=0, max=10, step=1,
+        marks={i: {"label": f'{str(i)}', "style": {'color': 'white'}} for i in
+        range(init_tour['max_leg_slope'][0], init_tour['max_leg_slope'][1] + 1, 2)},
+        value=init_tour['max_leg_slope'][2], id='max_leg_slope'),]))
+
 tour_config = dbc.Card(
     [dbc.Row([
         html.H4("Tour Settings", className="card-title", style={'textAlign': 'left'})]),
      dbc.Row([
         dbc.Col([
-            html.B("Set Legs", style={"text-decoration": "underline"},)]),
-        dbc.Col([
-            html.B("Set Budget", style={"text-decoration": "underline"}),]),]),
+            html.B(f"{tour_title}", style={"text-decoration": "underline"},) ]) for tour_title in tour_titles]),
      dbc.Row([
-        dbc.Col([
-            dbc.Row([
-                "How Many:",]),
-            dbc.Row([
-                dcc.Input(id='num_legs', type='number', min=init_tour['num_legs'][0],
-                    max=init_tour['num_legs'][1], step=1, value=init_tour['num_legs'][2])],),
-            dbc.Row([
-                "Longest Leg:",]),
-            dbc.Row([
-                dcc.Input(id='max_leg_length', type='number', min=init_tour['max_leg_length'][0],
-                    max=init_tour['max_leg_length'][1], step=1, value=init_tour['max_leg_length'][2]),]),
-            dbc.Row([
-                "Shortest Leg:"]),
-            dbc.Row([
-               dcc.Input(id='min_leg_length', type='number', min=init_tour['min_leg_length'][0],
-                    max=init_tour['min_leg_length'][1], step=1,
-                    value=init_tour['min_leg_length'][2]),]),
-            dbc.Row([
-               "Steepest Leg:",]),
-            dbc.Row([
-               dcc.Slider(min=0, max=10, step=1,
-                    marks={i: {"label": f'{str(i)}', "style": {'color': 'white'}} for i in
-                    range(init_tour['max_leg_slope'][0], init_tour['max_leg_slope'][1] + 1, 2)},
-                    value=init_tour['max_leg_slope'][2], id='max_leg_slope'),]),],
-                    style={'margin-right': '20px'}),
+        dbc.Col(leg_rows, style={'margin-right': '20px'}),
         dbc.Col([
             dbc.Row([
                 "Highest Cost:",]),

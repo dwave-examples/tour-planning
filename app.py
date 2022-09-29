@@ -75,14 +75,16 @@ cqm_config = dbc.Card(
 
 tour_titles = ["Set Legs", "Set Budget"]
 leg_settings = [["How Many:", "num_legs"],["Longest Leg:", "max_leg_length"],
-                ["Shortest Leg:", "min_leg_length"]]
-leg_rows = [dbc.Row([
+                ["Shortest Leg:", "min_leg_length"],
+                ["Highest Cost:", "max_cost"], ["Longest Time:", "max_time"]]
+
+leg_setting_rows = [dbc.Row([
     f"{leg_setting[0]}",
     html.Br(),
     dcc.Input(id=f"{leg_setting[1]}", type='number', min=init_tour[f"{leg_setting[1]}"][0],
         max=init_tour[f"{leg_setting[1]}"][1], step=1,
-        value=init_tour[f"{leg_setting[1]}"][2])]) for leg_setting in leg_settings]
-leg_rows.append(dbc.Row([
+        value=init_tour[f"{leg_setting[1]}"][2])]) for leg_setting in leg_settings[:3]]
+leg_setting_rows.append(dbc.Row([
     "Steepest Leg:",
     dash.html.Br(),
     dcc.Slider(min=0, max=10, step=1,
@@ -90,26 +92,23 @@ leg_rows.append(dbc.Row([
         range(init_tour['max_leg_slope'][0], init_tour['max_leg_slope'][1] + 1, 2)},
         value=init_tour['max_leg_slope'][2], id='max_leg_slope'),]))
 
+leg_constraint_rows = [dbc.Row([
+    f"{leg_constraint[0]}",
+    html.Br(),
+    dcc.Input(id=f"{leg_constraint[1]}", type='number', min=init_tour[f"{leg_constraint[1]}"][0],
+        max=init_tour[f"{leg_constraint[1]}"][1], step=1,
+        value=init_tour[f"{leg_constraint[1]}"][2])]) for leg_constraint in leg_settings[3:]]
+
 tour_config = dbc.Card(
     [dbc.Row([
         html.H4("Tour Settings", className="card-title", style={'textAlign': 'left'})]),
      dbc.Row([
         dbc.Col([
-            html.B(f"{tour_title}", style={"text-decoration": "underline"},) ]) for tour_title in tour_titles]),
+            html.B(f"{tour_title}", style={"text-decoration": "underline"},) ])
+                for tour_title in tour_titles]),
      dbc.Row([
-        dbc.Col(leg_rows, style={'margin-right': '20px'}),
-        dbc.Col([
-            dbc.Row([
-                "Highest Cost:",]),
-            dbc.Row([
-               dcc.Input(id='max_cost', type='number', min=init_tour['max_cost'][0],
-                    max=init_tour['max_cost'][1], step=1, value=init_tour['max_cost'][2]),]),
-            dbc.Row([
-                "Longest Time:",]),
-            dbc.Row([
-               dcc.Input(id='max_time', type='number', min=init_tour['max_time'][0],
-                    max=init_tour['max_time'][1], step=1, value=init_tour['max_time'][2]),]),],
-                    style={'margin-left': '20px'}),],)],
+        dbc.Col(leg_setting_rows, style={'margin-right': '20px'}),
+        dbc.Col(leg_constraint_rows, style={'margin-left': '20px'}),],)],
     body=True, color="secondary")
 
 graphs = ["Space", "Time", "Diversity"]

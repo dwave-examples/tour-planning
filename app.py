@@ -145,8 +145,8 @@ solver_card = dbc.Card([
             style = dict(display='none')),]),],
     color="secondary")
 
-initital_views = {"problem": out_problem_code(init_legs),
-                  "solutions": "SampleSet object to be displayed here",}
+tabs = {}
+
 viewers = ["problem", "solutions", ]
 readers = ["Human", "Code"]
 viewer_tabs = {}
@@ -161,14 +161,12 @@ for viewer in viewers:
                                     label_style={"color": "white", "backgroundColor": "black"},)
     for reader in readers])
 
-initital_views = {"cqm": "", "input": "", "transport": out_transport_human(transport)}
-viewers = ["cqm", "input", "transport"]
-viewer_cards = {}
-for viewer in viewers:
-    viewer_cards[viewer] = dbc.Card([
+viewers = {"CQM": "", "Input": "", "Transport": out_transport_human(transport)}
+for key, val in viewers.items():
+    tabs[key] = dbc.Card([
         dbc.Row([
             dbc.Col([
-                dcc.Textarea(id=f"{viewer}_print", value=initital_views[viewer],
+                dcc.Textarea(id=f"{key.lower()}_print", value=val,
                     style={'width': '100%'}, rows=20)])]),])
 
 app.layout = dbc.Container([
@@ -194,13 +192,13 @@ app.layout = dbc.Container([
                 label_style={"color": "rgb(6, 236, 220)", "backgroundColor": "black"},),
             dbc.Tab(viewer_tabs["problem"], label="Problem", tab_id="tab_problem",
                 label_style={"color": "rgb(6, 236, 220)", "backgroundColor": "black"}),
-            dbc.Tab(viewer_cards["cqm"], label="CQM", tab_id="tab_cqm",
+            dbc.Tab(tabs["CQM"], label="CQM", tab_id="tab_cqm",
                 label_style={"color": "rgb(6, 236, 220)", "backgroundColor": "black"}),
             dbc.Tab(viewer_tabs["solutions"], label="Solutions", tab_id="tab_solutions",
                 label_style={"color": "rgb(6, 236, 220)", "backgroundColor": "black"}),
-            dbc.Tab(viewer_cards["input"], label="Inputs", tab_id="tab_inputs",
+            dbc.Tab(tabs["Input"], label="Inputs", tab_id="tab_inputs",
                 label_style={"color": "rgb(6, 236, 220)", "backgroundColor": "black"}),
-            dbc.Tab(viewer_cards["transport"], label="Transport", tab_id="tab_transport",
+            dbc.Tab(tabs["Transport"], label="Transport", tab_id="tab_transport",
                 label_style={"color": "rgb(6, 236, 220)", "backgroundColor": "black"})],
             id="tabs", active_tab="tab_graph"),
 

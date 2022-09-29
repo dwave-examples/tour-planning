@@ -121,25 +121,14 @@ tour_config = dbc.Card(
                     style={'margin-left': '20px'}),],)],
     body=True, color="secondary")
 
+graphs = ["Space", "Time", "Diversity"]
 graph_card = dbc.Tabs([
     dbc.Tab(dbc.Card([
-                dbc.Row([
-                    dbc.Col(
-                        dcc.Graph(id='tour_graph'), width=12)])]), label="Space",
-                                tab_id="graph_space",
-                                label_style={"color": "white", "backgroundColor": "black"},),
-    dbc.Tab(dbc.Card([
-                dbc.Row([
-                    dbc.Col(
-                        dcc.Graph(id='time_graph'), width=12)])]), label="Time",
-                                tab_id="graph_time",
-                                label_style={"color": "white", "backgroundColor": "black"},),
-    dbc.Tab(dbc.Card([
-                dbc.Row([
-                    dbc.Col(
-                        dcc.Graph(id='diversity_graph'), width=12)])]), label="Diversity",
-                                tab_id="graph_diversity",
-                                label_style={"color": "white", "backgroundColor": "black"},),])
+        dbc.Row([
+            dbc.Col(
+                dcc.Graph(id=f'{graph.lower()}_graph'), width=12)])]), label=f"{graph}",
+                    tab_id=f"graph_{graph.lower()}",
+                    label_style={"color": "white", "backgroundColor": "black"},) for graph in graphs])
 
 solver_card = dbc.Card([
     html.H4("Job Submission", className="card-title"),
@@ -230,7 +219,7 @@ app.layout = dbc.Container([
     fluid=True, style={"backgroundColor": "black", "color": "rgb(6, 236, 220)"})
 
 @app.callback(
-    Output('tour_graph', 'figure'),
+    Output('space_graph', 'figure'),
     Output('time_graph', 'figure'),
     Output('diversity_graph', 'figure'),
     Output('problem_print_code', 'value'),

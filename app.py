@@ -42,50 +42,72 @@ try:
 except Exception as client_err:
     client = None
 
-constraints = ["Cost", "Time", "Slope"]
+def dcc_input(name, config_vals, step=None, with_slider=""):
+    name = f"{name[1]}{with_slider}"
+    return dcc.Input(
+        id=name,
+        type='number',
+        min=config_vals[name][0],
+        max=config_vals[name][1],
+        step=step,
+        value=config_vals[name][2])
+
+def dcc_slider(name, config_vals, step=None, with_suffix=False, discrete_slider=False):
+    name = name[1]
+    suffix_slider = suffix_input = ""
+    if with_suffix:
+        suffix_slider = "_slider"
+        suffix_input = "_input"
+    if not discrete_slider:
+        marks={config_vals[f"{name}{suffix_input}"][0]:
+                {"label": "Soft", "style": {'color': 'white'}},
+            config_vals[f"{name}{suffix_input}"][1]:
+                {"label": "Hard", "style": {'color': 'white'}}}
+    else:
+        marks={i: {"label": f'{str(i)}', "style": {'color': 'white'}} for i in
+        range(config_vals[name][0], init_tour[name][1] + 1, 2)}
+
+    return dcc.Slider(
+        id=f"{name}{suffix_slider}",
+        min=config_vals[f"{name}{suffix_input}"][0],
+        max=config_vals[f"{name}{suffix_input}"][1],
+        marks=marks,
+        step=step,
+        value=config_vals[f"{name}{suffix_input}"][2],)
+
+constraints = [[f"{constraint}", f"weight_{constraint.lower()}"] for constraint
+    in ["Cost", "Time", "Slope"]]
+
 constraint_card = [html.H4("CQM Settings", className="card-title")]
 constraint_card.extend([
     html.Div([
-        dbc.Label(f"{constraint} Weight"),
+        dbc.Label(f"{constraint[0]} Weight"),
         html.Div([
-            dcc.Input(id=f'weight_{constraint.lower()}_input', type='number',
-                min=init_cqm[f'weight_{constraint.lower()}_input'][0],
-                max=init_cqm[f'weight_{constraint.lower()}_input'][1], step=1,
-                value=init_cqm[f'weight_{constraint.lower()}_input'][2])],
+            dcc_input(constraint, init_cqm, step=1, with_slider="_input")],
                 style=dict(display='flex', justifyContent='right')),
-            dcc.Slider(init_cqm[f'weight_{constraint.lower()}_input'][0],
-                init_cqm[f'weight_{constraint.lower()}_input'][1],
-                id=f'weight_{constraint.lower()}_slider',
-                marks={init_cqm[f'weight_{constraint.lower()}_input'][0]:
-                        {"label": "Soft", "style": {'color': 'white'}},
-                    init_cqm[f'weight_{constraint.lower()}_input'][1]:
-                        {"label": "Hard", "style": {'color': 'white'}}},
-                value=init_cqm[f'weight_{constraint.lower()}_input'][2],),])
-            for constraint in constraints])
+            dcc_slider(constraint, init_cqm, with_suffix=True),])
+for constraint in constraints])
 
 tour_titles = ["Set Legs", "Set Budget"]
 leg_settings = [["How Many:", "num_legs"],["Longest Leg:", "max_leg_length"],
-                ["Shortest Leg:", "min_leg_length"],
+                ["Shortest Leg:", "min_leg_length"], ["Steepest Leg:", "max_leg_slope"],
                 ["Highest Cost:", "max_cost"], ["Longest Time:", "max_time"]]
 leg_setting_rows = [dbc.Row([
     f"{leg_setting[0]}",
-    html.Br(),
-    dcc.Input(id=f"{leg_setting[1]}", type='number', min=init_tour[f"{leg_setting[1]}"][0],
-        max=init_tour[f"{leg_setting[1]}"][1], step=1,
-        value=init_tour[f"{leg_setting[1]}"][2])]) for leg_setting in leg_settings[:3]]
+    dash.html.Br(),
+    dcc_input(leg_setting, init_tour, step=1)])
+        for leg_setting in leg_settings[:3]]
+
 leg_setting_rows.append(dbc.Row([
     "Steepest Leg:",
     dash.html.Br(),
-    dcc.Slider(min=0, max=10, step=1,
-        marks={i: {"label": f'{str(i)}', "style": {'color': 'white'}} for i in
-        range(init_tour['max_leg_slope'][0], init_tour['max_leg_slope'][1] + 1, 2)},
-        value=init_tour['max_leg_slope'][2], id='max_leg_slope'),]))
+    dcc_slider(leg_settings[3], init_tour, step=1, discrete_slider=True)]))
+
 leg_constraint_rows = [dbc.Row([
     f"{leg_constraint[0]}",
-    html.Br(),
-    dcc.Input(id=f"{leg_constraint[1]}", type='number', min=init_tour[f"{leg_constraint[1]}"][0],
-        max=init_tour[f"{leg_constraint[1]}"][1], step=1,
-        value=init_tour[f"{leg_constraint[1]}"][2])]) for leg_constraint in leg_settings[3:]]
+    dash.html.Br(),
+    dcc_input(leg_constraint, init_tour, step=1)])
+        for leg_constraint in leg_settings[4:]]
 
 tour_config = dbc.Card(
     [dbc.Row([

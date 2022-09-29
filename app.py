@@ -42,42 +42,31 @@ try:
 except Exception as client_err:
     client = None
 
-cqm_config = dbc.Card(
-    [html.H4("CQM Settings", className="card-title"),
-     html.Div([dbc.Label("Cost Weight"),
-               html.Div([dcc.Input(id='weight_cost_input', type='number',
-                min=init_cqm['weight_cost_input'][0], max=init_cqm['weight_cost_input'][1],
-                step=1, value=init_cqm['weight_cost_input'][2])],
-               style=dict(display='flex', justifyContent='right')),
-               dcc.Slider(init_cqm['weight_cost_input'][0], init_cqm['weight_cost_input'][1],
-                id='weight_cost_slider', marks={init_cqm['weight_cost_input'][0]:
-                {"label": "Soft", "style": {'color': 'white'}}, init_cqm['weight_cost_input'][1]:
-                {"label": "Hard", "style": {'color': 'white'}}}, value=init_cqm['weight_cost_input'][2],),]),
-     html.Div([dbc.Label("Time Weight"),
-               html.Div([dcc.Input(id='weight_time_input', type='number',
-                min=init_cqm['weight_time_input'][0], max=init_cqm['weight_time_input'][1],
-                step=1, value=init_cqm['weight_time_input'][2])],
+constraints = ["Cost", "Time", "Slope"]
+constraint_card = [html.H4("CQM Settings", className="card-title")]
+constraint_card.extend([
+    html.Div([
+        dbc.Label(f"{constraint} Weight"),
+        html.Div([
+            dcc.Input(id=f'weight_{constraint.lower()}_input', type='number',
+                min=init_cqm[f'weight_{constraint.lower()}_input'][0],
+                max=init_cqm[f'weight_{constraint.lower()}_input'][1], step=1,
+                value=init_cqm[f'weight_{constraint.lower()}_input'][2])],
                 style=dict(display='flex', justifyContent='right')),
-               dcc.Slider(init_cqm['weight_time_input'][0], init_cqm['weight_time_input'][1],
-                id='weight_time_slider', marks={init_cqm['weight_time_input'][0]:
-                {"label": "Soft", "style": {'color': 'white'}}, init_cqm['weight_time_input'][1]:
-                {"label": "Hard", "style": {'color': 'white'}}}, value=init_cqm['weight_time_input'][2],),]),
-     html.Div([dbc.Label("Slope Weight"),
-               html.Div([dcc.Input(id='weight_slope_input', type='number',
-                min=init_cqm['weight_slope_input'][0], max=init_cqm['weight_slope_input'][1],
-                step=1, value=init_cqm['weight_slope_input'][2])],
-                style=dict(display='flex', justifyContent='right')),
-               dcc.Slider(init_cqm['weight_slope_input'][0], init_cqm['weight_slope_input'][1],
-                id='weight_slope_slider', marks={init_cqm['weight_slope_input'][0]:
-                {"label": "Soft", "style": {'color': 'white'}}, init_cqm['weight_slope_input'][1]:
-                {"label": "Hard", "style": {'color': 'white'}}}, value=init_cqm['weight_slope_input'][2],),]),],
-    body=True, color="secondary")
+            dcc.Slider(init_cqm[f'weight_{constraint.lower()}_input'][0],
+                init_cqm[f'weight_{constraint.lower()}_input'][1],
+                id=f'weight_{constraint.lower()}_slider',
+                marks={init_cqm[f'weight_{constraint.lower()}_input'][0]:
+                        {"label": "Soft", "style": {'color': 'white'}},
+                    init_cqm[f'weight_{constraint.lower()}_input'][1]:
+                        {"label": "Hard", "style": {'color': 'white'}}},
+                value=init_cqm[f'weight_{constraint.lower()}_input'][2],),])
+            for constraint in constraints])
 
 tour_titles = ["Set Legs", "Set Budget"]
 leg_settings = [["How Many:", "num_legs"],["Longest Leg:", "max_leg_length"],
                 ["Shortest Leg:", "min_leg_length"],
                 ["Highest Cost:", "max_cost"], ["Longest Time:", "max_time"]]
-
 leg_setting_rows = [dbc.Row([
     f"{leg_setting[0]}",
     html.Br(),
@@ -91,7 +80,6 @@ leg_setting_rows.append(dbc.Row([
         marks={i: {"label": f'{str(i)}', "style": {'color': 'white'}} for i in
         range(init_tour['max_leg_slope'][0], init_tour['max_leg_slope'][1] + 1, 2)},
         value=init_tour['max_leg_slope'][2], id='max_leg_slope'),]))
-
 leg_constraint_rows = [dbc.Row([
     f"{leg_constraint[0]}",
     html.Br(),
@@ -171,7 +159,7 @@ app.layout = dbc.Container([
         dbc.Col(
             tour_config, width=4),
         dbc.Col(
-            cqm_config, width=2),
+            dbc.Card(constraint_card, body=True, color="secondary"), width=2),
         dbc.Col([
             dbc.Row([
                 dbc.Col([

@@ -48,7 +48,7 @@ except Exception as client_err:
 
 def _dcc_input(name, config_vals, step=None, with_slider=""):
     """Sets input to dash.Input elements in layout."""
-    name = f"{name[1]}{with_slider}"
+    name = f"{name}{with_slider}"
     return dcc.Input(
         id=name,
         type="number",
@@ -59,7 +59,6 @@ def _dcc_input(name, config_vals, step=None, with_slider=""):
 
 def _dcc_slider(name, config_vals, step=1, with_suffix=False, discrete_slider=False):
     """Sets input to dash.Input elements in layout."""
-    name = name[1]
     suffix_slider = suffix_input = ""
     if with_suffix:
         suffix_slider = "_slider"
@@ -145,17 +144,20 @@ for key, val in viewers.items():
 # Configuration sections
 ########################
 
-constraints = [[f"{constraint}", f"weight_{constraint.lower()}"] for constraint
-    in ["Cost", "Time", "Slope"]]
+constraints = {f"weight_{constraint.lower()}": f"{constraint}" for
+    constraint in ["Cost", "Time", "Slope"]}
+
+# constraints = [[f"{constraint}", f"weight_{constraint.lower()}"] for constraint
+#     in ["Cost", "Time", "Slope"]]
 constraint_card = [html.H4("CQM Settings", className="card-title")]
 constraint_card.extend([
     html.Div([
-        dbc.Label(f"{constraint[0]} Weight"),
+        dbc.Label(f"{val} Weight"),
         html.Div([
-            _dcc_input(constraint, init_cqm, step=1, with_slider="_input")],
+            _dcc_input(key, init_cqm, step=1, with_slider="_input")],
                 style=dict(display="flex", justifyContent="right")),
-            _dcc_slider(constraint, init_cqm, with_suffix=True),])
-for constraint in constraints])
+            _dcc_slider(key, init_cqm, with_suffix=True),])
+for key, val in constraints.items()])
 
 tour_titles = ["Set Legs", "Set Budget"]
 leg_config = {
@@ -168,19 +170,19 @@ leg_config = {
 leg_rows = [dbc.Row([
     f"{val}",
     dash.html.Br(),
-    _dcc_input([val, key], init_tour, step=1) if key != "max_leg_slope" else
-    _dcc_slider([val, key], init_tour, step=1, discrete_slider=True)])
+    _dcc_input(key, init_tour, step=1) if key != "max_leg_slope" else
+    _dcc_slider(key, init_tour, step=1, discrete_slider=True)])
     for key, val in leg_config.items()]
 tour_config = dbc.Card(
     [dbc.Row([
-        html.H4("Tour Settings", className="card-title", style={'textAlign': 'left'})]),
+        html.H4("Tour Settings", className="card-title", style={"textAlign": "left"})]),
      dbc.Row([
         dbc.Col([
             html.B(f"{tour_title}", style={"text-decoration": "underline"},) ])
                 for tour_title in tour_titles]),
      dbc.Row([
-        dbc.Col(leg_rows[:4], style={'margin-right': '20px'}),
-        dbc.Col(leg_rows[4:], style={'margin-left': '20px'}),],)],
+        dbc.Col(leg_rows[:4], style={"margin-right": "20px"}),
+        dbc.Col(leg_rows[4:], style={"margin-left": "20px"}),],)],
     body=True, color="secondary")
 
 # Page-layout section

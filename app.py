@@ -101,7 +101,7 @@ solver_card = dbc.Card([
 ##########################
 tabs = {}
 
-graphs = {
+graphs = {          # also used for display callback
     "Space": "Displays your configured tour, with leg distance as " + \
         "relative length and elevation by color. Will display best found mode of transport.",
     "Time": "Will display best found solution, with leg duration as relative length.",
@@ -117,13 +117,13 @@ tabs["Graph"] = dbc.Tabs([
         label_style={"color": "white", "backgroundColor": "black"},)
     for key, val in graphs.items()])
 
-viewers = {
+double_tabs = {    # also used for display callback
     "Problem": "Displays the configured tour: length of each leg, elevation, and "\
         "toll positions.",
     "Solutions": "Displays returned solutions to submitted problems."}
 readers = ["Human", "Code"]
 viewer_tabs = {}
-for key, val in viewers.items():
+for key, val in double_tabs.items():
     tabs[key] = dbc.Tabs([
         dbc.Tab(dbc.Card([
             dbc.Row([
@@ -135,8 +135,11 @@ for key, val in viewers.items():
             label_style={"color": "white", "backgroundColor": "black"},)
     for reader in readers])
 
-viewers = {"CQM": "", "Input": "", "Transport": out_transport_human(transport)}
-for key, val in viewers.items():
+single_tabs = {   # also used for display callback
+    "CQM": "",
+    "Input": "",
+    "Transport": out_transport_human(transport)}
+for key, val in single_tabs.items():
     tabs[key] = dbc.Card([
         dbc.Row([
             dbc.Col([
@@ -147,7 +150,7 @@ for key, val in viewers.items():
 ########################
 
 constraints = {f"weight_{constraint.lower()}": f"{constraint}" for
-    constraint in ["Cost", "Time", "Slope"]}
+    constraint in ["Cost", "Time", "Slope"]}      # also used for display callback
 constraint_card = [html.H4("CQM Settings", className="card-title")]
 constraint_card.extend([
     html.Div([
@@ -159,7 +162,7 @@ constraint_card.extend([
 for key, val in constraints.items()])
 
 tour_titles = ["Set Legs", "Set Budget"]
-leg_config = {
+leg_config = {      # also used for display callback
     "num_legs": "How Many:",
     "max_leg_length": "Longest Leg:",
     "min_leg_length": "Shortest Leg:",
@@ -226,34 +229,18 @@ app.layout = dbc.Container(
 ###################
 
 @app.callback(
-    Output('space_graph', 'figure'),
-    Output('time_graph', 'figure'),
-    Output('diversity_graph', 'figure'),
+    [Output(f'{key.lower()}_graph', 'figure') for key in graphs.keys()],
     Output('problem_print_code', 'value'),
-    Output('solutions_print_human', 'value'),
-    Output('cqm_print', 'value'),
-    Output('problem_print_human', 'value'),
-    Output('input_print', 'value'),
+#    [Output(f'{key.lower()}_print_code', 'value') for key in double_tabs.keys()],
+    [Output(f'{key.lower()}_print_human', 'value') for key in double_tabs.keys()],
+    [Output(f'{key.lower()}_print', 'value') for key in single_tabs.keys()],
     Output('max_leg_length', 'value'),
     Output('min_leg_length', 'value'),
-    Output('weight_cost_slider', 'value'),
-    Output('weight_cost_input', 'value'),
-    Output('weight_time_slider', 'value'),
-    Output('weight_time_input', 'value'),
-    Output('weight_slope_slider', 'value'),
-    Output('weight_slope_input', 'value'),
-    Input('num_legs', 'value'),
-    Input('max_leg_length', 'value'),
-    Input('min_leg_length', 'value'),
-    Input('max_leg_slope', 'value'),
-    Input('max_cost', 'value'),
-    Input('max_time', 'value'),
-    Input('weight_cost_slider', 'value'),
-    Input('weight_cost_input', 'value'),
-    Input('weight_time_slider', 'value'),
-    Input('weight_time_input', 'value'),
-    Input('weight_slope_slider', 'value'),
-    Input('weight_slope_input', 'value'),
+    [Output(f'{key}_input', 'value') for key in constraints.keys()],
+    [Output(f'{key}_slider', 'value') for key in constraints.keys()],
+    [Input(f'{key}', 'value') for key in leg_config.keys()],
+    [Input(f'{key}_input', 'value') for key in constraints.keys()],
+    [Input(f'{key}_slider', 'value') for key in constraints.keys()],
     Input('problem_print_code', 'value'),
     Input('job_submit_state', 'children'),
     State('solutions_print_code', 'value'),)
@@ -309,10 +296,10 @@ def display(num_legs, max_leg_length, min_leg_length, max_leg_slope, max_cost,
         fig_time = plot_time(legs, transport, samples)
         fig_diversity = plot_diversity(legs, transport, samples)
 
-    return fig_space, fig_time, fig_diversity, out_problem_code(legs), solutions_print_human_val, cqm.__str__(), \
-        out_problem_human(legs), out_input_human(inputs, legs, transport), max_leg_length, \
-        min_leg_length, weight_vals["cost"], weight_vals["cost"], weight_vals["time"], \
-        weight_vals["time"], weight_vals["slope"], weight_vals["slope"]
+    return fig_space, fig_time, fig_diversity, out_problem_code(legs), out_problem_human(legs), \
+        solutions_print_human_val, cqm.__str__(), out_input_human(inputs, legs, transport), \
+        dash.no_update, max_leg_length, min_leg_length, weight_vals["cost"], weight_vals["time"], \
+        weight_vals["slope"], weight_vals["cost"], weight_vals["time"],  weight_vals["slope"]
 
 job_bar = {'WAITING': [0, 'light'],
            'SUBMITTED': [25, 'info'],

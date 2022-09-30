@@ -27,6 +27,7 @@ from helpers import *
 from formatting import *
 from tour_planning import init_cqm, init_tour, init_legs
 from tour_planning import build_cqm, set_legs, transport
+from tool_tips import tool_tips
 
 import dimod
 from dwave.cloud.hybrid import Client
@@ -179,7 +180,7 @@ tour_config = dbc.Card(
 # Page-layout section
 #####################
 
-app.layout = dbc.Container([
+layout = [
     dbc.Row([
         dbc.Col([
             html.H1("Tour Planner", style={'textAlign': 'left'})], width=10),
@@ -197,20 +198,16 @@ app.layout = dbc.Container([
             ], width=2)],
         justify="left"),
     dbc.Tabs([
-            dbc.Tab(tabs[tab], label=tab, tab_id=f"tab_{tab.lower()}",
-                label_style={"color": "rgb(6, 236, 220)", "backgroundColor": "black"},)
-            for tab in tabs.keys()],
-            id="tabs", active_tab="tab_graph"),
+        dbc.Tab(tabs[tab], label=tab, tab_id=f"tab_{tab.lower()}",
+            label_style={"color": "rgb(6, 236, 220)", "backgroundColor": "black"},)
+        for tab in tabs.keys()],
+        id="tabs", active_tab="tab_graph")]
 
-    dbc.Tooltip("Number of legs for the tour.",
-                target="num_legs",),
-    dbc.Tooltip("Maximum length for a single leg.",
-                target="max_leg_length",),
-    dbc.Tooltip("Minimum length for a single leg.",
-                target="min_leg_length",),
-    dbc.Tooltip("Maximum elevation for a single leg.",
-                target="max_leg_slope",),],
-    fluid=True, style={"backgroundColor": "black", "color": "rgb(6, 236, 220)"})
+tips = [dbc.Tooltip(message, target=target) for target, message in tool_tips.items()]
+layout.extend(tips)
+
+app.layout = dbc.Container(layout, fluid=True,
+    style={"backgroundColor": "black", "color": "rgb(6, 236, 220)"})
 
 # Callbacks Section
 ###################

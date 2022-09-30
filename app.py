@@ -25,6 +25,7 @@ import time, datetime
 
 from helpers import *
 from formatting import *
+from tour_planning import init_cqm, init_tour, init_legs
 from tour_planning import build_cqm, set_legs, transport
 
 import dimod
@@ -41,130 +42,44 @@ try:
 except Exception as client_err:
     client = None
 
-def budgets(legs):
-    legs_total = sum(l["length"] for l in legs)
-    costs = [c["Cost"] for c in transport.values()]
-    speeds = [s["Speed"] for s in transport.values()]
-    max_cost = round(legs_total * np.mean([min(costs), max(costs)]))
-    max_time = round(legs_total * np.mean([min(speeds), max(speeds)]))
+# Helper functions
+##################
 
-    return max_cost, max_time
+def _dcc_input(name, config_vals, step=None, with_slider=""):
+    name = f"{name[1]}{with_slider}"
+    return dcc.Input(
+        id=name,
+        type='number',
+        min=config_vals[name][0],
+        max=config_vals[name][1],
+        step=step,
+        value=config_vals[name][2])
 
-init_cqm = {'weight_cost_input': [0, 10000, 100],
-    'weight_time_input': [0, 10000, 30],
-    'weight_slope_input': [0, 10000, 150],}
+def _dcc_slider(name, config_vals, step=None, with_suffix=False, discrete_slider=False):
+    name = name[1]
+    suffix_slider = suffix_input = ""
+    if with_suffix:
+        suffix_slider = "_slider"
+        suffix_input = "_input"
+    if not discrete_slider:
+        marks={config_vals[f"{name}{suffix_input}"][0]:
+                {"label": "Soft", "style": {'color': 'white'}},
+            config_vals[f"{name}{suffix_input}"][1]:
+                {"label": "Hard", "style": {'color': 'white'}}}
+    else:
+        marks={i: {"label": f'{str(i)}', "style": {'color': 'white'}} for i in
+        range(config_vals[name][0], init_tour[name][1] + 1, 2)}
 
-init_tour = {'num_legs': [5, 100, 10],
-    'max_leg_length': [1, 20, 10],
-    'min_leg_length': [1, 20, 2],
-    'max_leg_slope': [0, 10, 8],
-    'max_cost': [0, 100000, 0],
-    'max_time': [0, 100000, 0],}
+    return dcc.Slider(
+        id=f"{name}{suffix_slider}",
+        min=config_vals[f"{name}{suffix_input}"][0],
+        max=config_vals[f"{name}{suffix_input}"][1],
+        marks=marks,
+        step=step,
+        value=config_vals[f"{name}{suffix_input}"][2],)
 
-init_legs = {'legs': set_legs(init_tour['num_legs'][2],
-    [init_tour['min_leg_length'][2], init_tour['max_leg_length'][2]],
-    init_tour['max_leg_slope'][2])}
-
-init_tour['max_cost'][2], init_tour['max_time'][2] = budgets(init_legs['legs'])
-
-cqm_config = dbc.Card(
-    [html.H4("CQM Settings", className="card-title"),
-     html.Div([dbc.Label("Cost Weight"),
-               html.Div([dcc.Input(id='weight_cost_input', type='number',
-                min=init_cqm['weight_cost_input'][0], max=init_cqm['weight_cost_input'][1],
-                step=1, value=init_cqm['weight_cost_input'][2])],
-               style=dict(display='flex', justifyContent='right')),
-               dcc.Slider(init_cqm['weight_cost_input'][0], init_cqm['weight_cost_input'][1],
-                id='weight_cost_slider', marks={init_cqm['weight_cost_input'][0]:
-                {"label": "Soft", "style": {'color': 'white'}}, init_cqm['weight_cost_input'][1]:
-                {"label": "Hard", "style": {'color': 'white'}}}, value=init_cqm['weight_cost_input'][2],),]),
-     html.Div([dbc.Label("Time Weight"),
-               html.Div([dcc.Input(id='weight_time_input', type='number',
-                min=init_cqm['weight_time_input'][0], max=init_cqm['weight_time_input'][1],
-                step=1, value=init_cqm['weight_time_input'][2])],
-                style=dict(display='flex', justifyContent='right')),
-               dcc.Slider(init_cqm['weight_time_input'][0], init_cqm['weight_time_input'][1],
-                id='weight_time_slider', marks={init_cqm['weight_time_input'][0]:
-                {"label": "Soft", "style": {'color': 'white'}}, init_cqm['weight_time_input'][1]:
-                {"label": "Hard", "style": {'color': 'white'}}}, value=init_cqm['weight_time_input'][2],),]),
-     html.Div([dbc.Label("Slope Weight"),
-               html.Div([dcc.Input(id='weight_slope_input', type='number',
-                min=init_cqm['weight_slope_input'][0], max=init_cqm['weight_slope_input'][1],
-                step=1, value=init_cqm['weight_slope_input'][2])],
-                style=dict(display='flex', justifyContent='right')),
-               dcc.Slider(init_cqm['weight_slope_input'][0], init_cqm['weight_slope_input'][1],
-                id='weight_slope_slider', marks={init_cqm['weight_slope_input'][0]:
-                {"label": "Soft", "style": {'color': 'white'}}, init_cqm['weight_slope_input'][1]:
-                {"label": "Hard", "style": {'color': 'white'}}}, value=init_cqm['weight_slope_input'][2],),]),],
-    body=True, color="secondary")
-
-tour_config = dbc.Card(
-    [dbc.Row([
-        html.H4("Tour Settings", className="card-title", style={'textAlign': 'left'})]),
-     dbc.Row([
-        dbc.Col([
-            html.B("Set Legs", style={"text-decoration": "underline"},)]),
-        dbc.Col([
-            html.B("Set Budget", style={"text-decoration": "underline"}),]),]),
-     dbc.Row([
-        dbc.Col([
-            dbc.Row([
-                "How Many:",]),
-            dbc.Row([
-                dcc.Input(id='num_legs', type='number', min=init_tour['num_legs'][0],
-                    max=init_tour['num_legs'][1], step=1, value=init_tour['num_legs'][2])],),
-            dbc.Row([
-                "Longest Leg:",]),
-            dbc.Row([
-                dcc.Input(id='max_leg_length', type='number', min=init_tour['max_leg_length'][0],
-                    max=init_tour['max_leg_length'][1], step=1, value=init_tour['max_leg_length'][2]),]),
-            dbc.Row([
-                "Shortest Leg:"]),
-            dbc.Row([
-               dcc.Input(id='min_leg_length', type='number', min=init_tour['min_leg_length'][0],
-                    max=init_tour['min_leg_length'][1], step=1,
-                    value=init_tour['min_leg_length'][2]),]),
-            dbc.Row([
-               "Steepest Leg:",]),
-            dbc.Row([
-               dcc.Slider(min=0, max=10, step=1,
-                    marks={i: {"label": f'{str(i)}', "style": {'color': 'white'}} for i in
-                    range(init_tour['max_leg_slope'][0], init_tour['max_leg_slope'][1] + 1, 2)},
-                    value=init_tour['max_leg_slope'][2], id='max_leg_slope'),]),],
-                    style={'margin-right': '20px'}),
-        dbc.Col([
-            dbc.Row([
-                "Highest Cost:",]),
-            dbc.Row([
-               dcc.Input(id='max_cost', type='number', min=init_tour['max_cost'][0],
-                    max=init_tour['max_cost'][1], step=1, value=init_tour['max_cost'][2]),]),
-            dbc.Row([
-                "Longest Time:",]),
-            dbc.Row([
-               dcc.Input(id='max_time', type='number', min=init_tour['max_time'][0],
-                    max=init_tour['max_time'][1], step=1, value=init_tour['max_time'][2]),]),],
-                    style={'margin-left': '20px'}),],)],
-    body=True, color="secondary")
-
-graph_card = dbc.Tabs([
-    dbc.Tab(dbc.Card([
-                dbc.Row([
-                    dbc.Col(
-                        dcc.Graph(id='tour_graph'), width=12)])]), label="Space",
-                                tab_id="graph_space",
-                                label_style={"color": "white", "backgroundColor": "black"},),
-    dbc.Tab(dbc.Card([
-                dbc.Row([
-                    dbc.Col(
-                        dcc.Graph(id='time_graph'), width=12)])]), label="Time",
-                                tab_id="graph_time",
-                                label_style={"color": "white", "backgroundColor": "black"},),
-    dbc.Tab(dbc.Card([
-                dbc.Row([
-                    dbc.Col(
-                        dcc.Graph(id='diversity_graph'), width=12)])]), label="Diversity",
-                                tab_id="graph_diversity",
-                                label_style={"color": "white", "backgroundColor": "black"},),])
+# Problem-submission section
+############################
 
 solver_card = dbc.Card([
     html.H4("Job Submission", className="card-title"),
@@ -180,55 +95,89 @@ solver_card = dbc.Card([
             style = dict(display='none')),]),],
     color="secondary")
 
-problem_viewer = dbc.Tabs([
-    dbc.Tab(dbc.Card([
-                dbc.Row([
-                    dbc.Col([
-                        dcc.Textarea(id="problem_print_human", value='Human Readable',
-                            style={'width': '100%'}, rows=20)])]),]), label="Human Readable",
-                                tab_id="tab_problem_print_human",
-                                label_style={"color": "white", "backgroundColor": "black"},),
-    dbc.Tab(dbc.Card([
-                dbc.Row([
-                    dbc.Col([
-                        dcc.Textarea(id="problem_print_code", value=out_problem_code(init_legs),
-                            style={'width': '100%'}, rows=20)])]),]), label="Computer Readable",
-                                tab_id="tab_problem_print_code",
-                                label_style={"color": "white", "backgroundColor": "black"},),])
+# Tab-construction section
+##########################
+tabs = {}
 
-cqm_viewer = dbc.Card([
-    dbc.Row([
+graphs = ["Space", "Time", "Diversity"]
+tabs["Graph"] = dbc.Tabs([
+    dbc.Tab(dbc.Card([
+        dbc.Row([
+            dbc.Col(
+                dcc.Graph(id=f'{graph.lower()}_graph'), width=12)])]), label=f"{graph}",
+                    tab_id=f"graph_{graph.lower()}",
+                    label_style={"color": "white", "backgroundColor": "black"},)
+    for graph in graphs])
+
+viewers = {"Problem": "", "Solutions": ""}
+readers = ["Human", "Code"]
+viewer_tabs = {}
+for key, val in viewers.items():
+    tabs[key] = dbc.Tabs([
+        dbc.Tab(dbc.Card([
+                    dbc.Row([
+                        dbc.Col([
+                            dcc.Textarea(id=f"{key.lower()}_print_{reader.lower()}", value='',
+                                style={'width': '100%'}, rows=20)])]),]), label=f"{reader} Readable",
+                                    tab_id=f"tab_{key}_print_{reader.lower()}",
+                                    label_style={"color": "white", "backgroundColor": "black"},)
+    for reader in readers])
+
+viewers = {"CQM": "", "Input": "", "Transport": out_transport_human(transport)}
+for key, val in viewers.items():
+    tabs[key] = dbc.Card([
+        dbc.Row([
+            dbc.Col([
+                dcc.Textarea(id=f"{key.lower()}_print", value=val,
+                    style={'width': '100%'}, rows=20)])]),])
+
+# Configuration sections
+########################
+
+constraints = [[f"{constraint}", f"weight_{constraint.lower()}"] for constraint
+    in ["Cost", "Time", "Slope"]]
+constraint_card = [html.H4("CQM Settings", className="card-title")]
+constraint_card.extend([
+    html.Div([
+        dbc.Label(f"{constraint[0]} Weight"),
+        html.Div([
+            _dcc_input(constraint, init_cqm, step=1, with_slider="_input")],
+                style=dict(display='flex', justifyContent='right')),
+            _dcc_slider(constraint, init_cqm, with_suffix=True),])
+for constraint in constraints])
+
+tour_titles = ["Set Legs", "Set Budget"]
+leg_settings = [["How Many:", "num_legs"],["Longest Leg:", "max_leg_length"],
+                ["Shortest Leg:", "min_leg_length"], ["Steepest Leg:", "max_leg_slope"],
+                ["Highest Cost:", "max_cost"], ["Longest Time:", "max_time"]]
+leg_setting_rows = [dbc.Row([
+    f"{leg_setting[0]}",
+    dash.html.Br(),
+    _dcc_input(leg_setting, init_tour, step=1)])
+        for leg_setting in leg_settings[:3]]
+leg_setting_rows.append(dbc.Row([
+    "Steepest Leg:",
+    dash.html.Br(),
+    _dcc_slider(leg_settings[3], init_tour, step=1, discrete_slider=True)]))
+leg_constraint_rows = [dbc.Row([
+    f"{leg_constraint[0]}",
+    dash.html.Br(),
+    _dcc_input(leg_constraint, init_tour, step=1)])
+        for leg_constraint in leg_settings[4:]]
+tour_config = dbc.Card(
+    [dbc.Row([
+        html.H4("Tour Settings", className="card-title", style={'textAlign': 'left'})]),
+     dbc.Row([
         dbc.Col([
-            dcc.Textarea(id="cqm_print_human", value='',
-                style={'width': '100%'}, rows=20)])]),]),
+            html.B(f"{tour_title}", style={"text-decoration": "underline"},) ])
+                for tour_title in tour_titles]),
+     dbc.Row([
+        dbc.Col(leg_setting_rows, style={'margin-right': '20px'}),
+        dbc.Col(leg_constraint_rows, style={'margin-left': '20px'}),],)],
+    body=True, color="secondary")
 
-solutions_viewer = dbc.Tabs([
-    dbc.Tab(dbc.Card([
-                dbc.Row([
-                    dbc.Col([
-                        dcc.Textarea(id="solutions_print_human", value='Your solutions to be displayed here',
-                            style={'width': '100%'}, rows=20)])]),]), label="Human Readable",
-                                tab_id="tab_solutions_print_human",
-                                label_style={"color": "white", "backgroundColor": "black"},),
-    dbc.Tab(dbc.Card([
-                dbc.Row([
-                    dbc.Col([
-                        dcc.Textarea(id="solutions_print_code", value='SampleSet object to be displayed here',
-                            style={'width': '100%'}, rows=20)])]),]), label="Computer Readable",
-                                tab_id="tab_solutions_print_code",
-                                label_style={"color": "white", "backgroundColor": "black"},),])
-
-inputs_viewer = dbc.Card([
-    dbc.Row([
-        dbc.Col([
-            dcc.Textarea(id="input_print", value='Some inputs have dynamically set boundaries\n',
-                style={'width': '100%'}, rows=20)])]),]),
-
-transport_viewer = dbc.Card([
-    dbc.Row([
-        dbc.Col([
-            dcc.Textarea(id="transport_print", value=out_transport_human(transport),
-                style={'width': '100%'}, rows=20)])]),]),
+# Page-layout section
+#####################
 
 app.layout = dbc.Container([
     dbc.Row([
@@ -240,27 +189,17 @@ app.layout = dbc.Container([
         dbc.Col(
             tour_config, width=4),
         dbc.Col(
-            cqm_config, width=2),
+            dbc.Card(constraint_card, body=True, color="secondary"), width=2),
         dbc.Col([
             dbc.Row([
                 dbc.Col([
                     solver_card])]),
             ], width=2)],
         justify="left"),
-
     dbc.Tabs([
-            dbc.Tab(graph_card, label="Graph", tab_id="tab_graph",
-                label_style={"color": "rgb(6, 236, 220)", "backgroundColor": "black"},),
-            dbc.Tab(problem_viewer, label="Problem", tab_id="tab_problem",
-                label_style={"color": "rgb(6, 236, 220)", "backgroundColor": "black"}),
-            dbc.Tab(cqm_viewer, label="CQM", tab_id="tab_cqm",
-                label_style={"color": "rgb(6, 236, 220)", "backgroundColor": "black"}),
-            dbc.Tab(solutions_viewer, label="Solutions", tab_id="tab_solutions",
-                label_style={"color": "rgb(6, 236, 220)", "backgroundColor": "black"}),
-            dbc.Tab(inputs_viewer, label="Inputs", tab_id="tab_inputs",
-                label_style={"color": "rgb(6, 236, 220)", "backgroundColor": "black"}),
-            dbc.Tab(transport_viewer, label="Transport", tab_id="tab_transport",
-                label_style={"color": "rgb(6, 236, 220)", "backgroundColor": "black"})],
+            dbc.Tab(tabs[tab], label=tab, tab_id=f"tab_{tab.lower()}",
+                label_style={"color": "rgb(6, 236, 220)", "backgroundColor": "black"},)
+            for tab in tabs.keys()],
             id="tabs", active_tab="tab_graph"),
 
     dbc.Tooltip("Number of legs for the tour.",
@@ -273,22 +212,16 @@ app.layout = dbc.Container([
                 target="max_leg_slope",),],
     fluid=True, style={"backgroundColor": "black", "color": "rgb(6, 236, 220)"})
 
-def calculate_total(t, measure, legs, num_legs):
-    if measure == 'Exercise':
-        return dimod.quicksum(t[i]*transport[t[i].variables[0].split('_')[0]]['Exercise']*legs[i//num_modes]['length']*legs[i//num_modes]['uphill'] for i in range(num_modes*num_legs))
-    elif measure == 'Time':
-        return dimod.quicksum(t[i]*legs[i//num_modes]['length']/transport[t[i].variables[0].split('_')[0]]['Speed'] for i in range(num_modes*num_legs))
-    else:
-        return dimod.quicksum(t[i]*transport[t[i].variables[0].split('_')[0]][measure]*legs[i//num_modes]['length'] for i in range(num_modes*num_legs))
+# Callbacks Section
+###################
 
 @app.callback(
-    Output('tour_graph', 'figure'),
+    Output('space_graph', 'figure'),
     Output('time_graph', 'figure'),
     Output('diversity_graph', 'figure'),
     Output('problem_print_code', 'value'),
     Output('solutions_print_human', 'value'),
-    Output('cqm_print_human', 'value'),
-    #Output('cqm_print_code', 'value'),
+    Output('cqm_print', 'value'),
     Output('problem_print_human', 'value'),
     Output('input_print', 'value'),
     Output('max_leg_length', 'value'),
@@ -328,7 +261,7 @@ def display(num_legs, max_leg_length, min_leg_length, max_leg_slope, max_cost,
         min_leg_length = max_leg_length
     if trigger_id == 'min_leg_length' and min_leg_length >= max_leg_length:
         max_leg_length = min_leg_length
-    
+
     weights = ["cost", "time", "slope"]
     weight_vals = {}
     for weight in weights:
@@ -367,7 +300,7 @@ def display(num_legs, max_leg_length, min_leg_length, max_leg_slope, max_cost,
         fig_diversity = plot_diversity(legs, transport, samples)
 
     return fig_space, fig_time, fig_diversity, out_problem_code(legs), solutions_print_human_val, cqm.__str__(), \
-        out_problem_human(legs), out_inputs_human(inputs), max_leg_length, \
+        out_problem_human(legs), out_input_human(inputs, legs, transport), max_leg_length, \
         min_leg_length, weight_vals["cost"], weight_vals["cost"], weight_vals["time"], \
         weight_vals["time"], weight_vals["slope"], weight_vals["slope"]
 

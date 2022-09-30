@@ -33,6 +33,32 @@ def set_legs(num_legs, leg_length_range, max_leg_slope):
              'uphill': round(max_leg_slope*random.random(), 1),
              'toll': bool(np.random.choice([True, False], 1, p=[0.2, 0.8])[0])} for i in range(num_legs)]
 
+def budgets(legs):
+    legs_total = sum(l["length"] for l in legs)
+    costs = [c["Cost"] for c in transport.values()]
+    speeds = [s["Speed"] for s in transport.values()]
+    max_cost = round(legs_total * np.mean([min(costs), max(costs)]))
+    max_time = round(legs_total / np.mean([min(speeds), max(speeds)]))
+
+    return max_cost, max_time
+
+init_cqm = {'weight_cost_input': [0, 10000, 100],
+    'weight_time_input': [0, 10000, 30],
+    'weight_slope_input': [0, 10000, 150],}
+
+init_tour = {'num_legs': [5, 100, 10],
+    'max_leg_length': [1, 20, 10],
+    'min_leg_length': [1, 20, 2],
+    'max_leg_slope': [0, 10, 8],
+    'max_cost': [0, 100000, 0],
+    'max_time': [0, 100000, 0],}
+
+init_legs = {'legs': set_legs(init_tour['num_legs'][2],
+    [init_tour['min_leg_length'][2], init_tour['max_leg_length'][2]],
+    init_tour['max_leg_slope'][2])}
+
+init_tour['max_cost'][2], init_tour['max_time'][2] = budgets(init_legs['legs'])
+
 def calculate_total(t, measure, legs):
     """Helper function for building CQM.
 

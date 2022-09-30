@@ -65,9 +65,9 @@ def _dcc_slider(name, config_vals, step=1, with_suffix=False, discrete_slider=Fa
         suffix_input = "_input"
     if not discrete_slider:
         marks={config_vals[f"{name}{suffix_input}"][0]:
-                {"label": "Soft", "style": {"color": 'white'}},
+            {"label": "Soft", "style": {"color": 'white'}},
             config_vals[f"{name}{suffix_input}"][1]:
-                {"label": "Hard", "style": {"color": 'white'}}}
+            {"label": "Hard", "style": {"color": 'white'}}}
     else:
         marks={i: {"label": f'{str(i)}', "style": {"color": "white"}} for i in
         range(config_vals[name][0], init_tour[name][1] + 1, 2*step)}
@@ -111,9 +111,10 @@ tabs["Graph"] = dbc.Tabs([
         dbc.Row([
             dbc.Col([
                 html.P(id=f"{key}_intro", children=val, style={"color": "black"}),
-                dcc.Graph(id=f"{key.lower()}_graph")], width=12) ])]), label=f"{key}",
-                    tab_id=f"graph_{key.lower()}",
-                    label_style={"color": "white", "backgroundColor": "black"},)
+                dcc.Graph(id=f"{key.lower()}_graph")], width=12) ])]),
+        label=f"{key}",
+        tab_id=f"graph_{key.lower()}",
+        label_style={"color": "white", "backgroundColor": "black"},)
     for key, val in graphs.items()])
 
 viewers = {
@@ -125,12 +126,13 @@ viewer_tabs = {}
 for key, val in viewers.items():
     tabs[key] = dbc.Tabs([
         dbc.Tab(dbc.Card([
-                    dbc.Row([
-                        dbc.Col([
-                            dcc.Textarea(id=f"{key.lower()}_print_{reader.lower()}", value=val,
-                                style={"width": "100%"}, rows=20)])]),]), label=f"{reader} Readable",
-                                    tab_id=f"tab_{key}_print_{reader.lower()}",
-                                    label_style={"color": "white", "backgroundColor": "black"},)
+            dbc.Row([
+                dbc.Col([
+                    dcc.Textarea(id=f"{key.lower()}_print_{reader.lower()}", value=val,
+                        style={"width": "100%"}, rows=20)])]),]),
+            label=f"{reader} Readable",
+            tab_id=f"tab_{key}_print_{reader.lower()}",
+            label_style={"color": "white", "backgroundColor": "black"},)
     for reader in readers])
 
 viewers = {"CQM": "", "Input": "", "Transport": out_transport_human(transport)}
@@ -146,9 +148,6 @@ for key, val in viewers.items():
 
 constraints = {f"weight_{constraint.lower()}": f"{constraint}" for
     constraint in ["Cost", "Time", "Slope"]}
-
-# constraints = [[f"{constraint}", f"weight_{constraint.lower()}"] for constraint
-#     in ["Cost", "Time", "Slope"]]
 constraint_card = [html.H4("CQM Settings", className="card-title")]
 constraint_card.extend([
     html.Div([
@@ -193,28 +192,34 @@ layout = [
         dbc.Col([
             html.H1("Tour Planner", style={'textAlign': 'left'})], width=10),
         dbc.Col([
-            html.Img(src="assets/ocean.png", height="50px", style={'textAlign': 'right'})], width=2)]),
+            html.Img(src="assets/ocean.png", height="50px",
+                style={'textAlign': 'right'})], width=2)]),
     dbc.Row([
         dbc.Col(
             tour_config, width=4),
         dbc.Col(
-            dbc.Card(constraint_card, body=True, color="secondary"), width=2),
+            dbc.Card(constraint_card, body=True, color="secondary"),
+            width=2),
         dbc.Col([
             dbc.Row([
                 dbc.Col([
-                    solver_card])]),
-            ], width=2)],
+                    solver_card])]),],
+            width=2)],
         justify="left"),
     dbc.Tabs([
-        dbc.Tab(tabs[tab], label=tab, tab_id=f"tab_{tab.lower()}",
+        dbc.Tab(
+            tabs[tab], label=tab, tab_id=f"tab_{tab.lower()}",
             label_style={"color": "rgb(6, 236, 220)", "backgroundColor": "black"},)
         for tab in tabs.keys()],
         id="tabs", active_tab="tab_graph")]
 
-tips = [dbc.Tooltip(message, target=target) for target, message in tool_tips.items()]
+tips = [dbc.Tooltip(
+            message, target=target)
+            for target, message in tool_tips.items()]
 layout.extend(tips)
 
-app.layout = dbc.Container(layout, fluid=True,
+app.layout = dbc.Container(
+    layout, fluid=True,
     style={"backgroundColor": "black", "color": "rgb(6, 236, 220)"})
 
 # Callbacks Section

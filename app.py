@@ -46,39 +46,42 @@ except Exception as client_err:
 # Helper functions
 ##################
 
-def _dcc_input(name, config_vals, step=None, with_slider=""):
+def _dcc_input(name, config_vals, step=None):
     """Sets input to dash.Input elements in layout."""
-    name = f"{name}{with_slider}"
+    suffix = ""
+    if "_slider" in name:
+        suffix = "_slider"
+        name = name.replace("_slider", "")
     return dcc.Input(
-        id=name,
+        id=f"{name}{suffix}",
         type="number",
         min=config_vals[name][0],
         max=config_vals[name][1],
         step=step,
         value=config_vals[name][2])
 
-def _dcc_slider(name, config_vals, step=1, with_suffix=False, discrete_slider=False):
+def _dcc_slider(name, config_vals, step=1, discrete_slider=False):
     """Sets input to dash.Input elements in layout."""
-    suffix_slider = suffix_input = ""
-    if with_suffix:
-        suffix_slider = "_slider"
-        suffix_input = "_input"
+    suffix = ""
+    if "_slider" in name:
+        suffix = "_slider"
+        name = name.replace("_slider", "")
     if not discrete_slider:
-        marks={config_vals[f"{name}{suffix_input}"][0]:
+        marks={config_vals[f"{name}"][0]:
             {"label": "Soft", "style": {"color": 'white'}},
-            config_vals[f"{name}{suffix_input}"][1]:
+            config_vals[f"{name}"][1]:
             {"label": "Hard", "style": {"color": 'white'}}}
     else:
         marks={i: {"label": f'{str(i)}', "style": {"color": "white"}} for i in
         range(config_vals[name][0], init_tour[name][1] + 1, 2*step)}
 
     return dcc.Slider(
-        id=f"{name}{suffix_slider}",
-        min=config_vals[f"{name}{suffix_input}"][0],
-        max=config_vals[f"{name}{suffix_input}"][1],
+        id=f"{name}{suffix}",
+        min=config_vals[f"{name}"][0],
+        max=config_vals[f"{name}"][1],
         marks=marks,
         step=step,
-        value=config_vals[f"{name}{suffix_input}"][2],)
+        value=config_vals[f"{name}"][2],)
 
 # Problem-submission section
 ############################
@@ -149,32 +152,35 @@ for key, val in single_tabs.items():
 # Configuration sections
 ########################
 
-constraints = {f"weight_{constraint.lower()}": f"{constraint}" for
+constraint_inputs = {f"weight_{constraint.lower()}": f"{constraint}" for
     constraint in ["Cost", "Time", "Slope"]}      # also used for display callback
 constraint_card = [html.H4("CQM Settings", className="card-title")]
 constraint_card.extend([
     html.Div([
         dbc.Label(f"{val} Weight"),
         html.Div([
-            _dcc_input(key, init_cqm, step=1, with_slider="_input")],
+            _dcc_input(key, init_cqm, step=1)],
                 style=dict(display="flex", justifyContent="right")),
-            _dcc_slider(key, init_cqm, with_suffix=True),])
-for key, val in constraints.items()])
+            _dcc_slider(f"{key}_slider", init_cqm),])
+for key, val in constraint_inputs.items()])
 
 tour_titles = ["Set Legs", "Set Budget"]
-leg_config = {      # also used for display callback
+leg_inputs = {      # also used for callbacks
     "num_legs": "How Many:",
     "max_leg_length": "Longest Leg:",
     "min_leg_length": "Shortest Leg:",
-    "max_leg_slope": "Steepest Leg:",
+    "max_leg_slope": "Steepest Leg:",}
+cqm_inputs = {      # also used for callbacks
     "max_cost": "Highest Cost:",
     "max_time": "Longest Time:"}
+leg_rows_inputs = {**leg_inputs, **cqm_inputs}
+
 leg_rows = [dbc.Row([
     f"{val}",
     dash.html.Br(),
     _dcc_input(key, init_tour, step=1) if key != "max_leg_slope" else
     _dcc_slider(key, init_tour, step=1, discrete_slider=True)])
-    for key, val in leg_config.items()]
+    for key, val in leg_rows_inputs.items()]
 tour_config = dbc.Card(
     [dbc.Row([
         html.H4("Tour Settings", className="card-title", style={"textAlign": "left"})]),
@@ -228,10 +234,26 @@ app.layout = dbc.Container(
 # Callbacks Section
 ###################
 
-user_inputs = {f"{key}": "value" for key in leg_config.keys()}
-for key in constraints.keys():
+user_inputs = {f"{key}": "value" for key in leg_rows_inputs.keys()}
+for key in constraint_inputs.keys():
     user_inputs[f"{key}_input"] = "value"
     user_inputs[f"{key}_slider"] = "value"
+
+# @app.callback(
+#     Output('problem_print_code', 'value'),
+#     Input("input_print", "value"),)
+# def legs(input_print):
+#
+#     trigger = dash.callback_context.triggered
+#     trigger_id = trigger[0]["prop_id"].split(".")[0]
+#
+#     if not trigger_id:
+#         legs = init_legs["legs"]
+#     elif trigger_id in [k for k in list(init_tour.keys()) if k not in ('max_cost', 'max_time')]:
+#         legs = set_legs(num_legs, [min_leg_length, max_leg_length], max_leg_slope)
+#     else:
+#         legs = json.loads(problem_print_code)
+
 
 @app.callback(
     Output("solutions_print_human", "value"),
@@ -272,7 +294,6 @@ def graphics(solutions_print_code, cqm_print, problem_print_code):
     return fig_space, fig_time, fig_diversity
 
 @app.callback(
-    Output('problem_print_code', 'value'),
     [Output(f'{key.lower()}_print', 'value') for key in single_tabs.keys()],
     Output("max_leg_length", "value"),
     Output("min_leg_length", "value"),
@@ -313,6 +334,7 @@ def user_inputs(num_legs, max_leg_length, min_leg_length, max_leg_slope, max_cos
         legs = set_legs(num_legs, [min_leg_length, max_leg_length], max_leg_slope)
     else:
         legs = json.loads(problem_print_code)
+
 
     inputs = {**init_tour, **init_cqm}
     for key in inputs.keys():

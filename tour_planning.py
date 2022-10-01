@@ -42,9 +42,9 @@ def budgets(legs):
 
     return max_cost, max_time
 
-init_cqm = {'weight_cost_input': [0, 10000, 100],
-    'weight_time_input': [0, 10000, 30],
-    'weight_slope_input': [0, 10000, 150],}
+init_cqm = {'weight_cost': [0, 10000, 100],
+    'weight_time': [0, 10000, 30],
+    'weight_slope': [0, 10000, 150],}
 
 init_tour = {'num_legs': [5, 100, 10],
     'max_leg_length': [1, 20, 10],

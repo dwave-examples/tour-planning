@@ -228,26 +228,65 @@ app.layout = dbc.Container(
 # Callbacks Section
 ###################
 
+user_inputs = {f"{key}": "value" for key in leg_config.keys()}
+for key in constraints.keys():
+    user_inputs[f"{key}_input"] = "value"
+    user_inputs[f"{key}_slider"] = "value"
+
+@app.callback(
+    Output("solutions_print_human", "value"),
+    Input("solutions_print_code", "value"),)
+def solution_human(solutions_print_code):
+
+    trigger = dash.callback_context.triggered
+    trigger_id = trigger[0]["prop_id"].split(".")[0]
+
+    if trigger_id != "solutions_print_code":
+        return dash.no_update
+
+    samples = get_samples(solutions_print_code)
+    return out_solutions_human(samples["sampleset"])
+#
 @app.callback(
     [Output(f'{key.lower()}_graph', 'figure') for key in graphs.keys()],
+    Input("solutions_print_code", "value"),
+    Input("cqm_print", "value"),
+    State("problem_print_code", "value"))
+def graphics(solutions_print_code, cqm_print, problem_print_code):
+    """ """
+    trigger = dash.callback_context.triggered
+    trigger_id = trigger[0]["prop_id"].split(".")[0]
+
+    legs = json.loads(problem_print_code)
+    samples = None  # TODO: update other figures to accept samples=None
+    if trigger_id == 'solutions_print_code':
+        samples = get_samples(solutions_print_code)
+
+    fig_diversity = dash.no_update
+    fig_time = dash.no_update
+    fig_space = plot_space(legs, samples)
+    if samples:
+        fig_time = plot_time(legs, transport, samples)
+        fig_diversity = plot_diversity(legs, transport, samples)
+
+    return fig_space, fig_time, fig_diversity
+
+@app.callback(
     Output('problem_print_code', 'value'),
-#    [Output(f'{key.lower()}_print_code', 'value') for key in double_tabs.keys()],
-    [Output(f'{key.lower()}_print_human', 'value') for key in double_tabs.keys()],
     [Output(f'{key.lower()}_print', 'value') for key in single_tabs.keys()],
-    Output('max_leg_length', 'value'),
-    Output('min_leg_length', 'value'),
-    [Output(f'{key}_input', 'value') for key in constraints.keys()],
-    [Output(f'{key}_slider', 'value') for key in constraints.keys()],
-    [Input(f'{key}', 'value') for key in leg_config.keys()],
-    [Input(f'{key}_input', 'value') for key in constraints.keys()],
-    [Input(f'{key}_slider', 'value') for key in constraints.keys()],
-    Input('problem_print_code', 'value'),
-    Input('job_submit_state', 'children'),
-    State('solutions_print_code', 'value'),)
-def display(num_legs, max_leg_length, min_leg_length, max_leg_slope, max_cost,
-    max_time, weight_cost_slider, weight_cost_input, weight_time_slider,
-    weight_time_input, weight_slope_slider, weight_slope_input, problem_print_code,
-    job_submit_state, solutions_print_code):
+    Output("max_leg_length", "value"),
+    Output("min_leg_length", "value"),
+    Output("weight_cost_input", "value"),
+    Output("weight_cost_slider", "value"),
+    Output("weight_time_input", "value"),
+    Output("weight_time_slider", "value"),
+    Output("weight_slope_input", "value"),
+    Output("weight_slope_slider", "value"),
+    [Input(id, val) for id, val in user_inputs.items()],
+    Input('problem_print_code', 'value'),)
+def user_inputs(num_legs, max_leg_length, min_leg_length, max_leg_slope, max_cost,
+    max_time, weight_cost_input, weight_cost_slider, weight_time_input, weight_time_slider,
+    weight_slope_input, weight_slope_slider, problem_print_code):
     """
 
     """
@@ -275,13 +314,6 @@ def display(num_legs, max_leg_length, min_leg_length, max_leg_slope, max_cost,
     else:
         legs = json.loads(problem_print_code)
 
-    solutions_print_human_val = dash.no_update
-    samples = None
-    if trigger_id == "job_submit_state":
-        if in_job_submit_state(job_submit_state) == "COMPLETED":
-            samples = get_samples(solutions_print_code)
-            solutions_print_human_val = out_solutions_human(samples["sampleset"])
-
     inputs = {**init_tour, **init_cqm}
     for key in inputs.keys():
         inputs[key][2] = eval(key)
@@ -289,17 +321,12 @@ def display(num_legs, max_leg_length, min_leg_length, max_leg_slope, max_cost,
     cqm = build_cqm(legs, modes, max_cost, max_time, weight_cost_input,
                     weight_time_input, max_leg_slope, weight_slope_input)
 
-    fig_diversity = dash.no_update
-    fig_time = dash.no_update
-    fig_space = plot_space(legs, samples)
-    if samples:
-        fig_time = plot_time(legs, transport, samples)
-        fig_diversity = plot_diversity(legs, transport, samples)
-
-    return fig_space, fig_time, fig_diversity, out_problem_code(legs), out_problem_human(legs), \
-        solutions_print_human_val, cqm.__str__(), out_input_human(inputs, legs, transport), \
-        dash.no_update, max_leg_length, min_leg_length, weight_vals["cost"], weight_vals["time"], \
-        weight_vals["slope"], weight_vals["cost"], weight_vals["time"],  weight_vals["slope"]
+    return out_problem_code(legs), \
+        cqm.__str__(), out_input_human(inputs, legs, transport), dash.no_update,\
+        max_leg_length, min_leg_length, \
+        weight_vals["cost"], weight_vals["cost"], \
+        weight_vals["time"], weight_vals["time"], \
+        weight_vals["slope"], weight_vals["slope"]
 
 job_bar = {'WAITING': [0, 'light'],
            'SUBMITTED': [25, 'info'],

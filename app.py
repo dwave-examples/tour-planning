@@ -33,7 +33,7 @@ import dimod
 from dwave.cloud.hybrid import Client
 from dwave.cloud.api import Problems
 
-modes = transport.keys()  # global
+modes = transport.keys()  # global, but not user modified
 num_modes = len(modes)
 
 app = dash.Dash(__name__, external_stylesheets=[dbc.themes.BOOTSTRAP])
@@ -47,29 +47,30 @@ except Exception as client_err:
 ##################
 
 def _dcc_input(name, config_vals, step=None, with_slider=""):
-    name = f"{name[1]}{with_slider}"
+    """Sets input to dash.Input elements in layout."""
+    name = f"{name}{with_slider}"
     return dcc.Input(
         id=name,
-        type='number',
+        type="number",
         min=config_vals[name][0],
         max=config_vals[name][1],
         step=step,
         value=config_vals[name][2])
 
-def _dcc_slider(name, config_vals, step=None, with_suffix=False, discrete_slider=False):
-    name = name[1]
+def _dcc_slider(name, config_vals, step=1, with_suffix=False, discrete_slider=False):
+    """Sets input to dash.Input elements in layout."""
     suffix_slider = suffix_input = ""
     if with_suffix:
         suffix_slider = "_slider"
         suffix_input = "_input"
     if not discrete_slider:
         marks={config_vals[f"{name}{suffix_input}"][0]:
-                {"label": "Soft", "style": {'color': 'white'}},
+            {"label": "Soft", "style": {"color": 'white'}},
             config_vals[f"{name}{suffix_input}"][1]:
-                {"label": "Hard", "style": {'color': 'white'}}}
+            {"label": "Hard", "style": {"color": 'white'}}}
     else:
-        marks={i: {"label": f'{str(i)}', "style": {'color': 'white'}} for i in
-        range(config_vals[name][0], init_tour[name][1] + 1, 2)}
+        marks={i: {"label": f'{str(i)}', "style": {"color": "white"}} for i in
+        range(config_vals[name][0], init_tour[name][1] + 1, 2*step)}
 
     return dcc.Slider(
         id=f"{name}{suffix_slider}",
@@ -86,95 +87,104 @@ solver_card = dbc.Card([
     html.H4("Job Submission", className="card-title"),
     dbc.Col([
         dbc.Button("Solve CQM", id="btn_solve_cqm", color="primary", className="me-1"),
-        dcc.Interval(id='check_job_status', interval=None, n_intervals=0, disabled=True, max_intervals=1),
-        dbc.Progress(id="job_status_progress", value=0, color="info", className="mb-3"),
-        html.P(id='job_submit_state', children=out_job_submit_state('READY')),   # if no client change ready
-        html.P(id='job_submit_time', children='Mon Sep 26 07:39:20 2022', style = dict(display='none')),
-        html.P(id='job_problem_id', children='4e07426f-a0d1-4616-8e1c-c49b3ce542d8', style = dict(display='none')),
-        html.P(id='job_elapsed_time', children=f""),
+        dcc.Interval(id="wd_job", interval=None, n_intervals=0, disabled=True, max_intervals=1),
+        dbc.Progress(id="bar_job_status", value=0, color="info", className="mb-3"),
+        html.P(id="job_submit_state", children=out_job_submit_state("READY")),   # if no client change ready
+        html.P(id="job_submit_time", children="", style = dict(display="none")),
+        html.P(id="job_id", children="", style = dict(display="none")),
+        html.P(id="job_elapsed_time", children=""),
         dbc.Button("Cancel Job", id="btn_cancel", color="warning", className="me-1",
-            style = dict(display='none')),]),],
+            style = dict(display="none")),]),],
     color="secondary")
 
 # Tab-construction section
 ##########################
 tabs = {}
 
-graphs = ["Space", "Time", "Diversity"]
+graphs = {          # also used for display callback
+    "Space": "Displays your configured tour, with leg distance as " + \
+        "relative length and elevation by color. Will display best found mode of transport.",
+    "Time": "Will display best found solution, with leg duration as relative length.",
+    "Diversity": "Will display all returned solutions to submitted problems."}
 tabs["Graph"] = dbc.Tabs([
     dbc.Tab(dbc.Card([
         dbc.Row([
-            dbc.Col(
-                dcc.Graph(id=f'{graph.lower()}_graph'), width=12)])]), label=f"{graph}",
-                    tab_id=f"graph_{graph.lower()}",
-                    label_style={"color": "white", "backgroundColor": "black"},)
-    for graph in graphs])
+            dbc.Col([
+                html.P(id=f"{key}_intro", children=val, style={"color": "black"}),
+                dcc.Graph(id=f"{key.lower()}_graph")], width=12) ])]),
+        label=f"{key}",
+        tab_id=f"graph_{key.lower()}",
+        label_style={"color": "white", "backgroundColor": "black"},)
+    for key, val in graphs.items()])
 
-viewers = {"Problem": "", "Solutions": ""}
+double_tabs = {    # also used for display callback
+    "Problem": "Displays the configured tour: length of each leg, elevation, and "\
+        "toll positions.",
+    "Solutions": "Displays returned solutions to submitted problems."}
 readers = ["Human", "Code"]
 viewer_tabs = {}
-for key, val in viewers.items():
+for key, val in double_tabs.items():
     tabs[key] = dbc.Tabs([
         dbc.Tab(dbc.Card([
-                    dbc.Row([
-                        dbc.Col([
-                            dcc.Textarea(id=f"{key.lower()}_print_{reader.lower()}", value='',
-                                style={'width': '100%'}, rows=20)])]),]), label=f"{reader} Readable",
-                                    tab_id=f"tab_{key}_print_{reader.lower()}",
-                                    label_style={"color": "white", "backgroundColor": "black"},)
+            dbc.Row([
+                dbc.Col([
+                    dcc.Textarea(id=f"{key.lower()}_print_{reader.lower()}", value=val,
+                        style={"width": "100%"}, rows=20)])]),]),
+            label=f"{reader} Readable",
+            tab_id=f"tab_{key}_print_{reader.lower()}",
+            label_style={"color": "white", "backgroundColor": "black"},)
     for reader in readers])
 
-viewers = {"CQM": "", "Input": "", "Transport": out_transport_human(transport)}
-for key, val in viewers.items():
+single_tabs = {   # also used for display callback
+    "CQM": "",
+    "Input": "",
+    "Transport": out_transport_human(transport)}
+for key, val in single_tabs.items():
     tabs[key] = dbc.Card([
         dbc.Row([
             dbc.Col([
                 dcc.Textarea(id=f"{key.lower()}_print", value=val,
-                    style={'width': '100%'}, rows=20)])]),])
+                    style={"width": "100%"}, rows=20)])]),])
 
 # Configuration sections
 ########################
 
-constraints = [[f"{constraint}", f"weight_{constraint.lower()}"] for constraint
-    in ["Cost", "Time", "Slope"]]
+constraints = {f"weight_{constraint.lower()}": f"{constraint}" for
+    constraint in ["Cost", "Time", "Slope"]}      # also used for display callback
 constraint_card = [html.H4("CQM Settings", className="card-title")]
 constraint_card.extend([
     html.Div([
-        dbc.Label(f"{constraint[0]} Weight"),
+        dbc.Label(f"{val} Weight"),
         html.Div([
-            _dcc_input(constraint, init_cqm, step=1, with_slider="_input")],
-                style=dict(display='flex', justifyContent='right')),
-            _dcc_slider(constraint, init_cqm, with_suffix=True),])
-for constraint in constraints])
+            _dcc_input(key, init_cqm, step=1, with_slider="_input")],
+                style=dict(display="flex", justifyContent="right")),
+            _dcc_slider(key, init_cqm, with_suffix=True),])
+for key, val in constraints.items()])
 
 tour_titles = ["Set Legs", "Set Budget"]
-leg_settings = [["How Many:", "num_legs"],["Longest Leg:", "max_leg_length"],
-                ["Shortest Leg:", "min_leg_length"], ["Steepest Leg:", "max_leg_slope"],
-                ["Highest Cost:", "max_cost"], ["Longest Time:", "max_time"]]
-leg_setting_rows = [dbc.Row([
-    f"{leg_setting[0]}",
+leg_config = {      # also used for display callback
+    "num_legs": "How Many:",
+    "max_leg_length": "Longest Leg:",
+    "min_leg_length": "Shortest Leg:",
+    "max_leg_slope": "Steepest Leg:",
+    "max_cost": "Highest Cost:",
+    "max_time": "Longest Time:"}
+leg_rows = [dbc.Row([
+    f"{val}",
     dash.html.Br(),
-    _dcc_input(leg_setting, init_tour, step=1)])
-        for leg_setting in leg_settings[:3]]
-leg_setting_rows.append(dbc.Row([
-    "Steepest Leg:",
-    dash.html.Br(),
-    _dcc_slider(leg_settings[3], init_tour, step=1, discrete_slider=True)]))
-leg_constraint_rows = [dbc.Row([
-    f"{leg_constraint[0]}",
-    dash.html.Br(),
-    _dcc_input(leg_constraint, init_tour, step=1)])
-        for leg_constraint in leg_settings[4:]]
+    _dcc_input(key, init_tour, step=1) if key != "max_leg_slope" else
+    _dcc_slider(key, init_tour, step=1, discrete_slider=True)])
+    for key, val in leg_config.items()]
 tour_config = dbc.Card(
     [dbc.Row([
-        html.H4("Tour Settings", className="card-title", style={'textAlign': 'left'})]),
+        html.H4("Tour Settings", className="card-title", style={"textAlign": "left"})]),
      dbc.Row([
         dbc.Col([
             html.B(f"{tour_title}", style={"text-decoration": "underline"},) ])
                 for tour_title in tour_titles]),
      dbc.Row([
-        dbc.Col(leg_setting_rows, style={'margin-right': '20px'}),
-        dbc.Col(leg_constraint_rows, style={'margin-left': '20px'}),],)],
+        dbc.Col(leg_rows[:4], style={"margin-right": "20px"}),
+        dbc.Col(leg_rows[4:], style={"margin-left": "20px"}),],)],
     body=True, color="secondary")
 
 # Page-layout section
@@ -185,62 +195,52 @@ layout = [
         dbc.Col([
             html.H1("Tour Planner", style={'textAlign': 'left'})], width=10),
         dbc.Col([
-            html.Img(src="assets/ocean.png", height="50px", style={'textAlign': 'right'})], width=2)]),
+            html.Img(src="assets/ocean.png", height="50px",
+                style={'textAlign': 'right'})], width=2)]),
     dbc.Row([
         dbc.Col(
             tour_config, width=4),
         dbc.Col(
-            dbc.Card(constraint_card, body=True, color="secondary"), width=2),
+            dbc.Card(constraint_card, body=True, color="secondary"),
+            width=2),
         dbc.Col([
             dbc.Row([
                 dbc.Col([
-                    solver_card])]),
-            ], width=2)],
+                    solver_card])]),],
+            width=2)],
         justify="left"),
     dbc.Tabs([
-        dbc.Tab(tabs[tab], label=tab, tab_id=f"tab_{tab.lower()}",
+        dbc.Tab(
+            tabs[tab], label=tab, tab_id=f"tab_{tab.lower()}",
             label_style={"color": "rgb(6, 236, 220)", "backgroundColor": "black"},)
         for tab in tabs.keys()],
         id="tabs", active_tab="tab_graph")]
 
-tips = [dbc.Tooltip(message, target=target) for target, message in tool_tips.items()]
+tips = [dbc.Tooltip(
+            message, target=target)
+            for target, message in tool_tips.items()]
 layout.extend(tips)
 
-app.layout = dbc.Container(layout, fluid=True,
+app.layout = dbc.Container(
+    layout, fluid=True,
     style={"backgroundColor": "black", "color": "rgb(6, 236, 220)"})
 
 # Callbacks Section
 ###################
 
 @app.callback(
-    Output('space_graph', 'figure'),
-    Output('time_graph', 'figure'),
-    Output('diversity_graph', 'figure'),
+    [Output(f'{key.lower()}_graph', 'figure') for key in graphs.keys()],
     Output('problem_print_code', 'value'),
-    Output('solutions_print_human', 'value'),
-    Output('cqm_print', 'value'),
-    Output('problem_print_human', 'value'),
-    Output('input_print', 'value'),
+#    [Output(f'{key.lower()}_print_code', 'value') for key in double_tabs.keys()],
+    [Output(f'{key.lower()}_print_human', 'value') for key in double_tabs.keys()],
+    [Output(f'{key.lower()}_print', 'value') for key in single_tabs.keys()],
     Output('max_leg_length', 'value'),
     Output('min_leg_length', 'value'),
-    Output('weight_cost_slider', 'value'),
-    Output('weight_cost_input', 'value'),
-    Output('weight_time_slider', 'value'),
-    Output('weight_time_input', 'value'),
-    Output('weight_slope_slider', 'value'),
-    Output('weight_slope_input', 'value'),
-    Input('num_legs', 'value'),
-    Input('max_leg_length', 'value'),
-    Input('min_leg_length', 'value'),
-    Input('max_leg_slope', 'value'),
-    Input('max_cost', 'value'),
-    Input('max_time', 'value'),
-    Input('weight_cost_slider', 'value'),
-    Input('weight_cost_input', 'value'),
-    Input('weight_time_slider', 'value'),
-    Input('weight_time_input', 'value'),
-    Input('weight_slope_slider', 'value'),
-    Input('weight_slope_input', 'value'),
+    [Output(f'{key}_input', 'value') for key in constraints.keys()],
+    [Output(f'{key}_slider', 'value') for key in constraints.keys()],
+    [Input(f'{key}', 'value') for key in leg_config.keys()],
+    [Input(f'{key}_input', 'value') for key in constraints.keys()],
+    [Input(f'{key}_slider', 'value') for key in constraints.keys()],
     Input('problem_print_code', 'value'),
     Input('job_submit_state', 'children'),
     State('solutions_print_code', 'value'),)
@@ -296,10 +296,10 @@ def display(num_legs, max_leg_length, min_leg_length, max_leg_slope, max_cost,
         fig_time = plot_time(legs, transport, samples)
         fig_diversity = plot_diversity(legs, transport, samples)
 
-    return fig_space, fig_time, fig_diversity, out_problem_code(legs), solutions_print_human_val, cqm.__str__(), \
-        out_problem_human(legs), out_input_human(inputs, legs, transport), max_leg_length, \
-        min_leg_length, weight_vals["cost"], weight_vals["cost"], weight_vals["time"], \
-        weight_vals["time"], weight_vals["slope"], weight_vals["slope"]
+    return fig_space, fig_time, fig_diversity, out_problem_code(legs), out_problem_human(legs), \
+        solutions_print_human_val, cqm.__str__(), out_input_human(inputs, legs, transport), \
+        dash.no_update, max_leg_length, min_leg_length, weight_vals["cost"], weight_vals["time"], \
+        weight_vals["slope"], weight_vals["cost"], weight_vals["time"],  weight_vals["slope"]
 
 job_bar = {'WAITING': [0, 'light'],
            'SUBMITTED': [25, 'info'],
@@ -312,18 +312,18 @@ job_bar = {'WAITING': [0, 'light'],
 @app.callback(
     Output('btn_solve_cqm', 'disabled'),
     Output('btn_cancel', component_property='style'),
-    Output('check_job_status', 'disabled'),
-    Output('check_job_status', 'interval'),
-    Output('check_job_status', 'n_intervals'),
-    Output('job_status_progress', 'value'),
-    Output('job_status_progress', 'color'),
+    Output('wd_job', 'disabled'),
+    Output('wd_job', 'interval'),
+    Output('wd_job', 'n_intervals'),
+    Output('bar_job_status', 'value'),
+    Output('bar_job_status', 'color'),
     Output('job_submit_state', 'children'),
     Output('job_submit_time', 'children'),
     Output('job_elapsed_time', 'children'),
     Output('solutions_print_code', 'value'),
-    Output('job_problem_id', 'children'),
+    Output('job_id', 'children'),
     Input('btn_solve_cqm', 'n_clicks'),
-    Input('check_job_status', 'n_intervals'),
+    Input('wd_job', 'n_intervals'),
     State('max_leg_slope', 'value'),
     State('max_cost', 'value'),
     State('max_time', 'value'),
@@ -336,14 +336,14 @@ job_bar = {'WAITING': [0, 'light'],
     State('problem_print_code', 'value'),
     State('job_submit_state', 'children'),
     State('job_submit_time', 'children'),
-    State('job_problem_id', 'children'),)
+    State('job_id', 'children'),)
 def cqm_submit(n_clicks, n_intervals, max_leg_slope, max_cost, max_time, weight_cost_slider, \
     weight_cost_input, weight_time_slider, weight_time_input, weight_slope_slider, \
-    weight_slope_input, problem_print_code, job_submit_state, job_submit_time, job_problem_id):
+    weight_slope_input, problem_print_code, job_submit_state, job_submit_time, job_id):
     """SM for job submission."""
     trigger_id = dash.callback_context.triggered[0]["prop_id"].split(".")[0]
 
-    if not trigger_id in ["btn_solve_cqm", "check_job_status"]:
+    if not trigger_id in ["btn_solve_cqm", "wd_job"]:
         return dash.no_update, dash.no_update, dash.no_update, dash.no_update, \
             dash.no_update, dash.no_update, dash.no_update, dash.no_update, \
             dash.no_update, dash.no_update, dash.no_update, dash.no_update
@@ -374,7 +374,7 @@ def cqm_submit(n_clicks, n_intervals, max_leg_slope, max_cost, max_time, weight_
 
     if in_job_submit_state(job_submit_state) == "SUBMITTED":
         p = Problems(endpoint=client.endpoint, token=client.token)
-        status = p.get_problem_status(job_problem_id).status.value
+        status = p.get_problem_status(job_id).status.value
 
         if status == None:   # First few checks
             job_submit_state = "SUBMITTED"
@@ -389,7 +389,7 @@ def cqm_submit(n_clicks, n_intervals, max_leg_slope, max_cost, max_time, weight_
 
     if in_job_submit_state(job_submit_state) in ['PENDING', 'IN_PROGRESS']:
         p = Problems(endpoint=client.endpoint, token=client.token)
-        status = p.get_problem_status(job_problem_id).status.value
+        status = p.get_problem_status(job_id).status.value
         job_submit_state = status
 
         sampleset_str = "Failed maybe"
@@ -397,7 +397,7 @@ def cqm_submit(n_clicks, n_intervals, max_leg_slope, max_cost, max_time, weight_
         if status == 'IN_PROGRESS':
             hide_button = dict(display='none')
         elif status == 'COMPLETED':
-            sampleset = client.retrieve_answer(job_problem_id).sampleset
+            sampleset = client.retrieve_answer(job_id).sampleset
             sampleset_str = json.dumps(sampleset.to_serializable())
 
         elapsed_time = (datetime.datetime.now() - datetime.datetime.strptime(job_submit_time, "%c")).seconds

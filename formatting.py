@@ -15,32 +15,30 @@
 import pandas as pd
 import json
 
-__all__ = ["in_job_submit_state", "in_problem_code", 
+__all__ = ["in_job_submit_state", "in_problem_code",
     "out_job_submit_state",  "out_problem_human", "out_problem_code",
     "out_input_human", "out_transport_human", "out_solutions_human",]
-
-def out_job_submit_state(code):
-    """Output status as 'Status: <status>'."""
-    return f"Status: {code}"
 
 def in_job_submit_state(human_readable):
     """Strip status from 'Status: <status>'"""
     return human_readable.split()[1]
+
+def in_problem_code(code):
+    """Input problem from code."""
+    return json.loads(code)
+
+def out_job_submit_state(code):
+    """Output status as 'Status: <status>'."""
+    return f"Status: {code}"
 
 def out_problem_human(problem):
     """Output problem for humans."""
     df = pd.DataFrame(problem)
     return df.to_string()
 
-out_transport_human = out_problem_human
-
 def out_problem_code(problem):
     """Output problem for code."""
     return json.dumps(problem)
-
-def in_problem_code(code):
-    """Input problem from code."""
-    return json.loads(code)
 
 def out_input_human(params, last_changed):
     """Output the input ranges."""
@@ -55,6 +53,8 @@ def out_input_human(params, last_changed):
     header = f"""Configurable inputs have these supported ranges and current values:
 """
     return header + df_t.to_string()
+
+out_transport_human = out_problem_human
 
 def out_solutions_human(sampleset):
     """Output solutions for humans."""

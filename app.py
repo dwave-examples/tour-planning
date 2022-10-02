@@ -234,10 +234,10 @@ app.layout = dbc.Container(
 # Callbacks Section
 ###################
 
-user_inputs = {f"{key}": "value" for key in leg_rows_inputs.keys()}
-for key in constraint_inputs.keys():
-    user_inputs[f"{key}_input"] = "value"
-    user_inputs[f"{key}_slider"] = "value"
+# user_inputs = {f"{key}": "value" for key in leg_rows_inputs.keys()}
+# for key in constraint_inputs.keys():
+#     user_inputs[f"{key}_input"] = "value"
+#     user_inputs[f"{key}_slider"] = "value"
 
 # @app.callback(
 #     Output('problem_print_code', 'value'),
@@ -249,7 +249,7 @@ for key in constraint_inputs.keys():
 #
 #     if not trigger_id:
 #         legs = init_legs["legs"]
-#     elif trigger_id in [k for k in list(init_tour.keys()) if k not in ('max_cost', 'max_time')]:
+#     elif trigger_id in list(leg_inputs.keys()):
 #         legs = set_legs(num_legs, [min_leg_length, max_leg_length], max_leg_slope)
 #     else:
 #         legs = json.loads(problem_print_code)
@@ -279,14 +279,14 @@ def graphics(solutions_print_code, cqm_print, problem_print_code):
     trigger = dash.callback_context.triggered
     trigger_id = trigger[0]["prop_id"].split(".")[0]
 
-    legs = json.loads(problem_print_code)
+    #legs = json.loads(problem_print_code)
     samples = None  # TODO: update other figures to accept samples=None
     if trigger_id == 'solutions_print_code':
         samples = get_samples(solutions_print_code)
 
     fig_diversity = dash.no_update
     fig_time = dash.no_update
-    fig_space = plot_space(legs, samples)
+    fig_space = dash.no_update    #plot_space(legs, samples)
     if samples:
         fig_time = plot_time(legs, transport, samples)
         fig_diversity = plot_diversity(legs, transport, samples)
@@ -294,20 +294,15 @@ def graphics(solutions_print_code, cqm_print, problem_print_code):
     return fig_space, fig_time, fig_diversity
 
 @app.callback(
-    [Output(f'{key.lower()}_print', 'value') for key in single_tabs.keys()],
-    Output("max_leg_length", "value"),
-    Output("min_leg_length", "value"),
-    Output("weight_cost_input", "value"),
-    Output("weight_cost_slider", "value"),
-    Output("weight_time_input", "value"),
-    Output("weight_time_slider", "value"),
-    Output("weight_slope_input", "value"),
-    Output("weight_slope_slider", "value"),
-    [Input(id, val) for id, val in user_inputs.items()],
-    Input('problem_print_code', 'value'),)
-def user_inputs(num_legs, max_leg_length, min_leg_length, max_leg_slope, max_cost,
-    max_time, weight_cost_input, weight_cost_slider, weight_time_input, weight_time_slider,
-    weight_slope_input, weight_slope_slider, problem_print_code):
+    [Output(id, "value") for id in leg_inputs.keys()],
+    [Output(id, "value") for id in constraint_inputs.keys()],
+    [Output(f"{id}_slider", "value") for id in constraint_inputs.keys()],
+    [Input(id, "value") for id in leg_inputs.keys()],
+    [Input(id, "value") for id in constraint_inputs.keys()],
+    [Input(f"{id}_slider", "value") for id in constraint_inputs.keys()],)
+def user_inputs(num_legs, max_leg_length, min_leg_length, max_leg_slope, \
+    weight_cost, weight_time, weight_slope, \
+    weight_cost_slider,  weight_time_slider, weight_slope_slider):
     """
 
     """
@@ -325,30 +320,19 @@ def user_inputs(num_legs, max_leg_length, min_leg_length, max_leg_slope, max_cos
         weight_vals[weight] = dash.no_update
         if trigger_id == f'weight_{weight}_slider':
             weight_vals[weight] = eval(f'weight_{weight}_slider')
-        if trigger_id == f'weight_{weight}_input':
-            weight_vals[weight] = eval(f'weight_{weight}_input')
-
-    if not trigger_id:
-        legs = init_legs["legs"]
-    elif trigger_id in [k for k in list(init_tour.keys()) if k not in ('max_cost', 'max_time')]:
-        legs = set_legs(num_legs, [min_leg_length, max_leg_length], max_leg_slope)
-    else:
-        legs = json.loads(problem_print_code)
-
+        if trigger_id == f'weight_{weight}':
+            weight_vals[weight] = eval(f'weight_{weight}')
 
     inputs = {**init_tour, **init_cqm}
-    for key in inputs.keys():
-        inputs[key][2] = eval(key)
+    # for key in inputs.keys():
+    #     inputs[key][2] = eval(key)
 
-    cqm = build_cqm(legs, modes, max_cost, max_time, weight_cost_input,
-                    weight_time_input, max_leg_slope, weight_slope_input)
+    # cqm = build_cqm(legs, modes, max_cost, max_time, weight_cost_input,
+    #                 weight_time_input, max_leg_slope, weight_slope_input)
 
-    return out_problem_code(legs), \
-        cqm.__str__(), out_input_human(inputs, legs, transport), dash.no_update,\
-        max_leg_length, min_leg_length, \
-        weight_vals["cost"], weight_vals["cost"], \
-        weight_vals["time"], weight_vals["time"], \
-        weight_vals["slope"], weight_vals["slope"]
+    return num_legs, max_leg_length, min_leg_length, max_leg_slope, \
+        weight_vals["cost"], weight_vals["time"], weight_vals["slope"], \
+        weight_vals["cost"], weight_vals["time"], weight_vals["slope"]
 
 job_bar = {'WAITING': [0, 'light'],
            'SUBMITTED': [25, 'info'],
@@ -377,11 +361,11 @@ job_bar = {'WAITING': [0, 'light'],
     State('max_cost', 'value'),
     State('max_time', 'value'),
     State('weight_cost_slider', 'value'),
-    State('weight_cost_input', 'value'),
+    State('weight_cost', 'value'),
     State('weight_time_slider', 'value'),
-    State('weight_time_input', 'value'),
+    State('weight_time', 'value'),
     State('weight_slope_slider', 'value'),
-    State('weight_slope_input', 'value'),
+    State('weight_slope', 'value'),
     State('problem_print_code', 'value'),
     State('job_submit_state', 'children'),
     State('job_submit_time', 'children'),

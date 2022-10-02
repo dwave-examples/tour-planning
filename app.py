@@ -239,20 +239,21 @@ app.layout = dbc.Container(
 #     user_inputs[f"{key}_input"] = "value"
 #     user_inputs[f"{key}_slider"] = "value"
 
-# @app.callback(
-#     Output('problem_print_code', 'value'),
-#     Input("input_print", "value"),)
-# def legs(input_print):
-#
-#     trigger = dash.callback_context.triggered
-#     trigger_id = trigger[0]["prop_id"].split(".")[0]
-#
-#     if not trigger_id:
-#         legs = init_legs["legs"]
-#     elif trigger_id in list(leg_inputs.keys()):
-#         legs = set_legs(num_legs, [min_leg_length, max_leg_length], max_leg_slope)
-#     else:
-#         legs = json.loads(problem_print_code)
+@app.callback(
+    Output('problem_print_code', 'value'),
+    Input("input_print", "value"),)
+def legs(input_print):
+
+    trigger = dash.callback_context.triggered
+    trigger_id = trigger[0]["prop_id"].split(".")[0]
+
+    if not trigger_id:
+        legs = init_legs["legs"]
+    elif trigger_id in list(leg_inputs.keys()):
+        legs = set_legs(num_legs, [min_leg_length, max_leg_length], max_leg_slope)
+    else:
+        legs = init_legs["legs"]
+        #legs = json.loads(problem_print_code)
 
 
 @app.callback(
@@ -294,17 +295,21 @@ def graphics(solutions_print_code, cqm_print, problem_print_code):
     return fig_space, fig_time, fig_diversity
 
 @app.callback(
+    [Output("input_print", "value")],
     [Output(id, "value") for id in leg_inputs.keys()],
     [Output(id, "value") for id in constraint_inputs.keys()],
     [Output(f"{id}_slider", "value") for id in constraint_inputs.keys()],
     [Input(id, "value") for id in leg_inputs.keys()],
     [Input(id, "value") for id in constraint_inputs.keys()],
-    [Input(f"{id}_slider", "value") for id in constraint_inputs.keys()],)
+    [Input(f"{id}_slider", "value") for id in constraint_inputs.keys()],
+    [State(id, "value") for id in cqm_inputs.keys()],)
 def user_inputs(num_legs, max_leg_length, min_leg_length, max_leg_slope, \
     weight_cost, weight_time, weight_slope, \
-    weight_cost_slider,  weight_time_slider, weight_slope_slider):
+    weight_cost_slider,  weight_time_slider, weight_slope_slider, \
+    max_cost, max_time):
     """
-
+    Handle configurable user inputs.
+    Generates input_print readable text.
     """
     trigger = dash.callback_context.triggered
     trigger_id = trigger[0]["prop_id"].split(".")[0]
@@ -324,13 +329,16 @@ def user_inputs(num_legs, max_leg_length, min_leg_length, max_leg_slope, \
             weight_vals[weight] = eval(f'weight_{weight}')
 
     inputs = {**init_tour, **init_cqm}
-    # for key in inputs.keys():
-    #     inputs[key][2] = eval(key)
+    for key in inputs.keys():
+        inputs[key][2] = eval(key)
+        print(key, (eval(key)))
 
     # cqm = build_cqm(legs, modes, max_cost, max_time, weight_cost_input,
     #                 weight_time_input, max_leg_slope, weight_slope_input)
 
-    return num_legs, max_leg_length, min_leg_length, max_leg_slope, \
+    #TODO: get legs
+    return out_input_human(inputs, init_legs["legs"], transport), \
+        num_legs, max_leg_length, min_leg_length, max_leg_slope, \
         weight_vals["cost"], weight_vals["time"], weight_vals["slope"], \
         weight_vals["cost"], weight_vals["time"], weight_vals["slope"]
 

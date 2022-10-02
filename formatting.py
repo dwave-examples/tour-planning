@@ -15,53 +15,46 @@
 import pandas as pd
 import json
 
-__all__ = ["out_job_submit_state", "in_job_submit_state", "out_problem_human",
-    "out_problem_code", "in_problem_code", "out_input_human", "out_transport_human",
-    "out_solutions_human",]
-
-def out_job_submit_state(code):
-    """Output status as 'Status: <status>'."""
-    return f"Status: {code}"
+__all__ = ["in_job_submit_state", "in_problem_code",
+    "out_job_submit_state",  "out_problem_human", "out_problem_code",
+    "out_input_human", "out_transport_human", "out_solutions_human",]
 
 def in_job_submit_state(human_readable):
     """Strip status from 'Status: <status>'"""
     return human_readable.split()[1]
+
+def in_problem_code(code):
+    """Input problem from code."""
+    return json.loads(code)
+
+def out_job_submit_state(code):
+    """Output status as 'Status: <status>'."""
+    return f"Status: {code}"
 
 def out_problem_human(problem):
     """Output problem for humans."""
     df = pd.DataFrame(problem)
     return df.to_string()
 
-out_transport_human = out_problem_human
-
 def out_problem_code(problem):
     """Output problem for code."""
     return json.dumps(problem)
 
-def in_problem_code(code):
-    """Input problem from code."""
-    return json.loads(code)
-
-def out_input_human(params, legs, transport):
+def out_input_human(params, last_changed):
     """Output the input ranges."""
     df = pd.DataFrame(params)
+    last_change_row = df.shape[1]*[""]
+    if last_changed:
+        last_change_row[df.columns.get_loc(last_changed)] = "<<---"
+    df.loc[len(df)] = last_change_row
     df_t = df.T
-    df_t.columns = ["Min.", "Max.", "Current Value"]
+    df_t.columns = ["Min.", "Max.", "Current Value", "Last Updated Input"]
 
-    cost_max = round(sum(l["length"] for l in legs)*max([c["Cost"] for c in
-        transport.values()]))
-    time_max = round(sum(l["length"] for l in legs)/min(s["Speed"] for s in
-        transport.values()))
-    time_min = round(sum(l["length"] for l in legs)/max(s["Speed"] for s in
-        transport.values()))
-    header = f"""For your current tour configuration:
-
-* Maximum tour cost is {cost_max}.
-* Range of tour time is {time_min} to {time_max}.
-
-Configurable parameters have supported ranges and the current settings shown below:
+    header = f"""Configurable inputs have these supported ranges and current values:
 """
     return header + df_t.to_string()
+
+out_transport_human = out_problem_human
 
 def out_solutions_human(sampleset):
     """Output solutions for humans."""

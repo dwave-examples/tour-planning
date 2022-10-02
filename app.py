@@ -46,39 +46,42 @@ except Exception as client_err:
 # Helper functions
 ##################
 
-def _dcc_input(name, config_vals, step=None, with_slider=""):
+def _dcc_input(name, config_vals, step=None):
     """Sets input to dash.Input elements in layout."""
-    name = f"{name}{with_slider}"
+    suffix = ""
+    if "_slider" in name:
+        suffix = "_slider"
+        name = name.replace("_slider", "")
     return dcc.Input(
-        id=name,
+        id=f"{name}{suffix}",
         type="number",
         min=config_vals[name][0],
         max=config_vals[name][1],
         step=step,
         value=config_vals[name][2])
 
-def _dcc_slider(name, config_vals, step=1, with_suffix=False, discrete_slider=False):
+def _dcc_slider(name, config_vals, step=1, discrete_slider=False):
     """Sets input to dash.Input elements in layout."""
-    suffix_slider = suffix_input = ""
-    if with_suffix:
-        suffix_slider = "_slider"
-        suffix_input = "_input"
+    suffix = ""
+    if "_slider" in name:
+        suffix = "_slider"
+        name = name.replace("_slider", "")
     if not discrete_slider:
-        marks={config_vals[f"{name}{suffix_input}"][0]:
+        marks={config_vals[f"{name}"][0]:
             {"label": "Soft", "style": {"color": 'white'}},
-            config_vals[f"{name}{suffix_input}"][1]:
+            config_vals[f"{name}"][1]:
             {"label": "Hard", "style": {"color": 'white'}}}
     else:
         marks={i: {"label": f'{str(i)}', "style": {"color": "white"}} for i in
         range(config_vals[name][0], init_tour[name][1] + 1, 2*step)}
 
     return dcc.Slider(
-        id=f"{name}{suffix_slider}",
-        min=config_vals[f"{name}{suffix_input}"][0],
-        max=config_vals[f"{name}{suffix_input}"][1],
+        id=f"{name}{suffix}",
+        min=config_vals[f"{name}"][0],
+        max=config_vals[f"{name}"][1],
         marks=marks,
         step=step,
-        value=config_vals[f"{name}{suffix_input}"][2],)
+        value=config_vals[f"{name}"][2],)
 
 # Problem-submission section
 ############################
@@ -144,37 +147,40 @@ for key, val in single_tabs.items():
         dbc.Row([
             dbc.Col([
                 dcc.Textarea(id=f"{key.lower()}_print", value=val,
-                    style={"width": "100%"}, rows=20)])]),])
+                    style={"width": "100%"}, rows=20)],)]),])
 
 # Configuration sections
 ########################
 
-constraints = {f"weight_{constraint.lower()}": f"{constraint}" for
+constraint_inputs = {f"weight_{constraint.lower()}": f"{constraint}" for
     constraint in ["Cost", "Time", "Slope"]}      # also used for display callback
 constraint_card = [html.H4("CQM Settings", className="card-title")]
 constraint_card.extend([
     html.Div([
         dbc.Label(f"{val} Weight"),
         html.Div([
-            _dcc_input(key, init_cqm, step=1, with_slider="_input")],
+            _dcc_input(key, init_cqm, step=1)],
                 style=dict(display="flex", justifyContent="right")),
-            _dcc_slider(key, init_cqm, with_suffix=True),])
-for key, val in constraints.items()])
+            _dcc_slider(f"{key}_slider", init_cqm),])
+for key, val in constraint_inputs.items()])
 
 tour_titles = ["Set Legs", "Set Budget"]
-leg_config = {      # also used for display callback
+leg_inputs = {      # also used for callbacks
     "num_legs": "How Many:",
     "max_leg_length": "Longest Leg:",
     "min_leg_length": "Shortest Leg:",
-    "max_leg_slope": "Steepest Leg:",
+    "max_leg_slope": "Steepest Leg:",}
+cqm_inputs = {      # also used for callbacks
     "max_cost": "Highest Cost:",
     "max_time": "Longest Time:"}
+leg_rows_inputs = {**leg_inputs, **cqm_inputs}
+
 leg_rows = [dbc.Row([
     f"{val}",
     dash.html.Br(),
     _dcc_input(key, init_tour, step=1) if key != "max_leg_slope" else
     _dcc_slider(key, init_tour, step=1, discrete_slider=True)])
-    for key, val in leg_config.items()]
+    for key, val in leg_rows_inputs.items()]
 tour_config = dbc.Card(
     [dbc.Row([
         html.H4("Tour Settings", className="card-title", style={"textAlign": "left"})]),
@@ -229,27 +235,21 @@ app.layout = dbc.Container(
 ###################
 
 @app.callback(
-    [Output(f'{key.lower()}_graph', 'figure') for key in graphs.keys()],
-    Output('problem_print_code', 'value'),
-#    [Output(f'{key.lower()}_print_code', 'value') for key in double_tabs.keys()],
-    [Output(f'{key.lower()}_print_human', 'value') for key in double_tabs.keys()],
-    [Output(f'{key.lower()}_print', 'value') for key in single_tabs.keys()],
-    Output('max_leg_length', 'value'),
-    Output('min_leg_length', 'value'),
-    [Output(f'{key}_input', 'value') for key in constraints.keys()],
-    [Output(f'{key}_slider', 'value') for key in constraints.keys()],
-    [Input(f'{key}', 'value') for key in leg_config.keys()],
-    [Input(f'{key}_input', 'value') for key in constraints.keys()],
-    [Input(f'{key}_slider', 'value') for key in constraints.keys()],
-    Input('problem_print_code', 'value'),
-    Input('job_submit_state', 'children'),
-    State('solutions_print_code', 'value'),)
-def display(num_legs, max_leg_length, min_leg_length, max_leg_slope, max_cost,
-    max_time, weight_cost_slider, weight_cost_input, weight_time_slider,
-    weight_time_input, weight_slope_slider, weight_slope_input, problem_print_code,
-    job_submit_state, solutions_print_code):
+    [Output("input_print", "value")],
+    [Output(id, "value") for id in leg_inputs.keys()],
+    [Output(id, "value") for id in constraint_inputs.keys()],
+    [Output(f"{id}_slider", "value") for id in constraint_inputs.keys()],
+    [Input(id, "value") for id in leg_inputs.keys()],
+    [Input(id, "value") for id in constraint_inputs.keys()],
+    [Input(f"{id}_slider", "value") for id in constraint_inputs.keys()],
+    [Input(id, "value") for id in cqm_inputs.keys()],)
+def user_inputs(num_legs, max_leg_length, min_leg_length, max_leg_slope, \
+    weight_cost, weight_time, weight_slope, \
+    weight_cost_slider,  weight_time_slider, weight_slope_slider, \
+    max_cost, max_time):
     """
-
+    Handle configurable user inputs.
+    Generates input_print readable text.
     """
     trigger = dash.callback_context.triggered
     trigger_id = trigger[0]["prop_id"].split(".")[0]
@@ -265,41 +265,95 @@ def display(num_legs, max_leg_length, min_leg_length, max_leg_slope, max_cost,
         weight_vals[weight] = dash.no_update
         if trigger_id == f'weight_{weight}_slider':
             weight_vals[weight] = eval(f'weight_{weight}_slider')
-        if trigger_id == f'weight_{weight}_input':
-            weight_vals[weight] = eval(f'weight_{weight}_input')
-
-    if not trigger_id:
-        legs = init_legs["legs"]
-    elif trigger_id in [k for k in list(init_tour.keys()) if k not in ('max_cost', 'max_time')]:
-        legs = set_legs(num_legs, [min_leg_length, max_leg_length], max_leg_slope)
-    else:
-        legs = json.loads(problem_print_code)
-
-    solutions_print_human_val = dash.no_update
-    samples = None
-    if trigger_id == "job_submit_state":
-        if in_job_submit_state(job_submit_state) == "COMPLETED":
-            samples = get_samples(solutions_print_code)
-            solutions_print_human_val = out_solutions_human(samples["sampleset"])
+        if trigger_id == f'weight_{weight}':
+            weight_vals[weight] = eval(f'weight_{weight}')
 
     inputs = {**init_tour, **init_cqm}
     for key in inputs.keys():
         inputs[key][2] = eval(key)
 
-    cqm = build_cqm(legs, modes, max_cost, max_time, weight_cost_input,
-                    weight_time_input, max_leg_slope, weight_slope_input)
+    if trigger_id not in {**init_tour, **init_cqm}.keys():
+        trigger_id = None
 
-    fig_diversity = dash.no_update
-    fig_time = dash.no_update
+    return out_input_human(inputs, trigger_id),  \
+        num_legs, max_leg_length, min_leg_length, max_leg_slope, \
+        weight_vals["cost"], weight_vals["time"], weight_vals["slope"], \
+        weight_vals["cost"], weight_vals["time"], weight_vals["slope"]
+
+@app.callback(
+    [Output("problem_print_code", "value")],
+    [Output("problem_print_human", "value")],
+    [Input("input_print", "value")],
+    [State(id, "value") for id in leg_inputs.keys()])
+def legs(input_print, \
+    num_legs, max_leg_length, min_leg_length, max_leg_slope):
+    """
+    Sets the tour legs.
+    Generates problem_print code & readable text.
+    """
+    trigger = dash.callback_context.triggered
+    trigger_id = trigger[0]["prop_id"].split(".")[0]
+
+    if trigger_id == "input_print":
+        find_changed = [line for line in input_print.split("\n") if "<<--" in line]
+        if not find_changed:  # Print initial configuration
+            legs = init_legs["legs"]
+            return out_problem_code(legs), out_problem_human(legs)
+        if find_changed and find_changed[0].split(" ")[0] in leg_inputs.keys():
+            legs = set_legs(num_legs, [min_leg_length, max_leg_length], max_leg_slope)
+            return out_problem_code(legs), out_problem_human(legs)
+        else:
+            return dash.no_update, dash.no_update
+
+@app.callback(
+    Output("cqm_print", "value"),
+    [Input("input_print", "value")],
+    [Input("problem_print_code", "value")],
+    [State("max_leg_slope", "value")],
+    [State(id, "value") for id in constraint_inputs.keys()],
+    [State(id, "value") for id in cqm_inputs.keys()])
+def cqm(input_print, problem_print_code, max_leg_slope, \
+    max_cost, max_time,
+    weight_cost, weight_time, weight_slope):
+    """
+    Create the constrained quadratic model for the tour.
+    Generates problem_print code & readable text.
+    """
+
+    trigger = dash.callback_context.triggered
+    trigger_id = trigger[0]["prop_id"].split(".")[0]
+
+    if trigger_id in ["input_print", "problem_print_code"]:
+        try:    # Initial firing of input_print will create the intial problem_print_code
+            legs = in_problem_code(problem_print_code)
+            cqm = build_cqm(legs, modes, max_leg_slope, max_cost, max_time, \
+                weight_cost, weight_time, weight_slope)
+            return cqm.__str__()
+        except ValueError:  # Initial pass won't load JSON
+            return dash.no_update
+
+@app.callback(
+    [Output(f'{key.lower()}_graph', 'figure') for key in graphs.keys()],
+    Input("solutions_print_code", "value"),
+    Input("problem_print_code", "value"))
+def graphics(solutions_print_code, problem_print_code):
+    """ """
+    trigger = dash.callback_context.triggered
+    trigger_id = trigger[0]["prop_id"].split(".")[0]
+
+    samples = None
+    if trigger_id == 'solutions_print_code':
+        samples = get_samples(solutions_print_code)
+
+    legs = in_problem_code(problem_print_code)
     fig_space = plot_space(legs, samples)
-    if samples:
-        fig_time = plot_time(legs, transport, samples)
-        fig_diversity = plot_diversity(legs, transport, samples)
+    fig_time = plot_time(legs, transport, samples)
+    fig_diversity = plot_diversity(legs, transport, samples)
 
-    return fig_space, fig_time, fig_diversity, out_problem_code(legs), out_problem_human(legs), \
-        solutions_print_human_val, cqm.__str__(), out_input_human(inputs, legs, transport), \
-        dash.no_update, max_leg_length, min_leg_length, weight_vals["cost"], weight_vals["time"], \
-        weight_vals["slope"], weight_vals["cost"], weight_vals["time"],  weight_vals["slope"]
+    if not fig_time:
+        fig_time = fig_diversity = dash.no_update
+
+    return fig_space, fig_time, fig_diversity
 
 job_bar = {'WAITING': [0, 'light'],
            'SUBMITTED': [25, 'info'],
@@ -321,6 +375,7 @@ job_bar = {'WAITING': [0, 'light'],
     Output('job_submit_time', 'children'),
     Output('job_elapsed_time', 'children'),
     Output('solutions_print_code', 'value'),
+    Output("solutions_print_human", "value"),
     Output('job_id', 'children'),
     Input('btn_solve_cqm', 'n_clicks'),
     Input('wd_job', 'n_intervals'),
@@ -328,11 +383,11 @@ job_bar = {'WAITING': [0, 'light'],
     State('max_cost', 'value'),
     State('max_time', 'value'),
     State('weight_cost_slider', 'value'),
-    State('weight_cost_input', 'value'),
+    State('weight_cost', 'value'),
     State('weight_time_slider', 'value'),
-    State('weight_time_input', 'value'),
+    State('weight_time', 'value'),
     State('weight_slope_slider', 'value'),
-    State('weight_slope_input', 'value'),
+    State('weight_slope', 'value'),
     State('problem_print_code', 'value'),
     State('job_submit_state', 'children'),
     State('job_submit_time', 'children'),
@@ -346,12 +401,12 @@ def cqm_submit(n_clicks, n_intervals, max_leg_slope, max_cost, max_time, weight_
     if not trigger_id in ["btn_solve_cqm", "wd_job"]:
         return dash.no_update, dash.no_update, dash.no_update, dash.no_update, \
             dash.no_update, dash.no_update, dash.no_update, dash.no_update, \
-            dash.no_update, dash.no_update, dash.no_update, dash.no_update
+            dash.no_update, dash.no_update, dash.no_update, dash.no_update, dash.no_update
 
     if trigger_id == "btn_solve_cqm":
         return True, dict(), False, 0.1*1000, 0, job_bar['WAITING'][0], \
             job_bar['WAITING'][1], out_job_submit_state("START"), datetime.datetime.now().strftime("%c"), \
-            f"Elapsed: 0 sec.", dash.no_update, dash.no_update
+            f"Elapsed: 0 sec.", dash.no_update, dash.no_update, dash.no_update
 
     if in_job_submit_state(job_submit_state) == "START":
         # Need to disable all buttons
@@ -370,7 +425,8 @@ def cqm_submit(n_clicks, n_intervals, max_leg_slope, max_cost, max_time, weight_
 
         return True, dash.no_update, False, 1*1000, 0, job_bar['SUBMITTED'][0], \
             job_bar['SUBMITTED'][1], out_job_submit_state(job_submit_state), \
-            dash.no_update, f"Elapsed: {elapsed_time} sec.", dash.no_update, submission_id
+            dash.no_update, f"Elapsed: {elapsed_time} sec.", dash.no_update, \
+            dash.no_update, submission_id
 
     if in_job_submit_state(job_submit_state) == "SUBMITTED":
         p = Problems(endpoint=client.endpoint, token=client.token)
@@ -385,26 +441,29 @@ def cqm_submit(n_clicks, n_intervals, max_leg_slope, max_cost, max_time, weight_
 
         return True, dash.no_update, False, 0.5*1000, 0, job_bar['SUBMITTED'][0], \
             job_bar['SUBMITTED'][1], out_job_submit_state(job_submit_state), \
-            dash.no_update, f"Elapsed: {elapsed_time} sec.", dash.no_update, dash.no_update
+            dash.no_update, f"Elapsed: {elapsed_time} sec.", dash.no_update, dash.no_update, dash.no_update
 
     if in_job_submit_state(job_submit_state) in ['PENDING', 'IN_PROGRESS']:
         p = Problems(endpoint=client.endpoint, token=client.token)
         status = p.get_problem_status(job_id).status.value
         job_submit_state = status
 
-        sampleset_str = "Failed maybe"
+        sampleset_code = dash.no_update
+        sampleset_human = dash.no_update
         hide_button = dash.no_update
         if status == 'IN_PROGRESS':
             hide_button = dict(display='none')
         elif status == 'COMPLETED':
             sampleset = client.retrieve_answer(job_id).sampleset
-            sampleset_str = json.dumps(sampleset.to_serializable())
+            sampleset_code = json.dumps(sampleset.to_serializable())
+            sampleset_human = out_solutions_human(sampleset)
 
         elapsed_time = (datetime.datetime.now() - datetime.datetime.strptime(job_submit_time, "%c")).seconds
 
         return True, hide_button, False, 1*1000, 0, job_bar[status][0], \
             job_bar[status][1], out_job_submit_state(job_submit_state), \
-            dash.no_update, f"Elapsed: {elapsed_time} sec.", sampleset_str, dash.no_update
+            dash.no_update, f"Elapsed: {elapsed_time} sec.", \
+            sampleset_code, sampleset_human, dash.no_update
 
     if in_job_submit_state(job_submit_state) in ['COMPLETED', 'CANCELLED', 'FAILED']:
         # Need to enable all buttons
@@ -412,7 +471,7 @@ def cqm_submit(n_clicks, n_intervals, max_leg_slope, max_cost, max_time, weight_
 
         return False, dash.no_update, True, 0.1*1000, 0, dash.no_update, \
             dash.no_update, dash.no_update, \
-            dash.no_update, f"Elapsed: {elapsed_time} sec.", dash.no_update, dash.no_update
+            dash.no_update, f"Elapsed: {elapsed_time} sec.", dash.no_update, dash.no_update, dash.no_update
 
 if __name__ == "__main__":
     app.run_server(debug=True)

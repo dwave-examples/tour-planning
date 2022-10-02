@@ -42,9 +42,9 @@ def budgets(legs):
 
     return max_cost, max_time
 
-init_cqm = {'weight_cost_input': [0, 10000, 100],
-    'weight_time_input': [0, 10000, 30],
-    'weight_slope_input': [0, 10000, 150],}
+init_cqm = {'weight_cost': [0, 10000, 100],
+    'weight_time': [0, 10000, 30],
+    'weight_slope': [0, 10000, 150],}
 
 init_tour = {'num_legs': [5, 100, 10],
     'max_leg_length': [1, 20, 10],
@@ -77,8 +77,8 @@ def calculate_total(t, measure, legs):
     else:
         return dimod.quicksum(t[i]*transport[t[i].variables[0].split('_')[0]][measure]*legs[i//num_modes]['length'] for i in range(num_modes*num_legs))
 
-def build_cqm(legs, modes, max_cost, max_time, weight_cost_input, weight_time_input,
-    max_leg_slope, weight_slope_input):
+def build_cqm(legs, modes, max_leg_slope, max_cost, max_time, \
+    weight_cost, weight_time, weight_slope):
     """Build CQM for maximizing exercise.
 
     Args:
@@ -96,8 +96,8 @@ def build_cqm(legs, modes, max_cost, max_time, weight_cost_input, weight_time_in
 
     for leg in range(num_legs):
         cqm.add_constraint(dimod.quicksum(t[num_modes*leg:num_modes*leg+num_modes]) == 1, label=f"One-hot leg{leg}")
-    cqm.add_constraint(calculate_total(t, "Cost", legs) <= max_cost, label="Total cost", weight=weight_cost_input, penalty='quadratic')
-    cqm.add_constraint(calculate_total(t, "Time", legs) <= max_time, label="Total time", weight=weight_time_input, penalty='linear')
+    cqm.add_constraint(calculate_total(t, "Cost", legs) <= max_cost, label="Total cost", weight=weight_cost, penalty='quadratic')
+    cqm.add_constraint(calculate_total(t, "Time", legs) <= max_time, label="Total time", weight=weight_time, penalty='linear')
 
     drive_index = list(modes).index('drive')
     cycle_index = list(modes).index('cycle')
@@ -105,6 +105,6 @@ def build_cqm(legs, modes, max_cost, max_time, weight_cost_input, weight_time_in
          if legs[leg]['toll']:
              cqm.add_constraint(t[num_modes*leg:num_modes*leg+num_modes][drive_index] == 0, label=f"Toll to drive on leg {leg}")
          if legs[leg]['uphill'] > max_leg_slope/2:
-             cqm.add_constraint(t[num_modes*leg:num_modes*leg+num_modes][cycle_index] == 0, label=f"Too steep to cycle on leg {leg}", weight=weight_slope_input)
+             cqm.add_constraint(t[num_modes*leg:num_modes*leg+num_modes][cycle_index] == 0, label=f"Too steep to cycle on leg {leg}", weight=weight_slope)
 
     return cqm

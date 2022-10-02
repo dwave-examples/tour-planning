@@ -147,7 +147,7 @@ for key, val in single_tabs.items():
         dbc.Row([
             dbc.Col([
                 dcc.Textarea(id=f"{key.lower()}_print", value=val,
-                    style={"width": "100%"}, rows=20)])]),])
+                    style={"width": "100%"}, rows=20)],)]),])
 
 # Configuration sections
 ########################
@@ -234,11 +234,6 @@ app.layout = dbc.Container(
 # Callbacks Section
 ###################
 
-# user_inputs = {f"{key}": "value" for key in leg_rows_inputs.keys()}
-# for key in constraint_inputs.keys():
-#     user_inputs[f"{key}_input"] = "value"
-#     user_inputs[f"{key}_slider"] = "value"
-
 @app.callback(
     Output('problem_print_code', 'value'),
     Output('problem_print_human', 'value'),
@@ -250,12 +245,16 @@ def legs(input_print, \
     trigger = dash.callback_context.triggered
     trigger_id = trigger[0]["prop_id"].split(".")[0]
 
-    if trigger_id != "input_print":
-        legs = init_legs["legs"]
-    else:
-        legs = set_legs(num_legs, [min_leg_length, max_leg_length], max_leg_slope)
-
-    return out_problem_code(legs), out_problem_human(legs)
+    if trigger_id == "input_print":
+        find_changed = [line for line in input_print.split("\n") if "<<--" in line]
+        if not find_changed:  # Print initial configuration
+            legs = init_legs["legs"]
+            return out_problem_code(legs), out_problem_human(legs)
+        if find_changed and find_changed[0].split(" ")[0] in leg_inputs.keys():
+            legs = set_legs(num_legs, [min_leg_length, max_leg_length], max_leg_slope)
+            return out_problem_code(legs), out_problem_human(legs)
+        else:
+            return dash.no_update, dash.no_update
 
 @app.callback(
     Output("solutions_print_human", "value"),
@@ -274,21 +273,23 @@ def solution_human(solutions_print_code):
 @app.callback(
     [Output(f'{key.lower()}_graph', 'figure') for key in graphs.keys()],
     Input("solutions_print_code", "value"),
-    Input("cqm_print", "value"),
-    State("problem_print_code", "value"))
-def graphics(solutions_print_code, cqm_print, problem_print_code):
+    Input("problem_print_code", "value"))
+def graphics(solutions_print_code, problem_print_code):
     """ """
     trigger = dash.callback_context.triggered
     trigger_id = trigger[0]["prop_id"].split(".")[0]
 
-    #legs = json.loads(problem_print_code)
     samples = None  # TODO: update other figures to accept samples=None
     if trigger_id == 'solutions_print_code':
         samples = get_samples(solutions_print_code)
 
     fig_diversity = dash.no_update
     fig_time = dash.no_update
-    fig_space = dash.no_update    #plot_space(legs, samples)
+    fig_space = dash.no_update
+
+    if trigger_id == "problem_print_code":
+        legs = in_problem_code(problem_print_code)
+        fig_space = plot_space(legs, samples)
     if samples:
         fig_time = plot_time(legs, transport, samples)
         fig_diversity = plot_diversity(legs, transport, samples)
@@ -303,7 +304,7 @@ def graphics(solutions_print_code, cqm_print, problem_print_code):
     [Input(id, "value") for id in leg_inputs.keys()],
     [Input(id, "value") for id in constraint_inputs.keys()],
     [Input(f"{id}_slider", "value") for id in constraint_inputs.keys()],
-    [State(id, "value") for id in cqm_inputs.keys()],)
+    [Input(id, "value") for id in cqm_inputs.keys()],)
 def user_inputs(num_legs, max_leg_length, min_leg_length, max_leg_slope, \
     weight_cost, weight_time, weight_slope, \
     weight_cost_slider,  weight_time_slider, weight_slope_slider, \
@@ -332,13 +333,15 @@ def user_inputs(num_legs, max_leg_length, min_leg_length, max_leg_slope, \
     inputs = {**init_tour, **init_cqm}
     for key in inputs.keys():
         inputs[key][2] = eval(key)
-        print(key, (eval(key)))
+
+    if trigger_id not in {**init_tour, **init_cqm}.keys():
+        trigger_id = None
 
     # cqm = build_cqm(legs, modes, max_cost, max_time, weight_cost_input,
     #                 weight_time_input, max_leg_slope, weight_slope_input)
 
     #TODO: get legs
-    return out_input_human(inputs, init_legs["legs"], transport), \
+    return out_input_human(inputs, trigger_id),  \
         num_legs, max_leg_length, min_leg_length, max_leg_slope, \
         weight_vals["cost"], weight_vals["time"], weight_vals["slope"], \
         weight_vals["cost"], weight_vals["time"], weight_vals["slope"]

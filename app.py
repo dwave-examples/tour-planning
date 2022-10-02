@@ -308,7 +308,7 @@ def legs(input_print, \
 @app.callback(
     Output("cqm_print", "value"),
     [Input("input_print", "value")],
-    [State("problem_print_code", "value")],
+    [Input("problem_print_code", "value")],
     [State("max_leg_slope", "value")],
     [State(id, "value") for id in constraint_inputs.keys()],
     [State(id, "value") for id in cqm_inputs.keys()])
@@ -323,14 +323,13 @@ def cqm(input_print, problem_print_code, max_leg_slope, \
     trigger = dash.callback_context.triggered
     trigger_id = trigger[0]["prop_id"].split(".")[0]
 
-    if trigger_id == "input_print":
-        try:
+    if trigger_id in ["input_print", "problem_print_code"]:
+        try:    # Initial firing of input_print will create the intial problem_print_code
             legs = in_problem_code(problem_print_code)
             cqm = build_cqm(legs, modes, max_leg_slope, max_cost, max_time, \
                 weight_cost, weight_time, weight_slope)
             return cqm.__str__()
         except ValueError:  # Initial pass won't load JSON
-            print("no cqm")
             return dash.no_update
 
 @app.callback(
@@ -342,20 +341,17 @@ def graphics(solutions_print_code, problem_print_code):
     trigger = dash.callback_context.triggered
     trigger_id = trigger[0]["prop_id"].split(".")[0]
 
-    samples = None  # TODO: update other figures to accept samples=None
+    samples = None
     if trigger_id == 'solutions_print_code':
         samples = get_samples(solutions_print_code)
 
-    fig_diversity = dash.no_update
-    fig_time = dash.no_update
-    fig_space = dash.no_update
+    legs = in_problem_code(problem_print_code)
+    fig_space = plot_space(legs, samples)
+    fig_time = plot_time(legs, transport, samples)
+    fig_diversity = plot_diversity(legs, transport, samples)
 
-    if trigger_id == "problem_print_code":
-        legs = in_problem_code(problem_print_code)
-        fig_space = plot_space(legs, samples)
-    if samples:
-        fig_time = plot_time(legs, transport, samples)
-        fig_diversity = plot_diversity(legs, transport, samples)
+    if not fig_time:
+        fig_time = fig_diversity = dash.no_update
 
     return fig_space, fig_time, fig_diversity
 

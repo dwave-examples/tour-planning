@@ -31,7 +31,7 @@ def get_samples(saved_sampleset):
     return {"sampleset": sampleset, "feasible": sampleset_feasible, "first": first}
 
 def plot_space(legs, samples=None):
-
+    """Plot legs versus distance and slope, optionally with solutions."""
     df_legs = pd.DataFrame({'Length': [l['length'] for l in legs],
                             'Slope': [s['uphill'] for s in legs]})
     df_legs["Tour"] = 0
@@ -72,6 +72,10 @@ def plot_space(legs, samples=None):
     return fig
 
 def plot_time(legs, transport, samples):
+    """Plot legs versus time and cost, requires solutions."""
+
+    if not samples:
+        return None
 
     df_legs = pd.DataFrame({'Time': [l['length']/transport[f[1]]['Speed'] for l,f in zip(legs, samples["first"])],
                             'Cost': [transport[f[1]]['Speed'] for f in samples["first"]]})
@@ -105,6 +109,10 @@ def plot_time(legs, transport, samples):
     return fig
 
 def plot_diversity(legs, transport, samples):
+    """Plot solutions."""
+
+    if not samples:
+        return None
 
     #Done only once per job submission but can move to NumPy if slow
     data = {'Cost': [], 'Time': [], 'Energy': [], 'Feasibility': []}

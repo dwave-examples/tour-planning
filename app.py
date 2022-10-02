@@ -235,68 +235,6 @@ app.layout = dbc.Container(
 ###################
 
 @app.callback(
-    Output('problem_print_code', 'value'),
-    Output('problem_print_human', 'value'),
-    Input("input_print", "value"),
-    [State(id, "value") for id in leg_inputs.keys()])
-def legs(input_print, \
-    num_legs, max_leg_length, min_leg_length, max_leg_slope):
-
-    trigger = dash.callback_context.triggered
-    trigger_id = trigger[0]["prop_id"].split(".")[0]
-
-    if trigger_id == "input_print":
-        find_changed = [line for line in input_print.split("\n") if "<<--" in line]
-        if not find_changed:  # Print initial configuration
-            legs = init_legs["legs"]
-            return out_problem_code(legs), out_problem_human(legs)
-        if find_changed and find_changed[0].split(" ")[0] in leg_inputs.keys():
-            legs = set_legs(num_legs, [min_leg_length, max_leg_length], max_leg_slope)
-            return out_problem_code(legs), out_problem_human(legs)
-        else:
-            return dash.no_update, dash.no_update
-
-@app.callback(
-    Output("solutions_print_human", "value"),
-    Input("solutions_print_code", "value"),)
-def solution_human(solutions_print_code):
-
-    trigger = dash.callback_context.triggered
-    trigger_id = trigger[0]["prop_id"].split(".")[0]
-
-    if trigger_id != "solutions_print_code":
-        return dash.no_update
-
-    samples = get_samples(solutions_print_code)
-    return out_solutions_human(samples["sampleset"])
-#
-@app.callback(
-    [Output(f'{key.lower()}_graph', 'figure') for key in graphs.keys()],
-    Input("solutions_print_code", "value"),
-    Input("problem_print_code", "value"))
-def graphics(solutions_print_code, problem_print_code):
-    """ """
-    trigger = dash.callback_context.triggered
-    trigger_id = trigger[0]["prop_id"].split(".")[0]
-
-    samples = None  # TODO: update other figures to accept samples=None
-    if trigger_id == 'solutions_print_code':
-        samples = get_samples(solutions_print_code)
-
-    fig_diversity = dash.no_update
-    fig_time = dash.no_update
-    fig_space = dash.no_update
-
-    if trigger_id == "problem_print_code":
-        legs = in_problem_code(problem_print_code)
-        fig_space = plot_space(legs, samples)
-    if samples:
-        fig_time = plot_time(legs, transport, samples)
-        fig_diversity = plot_diversity(legs, transport, samples)
-
-    return fig_space, fig_time, fig_diversity
-
-@app.callback(
     [Output("input_print", "value")],
     [Output(id, "value") for id in leg_inputs.keys()],
     [Output(id, "value") for id in constraint_inputs.keys()],
@@ -337,15 +275,104 @@ def user_inputs(num_legs, max_leg_length, min_leg_length, max_leg_slope, \
     if trigger_id not in {**init_tour, **init_cqm}.keys():
         trigger_id = None
 
-    # cqm = build_cqm(legs, modes, max_cost, max_time, weight_cost_input,
-    #                 weight_time_input, max_leg_slope, weight_slope_input)
-
-    #TODO: get legs
     return out_input_human(inputs, trigger_id),  \
         num_legs, max_leg_length, min_leg_length, max_leg_slope, \
         weight_vals["cost"], weight_vals["time"], weight_vals["slope"], \
         weight_vals["cost"], weight_vals["time"], weight_vals["slope"]
 
+@app.callback(
+    [Output("problem_print_code", "value")],
+    [Output("problem_print_human", "value")],
+    [Input("input_print", "value")],
+    [State(id, "value") for id in leg_inputs.keys()])
+def legs(input_print, \
+    num_legs, max_leg_length, min_leg_length, max_leg_slope):
+    """
+    Sets the tour legs.
+    Generates problem_print code & readable text.
+    """
+    trigger = dash.callback_context.triggered
+    trigger_id = trigger[0]["prop_id"].split(".")[0]
+
+    if trigger_id == "input_print":
+        find_changed = [line for line in input_print.split("\n") if "<<--" in line]
+        if not find_changed:  # Print initial configuration
+            legs = init_legs["legs"]
+            return out_problem_code(legs), out_problem_human(legs)
+        if find_changed and find_changed[0].split(" ")[0] in leg_inputs.keys():
+            legs = set_legs(num_legs, [min_leg_length, max_leg_length], max_leg_slope)
+            return out_problem_code(legs), out_problem_human(legs)
+        else:
+            return dash.no_update, dash.no_update
+
+@app.callback(
+    Output("cqm_print", "value"),
+    [Input("input_print", "value")],
+    [State("problem_print_code", "value")],
+    [State("max_leg_slope", "value")],
+    [State(id, "value") for id in constraint_inputs.keys()],
+    [State(id, "value") for id in cqm_inputs.keys()])
+def cqm(input_print, problem_print_code, max_leg_slope, \
+    max_cost, max_time,
+    weight_cost, weight_time, weight_slope):
+    """
+    Create the constrained quadratic model for the tour.
+    Generates problem_print code & readable text.
+    """
+
+    trigger = dash.callback_context.triggered
+    trigger_id = trigger[0]["prop_id"].split(".")[0]
+
+    if trigger_id == "input_print":
+        try:
+            legs = in_problem_code(problem_print_code)
+            cqm = build_cqm(legs, modes, max_leg_slope, max_cost, max_time, \
+                weight_cost, weight_time, weight_slope)
+            return cqm.__str__()
+        except ValueError:  # Initial pass won't load JSON
+            print("no cqm")
+            return dash.no_update
+
+@app.callback(
+    [Output(f'{key.lower()}_graph', 'figure') for key in graphs.keys()],
+    Input("solutions_print_code", "value"),
+    Input("problem_print_code", "value"))
+def graphics(solutions_print_code, problem_print_code):
+    """ """
+    trigger = dash.callback_context.triggered
+    trigger_id = trigger[0]["prop_id"].split(".")[0]
+
+    samples = None  # TODO: update other figures to accept samples=None
+    if trigger_id == 'solutions_print_code':
+        samples = get_samples(solutions_print_code)
+
+    fig_diversity = dash.no_update
+    fig_time = dash.no_update
+    fig_space = dash.no_update
+
+    if trigger_id == "problem_print_code":
+        legs = in_problem_code(problem_print_code)
+        fig_space = plot_space(legs, samples)
+    if samples:
+        fig_time = plot_time(legs, transport, samples)
+        fig_diversity = plot_diversity(legs, transport, samples)
+
+    return fig_space, fig_time, fig_diversity
+
+@app.callback(
+    Output("solutions_print_human", "value"),
+    Input("solutions_print_code", "value"),)
+def solution_human(solutions_print_code):
+
+    trigger = dash.callback_context.triggered
+    trigger_id = trigger[0]["prop_id"].split(".")[0]
+
+    if trigger_id != "solutions_print_code":
+        return dash.no_update
+
+    samples = get_samples(solutions_print_code)
+    return out_solutions_human(samples["sampleset"])
+#
 job_bar = {'WAITING': [0, 'light'],
            'SUBMITTED': [25, 'info'],
            'PENDING': [50, 'warning'],

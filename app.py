@@ -241,20 +241,21 @@ app.layout = dbc.Container(
 
 @app.callback(
     Output('problem_print_code', 'value'),
-    Input("input_print", "value"),)
-def legs(input_print):
+    Output('problem_print_human', 'value'),
+    Input("input_print", "value"),
+    [State(id, "value") for id in leg_inputs.keys()])
+def legs(input_print, \
+    num_legs, max_leg_length, min_leg_length, max_leg_slope):
 
     trigger = dash.callback_context.triggered
     trigger_id = trigger[0]["prop_id"].split(".")[0]
 
-    if not trigger_id:
+    if trigger_id != "input_print":
         legs = init_legs["legs"]
-    elif trigger_id in list(leg_inputs.keys()):
-        legs = set_legs(num_legs, [min_leg_length, max_leg_length], max_leg_slope)
     else:
-        legs = init_legs["legs"]
-        #legs = json.loads(problem_print_code)
+        legs = set_legs(num_legs, [min_leg_length, max_leg_length], max_leg_slope)
 
+    return out_problem_code(legs), out_problem_human(legs)
 
 @app.callback(
     Output("solutions_print_human", "value"),

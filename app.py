@@ -23,7 +23,9 @@ import numpy as np
 from pprint import pprint
 import time, datetime
 
-from helpers import *
+from helpers_graphics import *
+from helpers_jobs import *
+from helpers_layout import *
 from formatting import *
 from tour_planning import init_cqm, init_tour, init_legs
 from tour_planning import build_cqm, set_legs, transport
@@ -40,61 +42,9 @@ num_modes = len(modes)
 app = dash.Dash(__name__, external_stylesheets=[dbc.themes.BOOTSTRAP])
 
 try:
-    client = Client.from_config(profile="test")
+    client = Client.from_config(profile="alpha")
 except Exception as client_err:
     client = None
-
-job_bar = {'READY': [0, 'link'],
-           'WAITING': [0, 'light'],
-           'SUBMITTED': [10, 'info'],
-           'PENDING': [50, 'warning'],
-           'IN_PROGRESS': [75 ,'primary'],
-           'COMPLETED': [100, 'success'],
-           'CANCELLED': [100, 'dark'],
-           'FAILED': [100, 'danger'], }
-
-TERMINATED = ["COMPLETED", "CANCELLED", "FAILED"]
-RUNNING = ["PENDING", "IN_PROGRESS"]
-
-# Helper functions
-##################
-
-def _dcc_input(name, config_vals, step=None):
-    """Sets input to dash.Input elements in layout."""
-    suffix = ""
-    if "_slider" in name:
-        suffix = "_slider"
-        name = name.replace("_slider", "")
-    return dcc.Input(
-        id=f"{name}{suffix}",
-        type="number",
-        min=config_vals[name][0],
-        max=config_vals[name][1],
-        step=step,
-        value=config_vals[name][2])
-
-def _dcc_slider(name, config_vals, step=1, discrete_slider=False):
-    """Sets input to dash.Input elements in layout."""
-    suffix = ""
-    if "_slider" in name:
-        suffix = "_slider"
-        name = name.replace("_slider", "")
-    if not discrete_slider:
-        marks={config_vals[f"{name}"][0]:
-            {"label": "Soft", "style": {"color": 'white'}},
-            config_vals[f"{name}"][1]:
-            {"label": "Hard", "style": {"color": 'white'}}}
-    else:
-        marks={i: {"label": f'{str(i)}', "style": {"color": "white"}} for i in
-        range(config_vals[name][0], init_tour[name][1] + 1, 2*step)}
-
-    return dcc.Slider(
-        id=f"{name}{suffix}",
-        min=config_vals[f"{name}"][0],
-        max=config_vals[f"{name}"][1],
-        marks=marks,
-        step=step,
-        value=config_vals[f"{name}"][2],)
 
 # Problem-submission section
 ############################
@@ -247,6 +197,18 @@ app.layout = dbc.Container(
 
 # Callbacks Section
 ###################
+
+job_bar = {"READY": [0, "link"],
+           "WAITING": [0, "light"],
+           "SUBMITTED": [10, "info"],
+           "PENDING": [50, "warning"],
+           "IN_PROGRESS": [75 ,"primary"],
+           "COMPLETED": [100, "success"],
+           "CANCELLED": [100, "dark"],
+           "FAILED": [100, "danger"], }
+
+TERMINATED = ["COMPLETED", "CANCELLED", "FAILED"]
+RUNNING = ["PENDING", "IN_PROGRESS"]
 
 @app.callback(
     [Output("input_print", "value")],

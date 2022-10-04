@@ -84,7 +84,7 @@ tabs["Graph"] = dbc.Tabs([
         label_style={"color": "white", "backgroundColor": "black"},)
     for key, val in graphs.items()])
 
-double_tabs = {    # also used for display callback
+double_tabs = {
     "Problem": "Displays the configured tour: length of each leg, elevation, and "\
         "toll positions.",
     "Solutions": "Displays returned solutions to submitted problems."}
@@ -102,7 +102,7 @@ for key, val in double_tabs.items():
             label_style={"color": "white", "backgroundColor": "black"},)
     for reader in readers])
 
-single_tabs = {   # also used for display callback
+single_tabs = {
     "CQM": "",
     "Input": "",
     "Transport": out_transport_human(transport)}
@@ -211,21 +211,42 @@ TERMINATED = ["COMPLETED", "CANCELLED", "FAILED"]
 RUNNING = ["PENDING", "IN_PROGRESS"]
 
 @app.callback(
+    [Output("problem_print_code", "value")],
+    [Output("problem_print_human", "value")],
+    [Input("input_print", "value")],
+    [State(id, "value") for id in leg_inputs.keys()])
+def legs(input_print, num_legs, max_leg_length, min_leg_length, max_leg_slope):
+    """
+    Set the tour legs.
+    Generates ``problem_print`` code & readable text.
+    """
+    trigger = dash.callback_context.triggered
+    trigger_id = trigger[0]["prop_id"].split(".")[0]
+
+    if trigger_id == "input_print":
+        find_changed = [line for line in input_print.split("\n") if "<<--" in line]
+        if not find_changed:  # Print initial configuration
+            legs = init_legs["legs"]
+            return out_problem_code(legs), out_problem_human(legs)
+        if find_changed and find_changed[0].split(" ")[0] in leg_inputs.keys():
+            legs = set_legs(num_legs, [min_leg_length, max_leg_length], max_leg_slope)
+            return out_problem_code(legs), out_problem_human(legs)
+        else:   # CQM-affecting inputs only
+            return dash.no_update, dash.no_update
+
+@app.callback(
     [Output("input_print", "value")],
-    [Output(id, "value") for id in leg_inputs.keys()],
-    [Output(id, "value") for id in constraint_inputs.keys()],
+    [Output(id, "value") for id in [*leg_inputs.keys(), *constraint_inputs.keys()]],
     [Output(f"{id}_slider", "value") for id in constraint_inputs.keys()],
-    [Input(id, "value") for id in leg_inputs.keys()],
-    [Input(id, "value") for id in constraint_inputs.keys()],
-    [Input(f"{id}_slider", "value") for id in constraint_inputs.keys()],
-    [Input(id, "value") for id in cqm_inputs.keys()],)
+    [Input(id, "value") for id in
+        [*leg_inputs.keys(), *constraint_inputs.keys(), *cqm_inputs.keys()]],
+    [Input(f"{id}_slider", "value") for id in constraint_inputs.keys()],)
 def user_inputs(num_legs, max_leg_length, min_leg_length, max_leg_slope, \
-    weight_cost, weight_time, weight_slope, \
-    weight_cost_slider,  weight_time_slider, weight_slope_slider, \
-    max_cost, max_time):
+    weight_cost, weight_time, weight_slope, max_cost, max_time, \
+    weight_cost_slider,  weight_time_slider, weight_slope_slider):
     """
     Handle configurable user inputs.
-    Generates input_print readable text.
+    Generates ``input_print`` readable text.
     """
     trigger = dash.callback_context.triggered
     trigger_id = trigger[0]["prop_id"].split(".")[0]
@@ -257,45 +278,17 @@ def user_inputs(num_legs, max_leg_length, min_leg_length, max_leg_slope, \
         weight_vals["cost"], weight_vals["time"], weight_vals["slope"]
 
 @app.callback(
-    [Output("problem_print_code", "value")],
-    [Output("problem_print_human", "value")],
-    [Input("input_print", "value")],
-    [State(id, "value") for id in leg_inputs.keys()])
-def legs(input_print, \
-    num_legs, max_leg_length, min_leg_length, max_leg_slope):
-    """
-    Sets the tour legs.
-    Generates problem_print code & readable text.
-    """
-    trigger = dash.callback_context.triggered
-    trigger_id = trigger[0]["prop_id"].split(".")[0]
-
-    if trigger_id == "input_print":
-        find_changed = [line for line in input_print.split("\n") if "<<--" in line]
-        if not find_changed:  # Print initial configuration
-            legs = init_legs["legs"]
-            return out_problem_code(legs), out_problem_human(legs)
-        if find_changed and find_changed[0].split(" ")[0] in leg_inputs.keys():
-            legs = set_legs(num_legs, [min_leg_length, max_leg_length], max_leg_slope)
-            return out_problem_code(legs), out_problem_human(legs)
-        else:
-            return dash.no_update, dash.no_update
-
-@app.callback(
     Output("cqm_print", "value"),
     [Input("input_print", "value")],
     [Input("problem_print_code", "value")],
     [State("max_leg_slope", "value")],
-    [State(id, "value") for id in constraint_inputs.keys()],
-    [State(id, "value") for id in cqm_inputs.keys()])
-def cqm(input_print, problem_print_code, max_leg_slope, \
-    max_cost, max_time,
+    [State(id, "value") for id in [*constraint_inputs.keys(), *cqm_inputs.keys()]],)
+def cqm(input_print, problem_print_code, max_leg_slope, max_cost, max_time, \
     weight_cost, weight_time, weight_slope):
     """
-    Create the constrained quadratic model for the tour.
-    Generates problem_print code & readable text.
+    Create the constrained quadratic model (CQM) for the tour.
+    Generates ``problem_print`` code & readable text.
     """
-
     trigger = dash.callback_context.triggered
     trigger_id = trigger[0]["prop_id"].split(".")[0]
 

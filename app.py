@@ -453,20 +453,10 @@ def cqm_submit(n_clicks, n_intervals, job_id, problem_print_code, job_submit_sta
             dash.no_update, dash.no_update
 
     if trigger_id == "btn_solve_cqm":
-        return True, dict(), False, 0.1*1000, 0, \
-            job_bar['WAITING'][0], job_bar['WAITING'][1], \
-            out_job_submit_state("START"), "disable_cqm_btn", \
-            datetime.datetime.now().strftime("%c"), f"Elapsed: 0 sec.", \
-            dash.no_update, dash.no_update
-
-    if job_sm == "disable_cqm_btn":
-
-        elapsed_time = (datetime.datetime.now() - datetime.datetime.strptime(job_submit_time, "%c")).seconds
-
-        return True, dash.no_update, False, 1*1000, 0, \
+        return True, dict(), False, 0.2*1000, 0, \
             job_bar['SUBMITTED'][0], job_bar['SUBMITTED'][1], \
-            out_job_submit_state(job_submit_state), 'SUBMITTED', \
-            dash.no_update, f"Elapsed: {elapsed_time} sec.", \
+            out_job_submit_state("SUBMITTED"), "SUBMITTED", \
+            datetime.datetime.now().strftime("%c"), f"Elapsed: 0 sec.", \
             dash.no_update, dash.no_update
 
     if job_sm == "SUBMITTED":

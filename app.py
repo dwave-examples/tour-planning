@@ -473,10 +473,9 @@ def solutions(job_submit_state, job_id):
     Input('btn_solve_cqm', 'n_clicks'),
     Input('wd_job', 'n_intervals'),
     State('job_id', 'children'),
-    State('problem_print_code', 'value'),
     State('job_submit_state', 'children'),
     State('job_submit_time', 'children'),)
-def submission_manager(n_clicks, n_intervals, job_id, problem_print_code, job_submit_state,
+def submission_manager(n_clicks, n_intervals, job_id, job_submit_state,
     job_submit_time):
     """Manage job submission."""
     trigger_id = dash.callback_context.triggered[0]["prop_id"].split(".")[0]
@@ -486,16 +485,20 @@ def submission_manager(n_clicks, n_intervals, job_id, problem_print_code, job_su
             dash.no_update, dash.no_update, dash.no_update, dash.no_update
 
     if trigger_id == "btn_solve_cqm":
-        return True, dict(), False, 0.2*1000, 0, \
+
+        submit_time = datetime.datetime.now().strftime("%c")
+        disable_btn = True
+        disable_watchdog = False
+
+        return disable_btn, dict(), disable_watchdog, 0.2*1000, 0, \
             out_job_submit_state("SUBMITTED"), \
-            datetime.datetime.now().strftime("%c"), f"Elapsed: 0 sec.", \
+            submit_time, f"Elapsed: 0 sec.", \
 
     if in_job_submit_state(job_submit_state) == "SUBMITTED":
 
         job_submit_state = get_status(client, job_id, job_submit_time)
         if not job_submit_state:
             job_submit_state = "SUBMITTED"
-        #
         elapsed_time = elapsed(job_submit_time)
 
         return True, dash.no_update, False, 1*1000, 0, \
@@ -505,11 +508,9 @@ def submission_manager(n_clicks, n_intervals, job_id, problem_print_code, job_su
     if in_job_submit_state(job_submit_state) in RUNNING:
 
         job_submit_state = get_status(client, job_id, job_submit_time)
-
         hide_button = dash.no_update
         if job_submit_state == 'IN_PROGRESS':
             hide_button = dict(display='none')
-
         elapsed_time = elapsed(job_submit_time)
 
         return True, hide_button, False, 1*1000, 0, \
@@ -519,8 +520,10 @@ def submission_manager(n_clicks, n_intervals, job_id, problem_print_code, job_su
     if in_job_submit_state(job_submit_state) in TERMINATED:
         # Need to enable all buttons
         elapsed_time = elapsed(job_submit_time)
+        disable_btn = False
+        disable_watchdog = True
 
-        return False, dash.no_update, True, 0.1*1000, 0, \
+        return disable_btn, dash.no_update, disable_watchdog, 0.1*1000, 0, \
             dash.no_update, dash.no_update, f"Elapsed: {elapsed_time} sec."
 
 if __name__ == "__main__":

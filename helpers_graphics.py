@@ -15,48 +15,17 @@ import datetime
 import pandas as pd
 import plotly.express as px
 
-from dwave.cloud.api import exceptions, Problems
-import dimod
 from formatting import *
 
-__all__ = ["elapsed", "get_status", "get_samples", "plot_space", "plot_time",
-    "plot_diversity"]
-
-def elapsed(ref_time):
-    """Return elapsed time in seconds."""
-    return (datetime.datetime.now() -
-        datetime.datetime.strptime(ref_time, "%c")).seconds
-
-def get_status(client, job_id, job_submit_time):
-    """Return elapsed time in seconds."""
-    p = Problems(endpoint=client.endpoint, token=client.token)
-    try:
-        status = p.get_problem_status(job_id)
-        label_time = dict(status)["label"].split("submitted: ")[1]
-        if label_time == job_submit_time:
-            return status.status.value
-        else:
-            return None
-    except exceptions.ResourceNotFoundError as err:
-        return None
-
-def get_samples(saved_sampleset):
-    """Retrieve saved sampleset."""
-
-    sampleset = dimod.SampleSet.from_serializable(in_problem_code(saved_sampleset))
-    sampleset_feasible = sampleset.filter(lambda row: row.is_feasible)
-    first = sorted({int(key.split('_')[1]): key.split('_')[0] for key,val in \
-        sampleset_feasible.first.sample.items() if val==1.0}.items())
-
-    return {"sampleset": sampleset, "feasible": sampleset_feasible, "first": first}
+__all__ = ["plot_space", "plot_time", "plot_diversity"]
 
 def plot_space(legs, samples=None):
     """Plot legs versus distance and slope, optionally with solutions."""
-    df_legs = pd.DataFrame({'Length': [l['length'] for l in legs],
-                            'Slope': [s['uphill'] for s in legs]})
+    df_legs = pd.DataFrame({"Length": [l["length"] for l in legs],
+                            "Slope": [s["uphill"] for s in legs]})
     df_legs["Tour"] = 0
 
-    fig = px.bar(df_legs, x="Length", y='Tour', color="Slope", orientation="h",
+    fig = px.bar(df_legs, x="Length", y="Tour", color="Slope", orientation="h",
                  color_continuous_scale=px.colors.diverging.Geyser)
 
     fig.add_layout_image(
@@ -66,7 +35,7 @@ def plot_space(legs, samples=None):
 
     x_pos = 0
     for indx, leg in enumerate(legs):
-        if leg['toll']:
+        if leg["toll"]:
             fig.add_layout_image(dict(source=f"assets/toll.png", xref="x",
                 yref="y", x=x_pos, y=0.2, sizex=2, sizey=2, opacity=1, layer="above"))
         x_pos += df_legs["Length"][indx]
@@ -97,11 +66,11 @@ def plot_time(legs, transport, samples):
     if not samples:
         return None
 
-    df_legs = pd.DataFrame({'Time': [l['length']/transport[f[1]]['Speed'] for l,f in zip(legs, samples["first"])],
-                            'Cost': [transport[f[1]]['Speed'] for f in samples["first"]]})
+    df_legs = pd.DataFrame({"Time": [l["length"]/transport[f[1]]["Speed"] for l,f in zip(legs, samples["first"])],
+                            "Cost": [transport[f[1]]["Speed"] for f in samples["first"]]})
     df_legs["Tour"] = 0
 
-    fig = px.bar(df_legs, x="Time", y='Tour', color="Cost", orientation="h",
+    fig = px.bar(df_legs, x="Time", y="Tour", color="Cost", orientation="h",
                  color_continuous_scale=px.colors.diverging.Geyser)
 
     fig.add_layout_image(
@@ -135,28 +104,28 @@ def plot_diversity(legs, transport, samples):
         return None
 
     #Done only once per job submission but can move to NumPy if slow
-    data = {'Cost': [], 'Time': [], 'Energy': [], 'Feasibility': []}
-    for sample, energy, feasability in samples["sampleset"].data(fields=['sample', 'energy', 'is_feasible']):
-        locomotion_per_leg = sorted({int(key.split('_')[1]): key.split('_')[0] for
+    data = {"Cost": [], "Time": [], "Energy": [], "Feasibility": []}
+    for sample, energy, feasability in samples["sampleset"].data(fields=["sample", "energy", "is_feasible"]):
+        locomotion_per_leg = sorted({int(key.split("_")[1]): key.split("_")[0] for
             key,val in sample.items() if val==1.0}.items())
-        data['Cost'].append(sum(transport[f[1]]['Speed'] for f in locomotion_per_leg))
-        data['Time'].append(sum(l['length']/transport[f[1]]['Speed'] for l,f in zip(legs, locomotion_per_leg)))
-        data['Energy'].append(energy)
-        data['Feasibility'].append(feasability)
+        data["Cost"].append(sum(transport[f[1]]["Speed"] for f in locomotion_per_leg))
+        data["Time"].append(sum(l["length"]/transport[f[1]]["Speed"] for l,f in zip(legs, locomotion_per_leg)))
+        data["Energy"].append(energy)
+        data["Feasibility"].append(feasability)
 
     df = pd.DataFrame(data)
 
     occurrences = df.groupby(df.columns.tolist(),as_index=False).size()
     color = ["blue" if f==True else "black" for f in occurrences["Feasibility"]]
-    legend_names = {'blue':'Feasible', 'black': 'Infeasible'}
+    legend_names = {"blue":"Feasible", "black": "Infeasible"}
 
-    fig = px.scatter_3d(occurrences, x='Time', y='Cost', z='Energy', color=color,
-        size=occurrences['size'])
+    fig = px.scatter_3d(occurrences, x="Time", y="Cost", z="Energy", color=color,
+        size=occurrences["size"])
 
     fig.for_each_trace(lambda t: t.update(name = legend_names[t.name], legendgroup = legend_names[t.name]))
-    fig.update_scenes(xaxis_title_text='Time',
-                      yaxis_title_text='Cost',
-                      zaxis_title_text='Exercise')
+    fig.update_scenes(xaxis_title_text="Time",
+                      yaxis_title_text="Cost",
+                      zaxis_title_text="Exercise")
     fig.update_layout(font_color="rgb(6, 236, 220)", margin=dict(l=20, r=20, t=20, b=20),
                       paper_bgcolor="rgba(0,0,0,0)")
 

@@ -46,7 +46,7 @@ except Exception as client_err:
 
 job_bar = {'READY': [0, 'link'],
            'WAITING': [0, 'light'],
-           'SUBMITTED': [25, 'info'],
+           'SUBMITTED': [10, 'info'],
            'PENDING': [50, 'warning'],
            'IN_PROGRESS': [75 ,'primary'],
            'COMPLETED': [100, 'success'],
@@ -391,6 +391,21 @@ def graphics(solutions_print_code, problem_print_code):
 #     return dash.no_update, dash.no_update
 
 @app.callback(
+    Output('bar_job_status', 'value'),
+    Output('bar_job_status', 'color'),
+    Input('job_submit_state', 'children'),)
+def progress_bar(job_submit_state):
+    """Update progress bar for submissions."""
+
+    trigger_id = dash.callback_context.triggered[0]["prop_id"].split(".")[0]
+
+    if trigger_id != "job_submit_state":
+        return job_bar['READY'][0], job_bar['READY'][1]
+    else:
+        state = in_job_submit_state(job_submit_state)
+        return job_bar[state][0], job_bar[state][1]
+
+@app.callback(
     Output("job_id", "children"),
     [Input("job_submit_time", "children")],
     [State("problem_print_code", "value")],
@@ -414,7 +429,8 @@ def job_submit(job_submit_time, problem_print_code, max_leg_slope, max_cost, max
         problem_data_id = solver.upload_cqm(cqm).result()
 
         computation = solver.sample_cqm(problem_data_id,
-                    label=f"Examples - Tour Planning, submitted: {job_submit_time}", time_limit=5)
+                    label=f"Examples - Tour Planning, submitted: {job_submit_time}",
+                    time_limit=5)
 
         return computation.wait_id()
 
@@ -426,8 +442,6 @@ def job_submit(job_submit_time, problem_print_code, max_leg_slope, max_cost, max
     Output('wd_job', 'disabled'),
     Output('wd_job', 'interval'),
     Output('wd_job', 'n_intervals'),
-    Output('bar_job_status', 'value'),
-    Output('bar_job_status', 'color'),
     Output('job_submit_state', 'children'),
     Output('job_submit_time', 'children'),
     Output('job_elapsed_time', 'children'),
@@ -439,21 +453,19 @@ def job_submit(job_submit_time, problem_print_code, max_leg_slope, max_cost, max
     State('problem_print_code', 'value'),
     State('job_submit_state', 'children'),
     State('job_submit_time', 'children'),)
-def cqm_submit(n_clicks, n_intervals, job_id, problem_print_code, job_submit_state,
+def submission_manager(n_clicks, n_intervals, job_id, problem_print_code, job_submit_state,
     job_submit_time):
-    """SM for job submission."""
+    """Manage job submission."""
     trigger_id = dash.callback_context.triggered[0]["prop_id"].split(".")[0]
 
     if not trigger_id in ["btn_solve_cqm", "wd_job"]:
         return dash.no_update, dash.no_update, dash.no_update, dash.no_update, dash.no_update, \
-            dash.no_update, dash.no_update, \
             dash.no_update, \
             dash.no_update, dash.no_update, \
             dash.no_update, dash.no_update
 
     if trigger_id == "btn_solve_cqm":
         return True, dict(), False, 0.2*1000, 0, \
-            job_bar['SUBMITTED'][0], job_bar['SUBMITTED'][1], \
             out_job_submit_state("SUBMITTED"), \
             datetime.datetime.now().strftime("%c"), f"Elapsed: 0 sec.", \
             dash.no_update, dash.no_update
@@ -474,22 +486,20 @@ def cqm_submit(n_clicks, n_intervals, job_id, problem_print_code, job_submit_sta
         elapsed_time = (datetime.datetime.now() - datetime.datetime.strptime(job_submit_time, "%c")).seconds
 
         return True, dash.no_update, False, 1*1000, 0, \
-            job_bar['SUBMITTED'][0], job_bar['SUBMITTED'][1], \
             out_job_submit_state(job_submit_state), \
             dash.no_update, f"Elapsed: {elapsed_time} sec.", \
             dash.no_update, dash.no_update
 
     if in_job_submit_state(job_submit_state) in RUNNING:
         p = Problems(endpoint=client.endpoint, token=client.token)
-        status = p.get_problem_status(job_id).status.value
-        job_submit_state = status
+        job_submit_state = p.get_problem_status(job_id).status.value
 
         sampleset_code = dash.no_update
         sampleset_human = dash.no_update
         hide_button = dash.no_update
-        if status == 'IN_PROGRESS':
+        if job_submit_state == 'IN_PROGRESS':
             hide_button = dict(display='none')
-        elif status == 'COMPLETED':
+        elif job_submit_state == 'COMPLETED':
             sampleset = client.retrieve_answer(job_id).sampleset
             sampleset_code = json.dumps(sampleset.to_serializable())
             sampleset_human = out_solutions_human(sampleset)
@@ -497,7 +507,6 @@ def cqm_submit(n_clicks, n_intervals, job_id, problem_print_code, job_submit_sta
         elapsed_time = (datetime.datetime.now() - datetime.datetime.strptime(job_submit_time, "%c")).seconds
 
         return True, hide_button, False, 1*1000, 0, \
-            job_bar[status][0], job_bar[status][1], \
             out_job_submit_state(job_submit_state), \
             dash.no_update, f"Elapsed: {elapsed_time} sec.", \
             sampleset_code, sampleset_human
@@ -507,7 +516,6 @@ def cqm_submit(n_clicks, n_intervals, job_id, problem_print_code, job_submit_sta
         elapsed_time = (datetime.datetime.now() - datetime.datetime.strptime(job_submit_time, "%c")).seconds
 
         return False, dash.no_update, True, 0.1*1000, 0, \
-            dash.no_update, dash.no_update, \
             dash.no_update, \
             dash.no_update, f"Elapsed: {elapsed_time} sec.", \
             dash.no_update, dash.no_update

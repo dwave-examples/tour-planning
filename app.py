@@ -224,15 +224,14 @@ def legs(input_print, num_legs, max_leg_length, min_leg_length, max_leg_slope):
     trigger_id = trigger[0]["prop_id"].split(".")[0]
 
     if trigger_id == "input_print":
+
         find_changed = [line for line in input_print.split("\n") if "<<--" in line]
-        if not find_changed:  # Print initial configuration
-            legs = init_legs["legs"]
-            return out_problem_code(legs), out_problem_human(legs)
-        if find_changed and find_changed[0].split(" ")[0] in leg_inputs.keys():
+
+        if find_changed and find_changed[0].split(" ")[0] not in leg_inputs.keys():
+            return dash.no_update, dash.no_update   # CQM-affecting inputs only
+        else:
             legs = set_legs(num_legs, [min_leg_length, max_leg_length], max_leg_slope)
             return out_problem_code(legs), out_problem_human(legs)
-        else:   # CQM-affecting inputs only
-            return dash.no_update, dash.no_update
 
 @app.callback(
     Output("cqm_print", "value"),
@@ -290,8 +289,12 @@ def user_inputs(num_legs, max_leg_length, min_leg_length, max_leg_slope, \
     for key in inputs.keys():
         inputs[key][2] = eval(key)
 
-    if trigger_id not in {**init_tour, **init_cqm}.keys():
+    user_inputs = list({**init_tour, **init_cqm}.keys())
+    user_inputs.extend([f"{a}_slider" for a in init_cqm.keys()])
+    if trigger_id not in user_inputs:
         trigger_id = None
+    else:
+        trigger_id = trigger_id.split("_slider")[0]
 
     return out_input_human(inputs, trigger_id),  \
         num_legs, max_leg_length, min_leg_length, max_leg_slope, \

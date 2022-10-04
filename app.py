@@ -163,10 +163,10 @@ tour_config = dbc.Card(
 layout = [
     dbc.Row([
         dbc.Col([
-            html.H1("Tour Planner", style={'textAlign': 'left'})], width=10),
+            html.H1("Tour Planner", style={"textAlign": "left"})], width=10),
         dbc.Col([
             html.Img(src="assets/ocean.png", height="50px",
-                style={'textAlign': 'right'})], width=2)]),
+                style={"textAlign": "right"})], width=2)]),
     dbc.Row([
         dbc.Col(
             tour_config, width=4),
@@ -235,6 +235,27 @@ def legs(input_print, num_legs, max_leg_length, min_leg_length, max_leg_slope):
             return dash.no_update, dash.no_update
 
 @app.callback(
+    Output("cqm_print", "value"),
+    [Input("input_print", "value")],
+    [Input("problem_print_code", "value")],
+    [State("max_leg_slope", "value")],
+    [State(id, "value") for id in [*constraint_inputs.keys(), *cqm_inputs.keys()]],)
+def cqm(input_print, problem_print_code, max_leg_slope, max_cost, max_time, \
+    weight_cost, weight_time, weight_slope):
+    """
+    Create the constrained quadratic model (CQM) for the tour.
+    Generates ``problem_print`` code & readable text.
+    """
+    trigger = dash.callback_context.triggered
+    trigger_id = trigger[0]["prop_id"].split(".")[0]
+
+    if trigger_id in ["input_print", "problem_print_code"]:
+        legs = in_problem_code(problem_print_code)
+        cqm = build_cqm(legs, modes, max_leg_slope, max_cost, max_time, \
+            weight_cost, weight_time, weight_slope)
+        return cqm.__str__()
+
+@app.callback(
     [Output("input_print", "value")],
     [Output(id, "value") for id in [*leg_inputs.keys(), *constraint_inputs.keys()]],
     [Output(f"{id}_slider", "value") for id in constraint_inputs.keys()],
@@ -251,19 +272,19 @@ def user_inputs(num_legs, max_leg_length, min_leg_length, max_leg_slope, \
     trigger = dash.callback_context.triggered
     trigger_id = trigger[0]["prop_id"].split(".")[0]
 
-    if trigger_id == 'max_leg_length' and max_leg_length <= min_leg_length:
+    if trigger_id == "max_leg_length" and max_leg_length <= min_leg_length:
         min_leg_length = max_leg_length
-    if trigger_id == 'min_leg_length' and min_leg_length >= max_leg_length:
+    if trigger_id == "min_leg_length" and min_leg_length >= max_leg_length:
         max_leg_length = min_leg_length
 
     weights = ["cost", "time", "slope"]
     weight_vals = {}
     for weight in weights:
         weight_vals[weight] = dash.no_update
-        if trigger_id == f'weight_{weight}_slider':
-            weight_vals[weight] = eval(f'weight_{weight}_slider')
-        if trigger_id == f'weight_{weight}':
-            weight_vals[weight] = eval(f'weight_{weight}')
+        if trigger_id == f"weight_{weight}_slider":
+            weight_vals[weight] = eval(f"weight_{weight}_slider")
+        if trigger_id == f"weight_{weight}":
+            weight_vals[weight] = eval(f"weight_{weight}")
 
     inputs = {**init_tour, **init_cqm}
     for key in inputs.keys():
@@ -278,31 +299,7 @@ def user_inputs(num_legs, max_leg_length, min_leg_length, max_leg_slope, \
         weight_vals["cost"], weight_vals["time"], weight_vals["slope"]
 
 @app.callback(
-    Output("cqm_print", "value"),
-    [Input("input_print", "value")],
-    [Input("problem_print_code", "value")],
-    [State("max_leg_slope", "value")],
-    [State(id, "value") for id in [*constraint_inputs.keys(), *cqm_inputs.keys()]],)
-def cqm(input_print, problem_print_code, max_leg_slope, max_cost, max_time, \
-    weight_cost, weight_time, weight_slope):
-    """
-    Create the constrained quadratic model (CQM) for the tour.
-    Generates ``problem_print`` code & readable text.
-    """
-    trigger = dash.callback_context.triggered
-    trigger_id = trigger[0]["prop_id"].split(".")[0]
-
-    if trigger_id in ["input_print", "problem_print_code"]:
-        try:    # Initial firing of input_print will create the intial problem_print_code
-            legs = in_problem_code(problem_print_code)
-            cqm = build_cqm(legs, modes, max_leg_slope, max_cost, max_time, \
-                weight_cost, weight_time, weight_slope)
-            return cqm.__str__()
-        except ValueError:  # Initial pass won't load JSON
-            return dash.no_update
-
-@app.callback(
-    [Output(f'{key.lower()}_graph', 'figure') for key in graphs.keys()],
+    [Output(f"{key.lower()}_graph", "figure") for key in graphs.keys()],
     Input("solutions_print_code", "value"),
     Input("problem_print_code", "value"))
 def graphics(solutions_print_code, problem_print_code):
@@ -311,7 +308,7 @@ def graphics(solutions_print_code, problem_print_code):
     trigger_id = trigger[0]["prop_id"].split(".")[0]
 
     samples = None
-    if trigger_id == 'solutions_print_code':
+    if trigger_id == "solutions_print_code":
         samples = get_samples(solutions_print_code)
 
     legs = in_problem_code(problem_print_code)
@@ -356,16 +353,16 @@ def button_control(job_submit_state):
         dash.no_update
 
 @app.callback(
-    Output('bar_job_status', 'value'),
-    Output('bar_job_status', 'color'),
-    Input('job_submit_state', 'children'),)
+    Output("bar_job_status", "value"),
+    Output("bar_job_status", "color"),
+    Input("job_submit_state", "children"),)
 def progress_bar(job_submit_state):
     """Update progress bar for submissions."""
 
     trigger_id = dash.callback_context.triggered[0]["prop_id"].split(".")[0]
 
     if trigger_id != "job_submit_state":
-        return job_bar['READY'][0], job_bar['READY'][1]
+        return job_bar["READY"][0], job_bar["READY"][1]
     else:
         state = in_job_submit_state(job_submit_state)
         return job_bar[state][0], job_bar[state][1]
@@ -402,10 +399,10 @@ def job_submit(job_submit_time, problem_print_code, max_leg_slope, max_cost, max
     return dash.no_update
 #
 @app.callback(
-    Output('solutions_print_code', 'value'),
+    Output("solutions_print_code", "value"),
     Output("solutions_print_human", "value"),
-    Input('job_submit_state', 'children'),
-    State('job_id', 'children'),)
+    Input("job_submit_state", "children"),
+    State("job_id", "children"),)
 def solutions(job_submit_state, job_id):
     """
     Update solutions.
@@ -427,18 +424,18 @@ def solutions(job_submit_state, job_id):
         return dash.no_update, dash.no_update
 
 @app.callback(
-    Output('btn_solve_cqm', 'disabled'),
-    Output('wd_job', 'disabled'),
-    Output('wd_job', 'interval'),
-    Output('wd_job', 'n_intervals'),
-    Output('job_submit_state', 'children'),
-    Output('job_submit_time', 'children'),
-    Output('job_elapsed_time', 'children'),
-    Input('btn_solve_cqm', 'n_clicks'),
-    Input('wd_job', 'n_intervals'),
-    State('job_id', 'children'),
-    State('job_submit_state', 'children'),
-    State('job_submit_time', 'children'),)
+    Output("btn_solve_cqm", "disabled"),
+    Output("wd_job", "disabled"),
+    Output("wd_job", "interval"),
+    Output("wd_job", "n_intervals"),
+    Output("job_submit_state", "children"),
+    Output("job_submit_time", "children"),
+    Output("job_elapsed_time", "children"),
+    Input("btn_solve_cqm", "n_clicks"),
+    Input("wd_job", "n_intervals"),
+    State("job_id", "children"),
+    State("job_submit_state", "children"),
+    State("job_submit_time", "children"),)
 def submission_manager(n_clicks, n_intervals, job_id, job_submit_state,
     job_submit_time):
     """Manage job submission."""

@@ -369,26 +369,36 @@ def graphics(solutions_print_code, problem_print_code):
 
     return fig_space, fig_time, fig_diversity
 
-# @app.callback(
-#     Output("???", "disabled"), # needs all disableds for all user inputs
-#     Output("btn_cancel", component_property="style"),
-#     Input("btn_solve_cqm", "n_clicks"),
-#     Input("solutions_print_human", "value"),)
-# def button_control(??, n_intervals):
-#     """
-#     Enable and disable user input during job submissions.
-#     """
-#     trigger_id = dash.callback_context.triggered[0]["prop_id"].split(".")[0]
-#
-#     if trigger_id =="???":
-#
-#         return True, dict()
-#
-#     if trigger_id =="solutions_print_human":
-#
-#         return False, dict(display="none")
-#
-#     return dash.no_update, dash.no_update
+@app.callback(
+    Output("btn_cancel", component_property="style"),
+    [Output(id, "disabled") for id in leg_inputs.keys()],
+    Input("job_submit_state", "children"),)
+def button_control(job_submit_state):
+    """
+    Enable and disable tour-effecting user input during job submissions.
+    """
+    trigger_id = dash.callback_context.triggered[0]["prop_id"].split(".")[0]
+
+    if trigger_id !="job_submit_state":
+        return dash.no_update, dash.no_update, dash.no_update, dash.no_update, \
+            dash.no_update
+
+    if in_job_submit_state(job_submit_state) == "SUBMITTED":
+        return  dict(), True, True, True, True
+
+    elif in_job_submit_state(job_submit_state) == "IN_PROGRESS":
+        return dict(display="none"), dash.no_update, dash.no_update, dash.no_update, \
+            dash.no_update
+
+    elif in_job_submit_state(job_submit_state) in TERMINATED:
+        return dash.no_update, False, False, False, False
+
+    else:
+        return dash.no_update, dash.no_update, dash.no_update, dash.no_update, \
+            dash.no_update
+
+    return dash.no_update, dash.no_update, dash.no_update, dash.no_update, \
+        dash.no_update
 
 @app.callback(
     Output('bar_job_status', 'value'),
@@ -463,7 +473,6 @@ def solutions(job_submit_state, job_id):
 
 @app.callback(
     Output('btn_solve_cqm', 'disabled'),
-    Output('btn_cancel', component_property='style'),
     Output('wd_job', 'disabled'),
     Output('wd_job', 'interval'),
     Output('wd_job', 'n_intervals'),
@@ -482,7 +491,7 @@ def submission_manager(n_clicks, n_intervals, job_id, job_submit_state,
 
     if not trigger_id in ["btn_solve_cqm", "wd_job"]:
         return dash.no_update, dash.no_update, dash.no_update, dash.no_update, \
-            dash.no_update, dash.no_update, dash.no_update, dash.no_update
+            dash.no_update, dash.no_update, dash.no_update
 
     if trigger_id == "btn_solve_cqm":
 
@@ -490,7 +499,7 @@ def submission_manager(n_clicks, n_intervals, job_id, job_submit_state,
         disable_btn = True
         disable_watchdog = False
 
-        return disable_btn, dict(), disable_watchdog, 0.2*1000, 0, \
+        return disable_btn, disable_watchdog, 0.2*1000, 0, \
             out_job_submit_state("SUBMITTED"), \
             submit_time, f"Elapsed: 0 sec.", \
 
@@ -501,29 +510,16 @@ def submission_manager(n_clicks, n_intervals, job_id, job_submit_state,
             job_submit_state = "SUBMITTED"
         elapsed_time = elapsed(job_submit_time)
 
-        return True, dash.no_update, False, 1*1000, 0, \
+        return True, False, 1*1000, 0, \
             out_job_submit_state(job_submit_state), dash.no_update, \
             f"Elapsed: {elapsed_time} sec."
 
-    # if in_job_submit_state(job_submit_state) in RUNNING:
-    #
-    #     job_submit_state = get_status(client, job_id, job_submit_time)
-    #     hide_button = dash.no_update
-    #     if job_submit_state == 'IN_PROGRESS':
-    #         hide_button = dict(display='none')
-    #     elapsed_time = elapsed(job_submit_time)
-    #
-    #     return True, hide_button, False, 1*1000, 0, \
-    #         out_job_submit_state(job_submit_state), dash.no_update, \
-    #         f"Elapsed: {elapsed_time} sec."
-
     if in_job_submit_state(job_submit_state) in TERMINATED:
-        # Need to enable all buttons
         elapsed_time = elapsed(job_submit_time)
         disable_btn = False
         disable_watchdog = True
 
-        return disable_btn, dash.no_update, disable_watchdog, 0.1*1000, 0, \
+        return disable_btn, disable_watchdog, 0.1*1000, 0, \
             dash.no_update, dash.no_update, f"Elapsed: {elapsed_time} sec."
 
 if __name__ == "__main__":

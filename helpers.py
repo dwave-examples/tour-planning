@@ -11,14 +11,34 @@
 #    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #    See the License for the specific language governing permissions and
 #    limitations under the License.
-
+import datetime
 import pandas as pd
 import plotly.express as px
 
+from dwave.cloud.api import exceptions, Problems
 import dimod
 from formatting import *
 
-__all__ = ["get_samples", "plot_space", "plot_time", "plot_diversity"]
+__all__ = ["elapsed", "get_status", "get_samples", "plot_space", "plot_time",
+    "plot_diversity"]
+
+def elapsed(ref_time):
+    """Return elapsed time in seconds."""
+    return (datetime.datetime.now() -
+        datetime.datetime.strptime(ref_time, "%c")).seconds
+
+def get_status(client, job_id, job_submit_time):
+    """Return elapsed time in seconds."""
+    p = Problems(endpoint=client.endpoint, token=client.token)
+    try:
+        status = p.get_problem_status(job_id)
+        label_time = dict(status)["label"].split("submitted: ")[1]
+        if label_time == job_submit_time:
+            return status.status.value
+        else:
+            return None
+    except exceptions.ResourceNotFoundError as err:
+        return None
 
 def get_samples(saved_sampleset):
     """Retrieve saved sampleset."""

@@ -471,19 +471,12 @@ def submission_manager(n_clicks, n_intervals, job_id, problem_print_code, job_su
             dash.no_update, dash.no_update
 
     if in_job_submit_state(job_submit_state) == "SUBMITTED":
-        p = Problems(endpoint=client.endpoint, token=client.token)
 
-        try:
-            status = p.get_problem_status(job_id)
-            label_time = dict(status)["label"].split("submitted: ")[1]
-            if label_time == job_submit_time:
-                job_submit_state = status.status.value
-            else:
-                job_submit_state = "SUBMITTED"
-        except exceptions.ResourceNotFoundError as err:
+        job_submit_state = get_status(client, job_id, job_submit_time)
+        if not job_submit_state:
             job_submit_state = "SUBMITTED"
         #
-        elapsed_time = (datetime.datetime.now() - datetime.datetime.strptime(job_submit_time, "%c")).seconds
+        elapsed_time = elapsed(job_submit_time)
 
         return True, dash.no_update, False, 1*1000, 0, \
             out_job_submit_state(job_submit_state), \
@@ -491,8 +484,8 @@ def submission_manager(n_clicks, n_intervals, job_id, problem_print_code, job_su
             dash.no_update, dash.no_update
 
     if in_job_submit_state(job_submit_state) in RUNNING:
-        p = Problems(endpoint=client.endpoint, token=client.token)
-        job_submit_state = p.get_problem_status(job_id).status.value
+
+        job_submit_state = get_status(client, job_id, job_submit_time)
 
         sampleset_code = dash.no_update
         sampleset_human = dash.no_update
@@ -504,7 +497,7 @@ def submission_manager(n_clicks, n_intervals, job_id, problem_print_code, job_su
             sampleset_code = json.dumps(sampleset.to_serializable())
             sampleset_human = out_solutions_human(sampleset)
 
-        elapsed_time = (datetime.datetime.now() - datetime.datetime.strptime(job_submit_time, "%c")).seconds
+        elapsed_time = elapsed(job_submit_time)
 
         return True, hide_button, False, 1*1000, 0, \
             out_job_submit_state(job_submit_state), \
@@ -513,7 +506,7 @@ def submission_manager(n_clicks, n_intervals, job_id, problem_print_code, job_su
 
     if in_job_submit_state(job_submit_state) in TERMINATED:
         # Need to enable all buttons
-        elapsed_time = (datetime.datetime.now() - datetime.datetime.strptime(job_submit_time, "%c")).seconds
+        elapsed_time = elapsed(job_submit_time)
 
         return False, dash.no_update, True, 0.1*1000, 0, \
             dash.no_update, \

@@ -351,7 +351,7 @@ def cqm(input_print, problem_print_code, max_leg_slope, \
     Input("solutions_print_code", "value"),
     Input("problem_print_code", "value"))
 def graphics(solutions_print_code, problem_print_code):
-    """ """
+    """Generates graphics for legs and samples."""
     trigger = dash.callback_context.triggered
     trigger_id = trigger[0]["prop_id"].split(".")[0]
 
@@ -437,6 +437,31 @@ def job_submit(job_submit_time, problem_print_code, max_leg_slope, max_cost, max
     return dash.no_update
 #
 @app.callback(
+    Output('solutions_print_code', 'value'),
+    Output("solutions_print_human", "value"),
+    Input('job_submit_state', 'children'),
+    State('job_id', 'children'),)
+def solutions(job_submit_state, job_id):
+    """
+    Update solutions.
+    Generates the solutions_print_* content.
+    """
+
+    trigger_id = dash.callback_context.triggered[0]["prop_id"].split(".")[0]
+
+    if trigger_id != "job_submit_state":
+        return dash.no_update, dash.no_update
+
+    if in_job_submit_state(job_submit_state) in TERMINATED:
+        if in_job_submit_state(job_submit_state) == "COMPLETED":
+            sampleset = client.retrieve_answer(job_id).sampleset
+            return out_solutions_code(sampleset), out_solutions_human(sampleset)
+        else:
+            return "No solutions for this submission", "No solutions for this submission"
+    else: # Other submission states like PENDING
+        return dash.no_update, dash.no_update
+
+@app.callback(
     Output('btn_solve_cqm', 'disabled'),
     Output('btn_cancel', component_property='style'),
     Output('wd_job', 'disabled'),
@@ -445,8 +470,6 @@ def job_submit(job_submit_time, problem_print_code, max_leg_slope, max_cost, max
     Output('job_submit_state', 'children'),
     Output('job_submit_time', 'children'),
     Output('job_elapsed_time', 'children'),
-    Output('solutions_print_code', 'value'),
-    Output("solutions_print_human", "value"),
     Input('btn_solve_cqm', 'n_clicks'),
     Input('wd_job', 'n_intervals'),
     State('job_id', 'children'),
@@ -459,16 +482,13 @@ def submission_manager(n_clicks, n_intervals, job_id, problem_print_code, job_su
     trigger_id = dash.callback_context.triggered[0]["prop_id"].split(".")[0]
 
     if not trigger_id in ["btn_solve_cqm", "wd_job"]:
-        return dash.no_update, dash.no_update, dash.no_update, dash.no_update, dash.no_update, \
-            dash.no_update, \
-            dash.no_update, dash.no_update, \
-            dash.no_update, dash.no_update
+        return dash.no_update, dash.no_update, dash.no_update, dash.no_update, \
+            dash.no_update, dash.no_update, dash.no_update, dash.no_update
 
     if trigger_id == "btn_solve_cqm":
         return True, dict(), False, 0.2*1000, 0, \
             out_job_submit_state("SUBMITTED"), \
             datetime.datetime.now().strftime("%c"), f"Elapsed: 0 sec.", \
-            dash.no_update, dash.no_update
 
     if in_job_submit_state(job_submit_state) == "SUBMITTED":
 
@@ -479,39 +499,29 @@ def submission_manager(n_clicks, n_intervals, job_id, problem_print_code, job_su
         elapsed_time = elapsed(job_submit_time)
 
         return True, dash.no_update, False, 1*1000, 0, \
-            out_job_submit_state(job_submit_state), \
-            dash.no_update, f"Elapsed: {elapsed_time} sec.", \
-            dash.no_update, dash.no_update
+            out_job_submit_state(job_submit_state), dash.no_update, \
+            f"Elapsed: {elapsed_time} sec."
 
     if in_job_submit_state(job_submit_state) in RUNNING:
 
         job_submit_state = get_status(client, job_id, job_submit_time)
 
-        sampleset_code = dash.no_update
-        sampleset_human = dash.no_update
         hide_button = dash.no_update
         if job_submit_state == 'IN_PROGRESS':
             hide_button = dict(display='none')
-        elif job_submit_state == 'COMPLETED':
-            sampleset = client.retrieve_answer(job_id).sampleset
-            sampleset_code = json.dumps(sampleset.to_serializable())
-            sampleset_human = out_solutions_human(sampleset)
 
         elapsed_time = elapsed(job_submit_time)
 
         return True, hide_button, False, 1*1000, 0, \
-            out_job_submit_state(job_submit_state), \
-            dash.no_update, f"Elapsed: {elapsed_time} sec.", \
-            sampleset_code, sampleset_human
+            out_job_submit_state(job_submit_state), dash.no_update, \
+            f"Elapsed: {elapsed_time} sec."
 
     if in_job_submit_state(job_submit_state) in TERMINATED:
         # Need to enable all buttons
         elapsed_time = elapsed(job_submit_time)
 
         return False, dash.no_update, True, 0.1*1000, 0, \
-            dash.no_update, \
-            dash.no_update, f"Elapsed: {elapsed_time} sec.", \
-            dash.no_update, dash.no_update
+            dash.no_update, dash.no_update, f"Elapsed: {elapsed_time} sec."
 
 if __name__ == "__main__":
     app.run_server(debug=True)

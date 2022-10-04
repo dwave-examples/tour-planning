@@ -494,7 +494,7 @@ def submission_manager(n_clicks, n_intervals, job_id, job_submit_state,
             out_job_submit_state("SUBMITTED"), \
             submit_time, f"Elapsed: 0 sec.", \
 
-    if in_job_submit_state(job_submit_state) == "SUBMITTED":
+    if in_job_submit_state(job_submit_state) in ["SUBMITTED", *RUNNING]:
 
         job_submit_state = get_status(client, job_id, job_submit_time)
         if not job_submit_state:
@@ -505,17 +505,17 @@ def submission_manager(n_clicks, n_intervals, job_id, job_submit_state,
             out_job_submit_state(job_submit_state), dash.no_update, \
             f"Elapsed: {elapsed_time} sec."
 
-    if in_job_submit_state(job_submit_state) in RUNNING:
-
-        job_submit_state = get_status(client, job_id, job_submit_time)
-        hide_button = dash.no_update
-        if job_submit_state == 'IN_PROGRESS':
-            hide_button = dict(display='none')
-        elapsed_time = elapsed(job_submit_time)
-
-        return True, hide_button, False, 1*1000, 0, \
-            out_job_submit_state(job_submit_state), dash.no_update, \
-            f"Elapsed: {elapsed_time} sec."
+    # if in_job_submit_state(job_submit_state) in RUNNING:
+    #
+    #     job_submit_state = get_status(client, job_id, job_submit_time)
+    #     hide_button = dash.no_update
+    #     if job_submit_state == 'IN_PROGRESS':
+    #         hide_button = dict(display='none')
+    #     elapsed_time = elapsed(job_submit_time)
+    #
+    #     return True, hide_button, False, 1*1000, 0, \
+    #         out_job_submit_state(job_submit_state), dash.no_update, \
+    #         f"Elapsed: {elapsed_time} sec."
 
     if in_job_submit_state(job_submit_state) in TERMINATED:
         # Need to enable all buttons

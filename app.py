@@ -289,7 +289,7 @@ def user_inputs(num_legs, max_leg_length, min_leg_length, max_leg_slope, \
     for key in inputs.keys():
         inputs[key][2] = eval(key)
 
-    user_inputs = list({**init_tour, **init_cqm}.keys())
+    user_inputs = list(inputs.keys())
     user_inputs.extend([f"{a}_slider" for a in init_cqm.keys()])
     if trigger_id not in user_inputs:
         trigger_id = None
@@ -306,12 +306,12 @@ def user_inputs(num_legs, max_leg_length, min_leg_length, max_leg_slope, \
     Input("solutions_print_code", "value"),
     Input("problem_print_code", "value"))
 def graphics(solutions_print_code, problem_print_code):
-    """Generates graphics for legs and samples."""
+    """Generate graphics for legs and samples."""
     trigger = dash.callback_context.triggered
     trigger_id = trigger[0]["prop_id"].split(".")[0]
 
     samples = None
-    if trigger_id == "solutions_print_code":
+    if trigger_id == "solutions_print_code":    # TODO: add case of no solutions
         samples = get_samples(solutions_print_code)
 
     legs = in_problem_code(problem_print_code)
@@ -352,15 +352,12 @@ def button_control(job_submit_state):
         return dash.no_update, dash.no_update, dash.no_update, dash.no_update, \
             dash.no_update
 
-    return dash.no_update, dash.no_update, dash.no_update, dash.no_update, \
-        dash.no_update
-
 @app.callback(
     Output("bar_job_status", "value"),
     Output("bar_job_status", "color"),
     Input("job_submit_state", "children"),)
 def progress_bar(job_submit_state):
-    """Update progress bar for submissions."""
+    """Update progress bar for job submissions."""
 
     trigger_id = dash.callback_context.triggered[0]["prop_id"].split(".")[0]
 
@@ -411,7 +408,6 @@ def solutions(job_submit_state, job_id):
     Update solutions.
     Generates the solutions_print_* content.
     """
-
     trigger_id = dash.callback_context.triggered[0]["prop_id"].split(".")[0]
 
     if trigger_id != "job_submit_state":
@@ -439,8 +435,7 @@ def solutions(job_submit_state, job_id):
     State("job_id", "children"),
     State("job_submit_state", "children"),
     State("job_submit_time", "children"),)
-def submission_manager(n_clicks, n_intervals, job_id, job_submit_state,
-    job_submit_time):
+def submission_manager(n_clicks, n_intervals, job_id, job_submit_state, job_submit_time):
     """Manage job submission."""
     trigger_id = dash.callback_context.triggered[0]["prop_id"].split(".")[0]
 

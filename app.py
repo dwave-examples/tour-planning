@@ -42,7 +42,7 @@ num_modes = len(modes)
 app = dash.Dash(__name__, external_stylesheets=[dbc.themes.BOOTSTRAP])
 
 try:
-    client = Client.from_config(profile="alpha")
+    client = Client.from_config(profile="test")
 except Exception as client_err:
     client = None
 
@@ -60,6 +60,8 @@ solver_card = dbc.Card([
         html.P(id="job_sm", children="ready", style = dict(display="none")),
         html.P(id="job_id", children="", style = dict(display="none")),
         html.P(id="job_elapsed_time", children=""),
+        dbc.Alert(id="alert_cancel", children="", dismissable=True,
+            is_open=False,),
         dbc.Button("Cancel Job", id="btn_cancel", color="warning", className="me-1",
             style = dict(display="none")),]),],
     color="secondary")
@@ -199,12 +201,12 @@ app.layout = dbc.Container(
 ###################
 
 job_bar = {"READY": [0, "link"],
-           "WAITING": [0, "light"],
+           "WAITING": [0, "dark"],
            "SUBMITTED": [10, "info"],
            "PENDING": [50, "warning"],
            "IN_PROGRESS": [75 ,"primary"],
            "COMPLETED": [100, "success"],
-           "CANCELLED": [100, "dark"],
+           "CANCELLED": [100, "light"],
            "FAILED": [100, "danger"], }
 
 TERMINATED = ["COMPLETED", "CANCELLED", "FAILED"]
@@ -325,7 +327,30 @@ def graphics(solutions_print_code, problem_print_code):
     return fig_space, fig_time, fig_diversity
 
 @app.callback(
+    Output("alert_cancel", "children"),
+    Output("alert_cancel", "is_open"),
+    Input("btn_cancel", "n_clicks"),
+    State("job_id", "children"),)
+def cancel_submission(btn_cancel, job_id):
+    """Try to cancel the current job submission."""
+    trigger_id = dash.callback_context.triggered[0]["prop_id"].split(".")[0]
+
+    if trigger_id !="btn_cancel":
+        return dash.no_update, dash.no_update
+    else:
+        status = cancel(client, job_id)
+        try:
+            if status.status.name == "CANCELLED":
+                alert = f"Cancelled job {job_id}"
+            else:
+                alert = f"Could not cancel job: {status}"
+        except Exception as err:
+            alert = f"Could not cancel job: {status}"
+        return alert, True
+
+@app.callback(
     Output("btn_cancel", component_property="style"),
+    Output("btn_cancel", "disabled"),
     [Output(id, "disabled") for id in leg_inputs.keys()],
     Input("job_submit_state", "children"),)
 def button_control(job_submit_state):
@@ -336,21 +361,24 @@ def button_control(job_submit_state):
 
     if trigger_id !="job_submit_state":
         return dash.no_update, dash.no_update, dash.no_update, dash.no_update, \
-            dash.no_update
+            dash.no_update, dash.no_update
 
     if in_job_submit_state(job_submit_state) == "SUBMITTED":
-        return  dict(), True, True, True, True
+        return  dict(), True, True, True, True, True
+
+    if in_job_submit_state(job_submit_state) == "PENDING":
+        return  dict(), False, True, True, True, True
 
     elif in_job_submit_state(job_submit_state) == "IN_PROGRESS":
-        return dict(display="none"), dash.no_update, dash.no_update, dash.no_update, \
-            dash.no_update
+        return dict(display="none"), True, dash.no_update, dash.no_update, \
+            dash.no_update, dash.no_update
 
     elif in_job_submit_state(job_submit_state) in TERMINATED:
-        return dash.no_update, False, False, False, False
+        return dash.no_update, False, False, False, False, False
 
     else:
         return dash.no_update, dash.no_update, dash.no_update, dash.no_update, \
-            dash.no_update
+            dash.no_update, dash.no_update
 
 @app.callback(
     Output("bar_job_status", "value"),

@@ -17,7 +17,16 @@ from dwave.cloud.api import exceptions, Problems
 import dimod
 from formatting import *
 
-__all__ = ["elapsed", "get_status", "get_samples",]
+__all__ = ["cancel", "elapsed", "get_status", "get_samples",]
+
+def cancel(client, job_id):
+    """Try to cancel a job submission."""
+    p = Problems(endpoint=client.endpoint, token=client.token)
+    try:
+        status = p.cancel_problem(job_id)
+        return status
+    except Exception as err:
+        return err
 
 def elapsed(ref_time):
     """Return elapsed time in seconds."""

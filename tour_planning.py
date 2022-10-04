@@ -17,7 +17,6 @@ import numpy as np
 import pandas as pd
 
 import dimod
-from dwave.cloud.hybrid import Client     # TODO: move the client function to this file
 
 transport = {
     'walk': {'Speed': 1, 'Cost': 0, 'Exercise': 1},
@@ -28,10 +27,12 @@ modes = transport.keys()  # global
 num_modes = len(modes)
 
 def set_legs(num_legs, leg_length_range, max_leg_slope):
+    """Create legs of random length within configured a range."""
     return [{'length': round((leg_length_range[1] - leg_length_range[0])*random.random() \
         + leg_length_range[0], 1),
              'uphill': round(max_leg_slope*random.random(), 1),
-             'toll': bool(np.random.choice([True, False], 1, p=[0.2, 0.8])[0])} for i in range(num_legs)]
+             'toll': bool(np.random.choice([True, False], 1, p=[0.2, 0.8])[0])}
+        for i in range(num_legs)]
 
 def budgets(legs):
     legs_total = sum(l["length"] for l in legs)
@@ -42,9 +43,9 @@ def budgets(legs):
 
     return max_cost, max_time
 
-init_cqm = {'weight_cost': [0, 10000, 100],
-    'weight_time': [0, 10000, 30],
-    'weight_slope': [0, 10000, 150],}
+init_cqm = {'weight_cost': [0, 100000, 100],
+    'weight_time': [0, 100000, 30],
+    'weight_slope': [0, 100000, 150],}
 
 init_tour = {'num_legs': [5, 100, 10],
     'max_leg_length': [1, 20, 10],

@@ -32,6 +32,7 @@ from tool_tips import tool_tips
 import dimod
 from dwave.cloud.hybrid import Client
 from dwave.cloud.api import Problems
+from dwave.cloud.api import exceptions
 
 modes = transport.keys()  # global, but not user modified
 num_modes = len(modes)
@@ -428,7 +429,6 @@ def job_submit(job_submit_time, problem_print_code, max_leg_slope, max_cost, max
     Output('bar_job_status', 'value'),
     Output('bar_job_status', 'color'),
     Output('job_submit_state', 'children'),
-    Output('job_sm', 'children'),
     Output('job_submit_time', 'children'),
     Output('job_elapsed_time', 'children'),
     Output('solutions_print_code', 'value'),
@@ -438,53 +438,48 @@ def job_submit(job_submit_time, problem_print_code, max_leg_slope, max_cost, max
     State('job_id', 'children'),
     State('problem_print_code', 'value'),
     State('job_submit_state', 'children'),
-    State('job_sm', 'children'),
     State('job_submit_time', 'children'),)
 def cqm_submit(n_clicks, n_intervals, job_id, problem_print_code, job_submit_state,
-    job_sm, job_submit_time):
+    job_submit_time):
     """SM for job submission."""
     trigger_id = dash.callback_context.triggered[0]["prop_id"].split(".")[0]
 
     if not trigger_id in ["btn_solve_cqm", "wd_job"]:
         return dash.no_update, dash.no_update, dash.no_update, dash.no_update, dash.no_update, \
             dash.no_update, dash.no_update, \
-            dash.no_update, dash.no_update, \
+            dash.no_update, \
             dash.no_update, dash.no_update, \
             dash.no_update, dash.no_update
 
     if trigger_id == "btn_solve_cqm":
         return True, dict(), False, 0.2*1000, 0, \
             job_bar['SUBMITTED'][0], job_bar['SUBMITTED'][1], \
-            out_job_submit_state("SUBMITTED"), "SUBMITTED", \
+            out_job_submit_state("SUBMITTED"), \
             datetime.datetime.now().strftime("%c"), f"Elapsed: 0 sec.", \
             dash.no_update, dash.no_update
 
-    if job_sm == "SUBMITTED":
+    if in_job_submit_state(job_submit_state) == "SUBMITTED":
         p = Problems(endpoint=client.endpoint, token=client.token)
 
         try:
             status = p.get_problem_status(job_id)
             label_time = dict(status)["label"].split("submitted: ")[1]
             if label_time == job_submit_time:
-                status = status.status.value
-                job_submit_state = status
+                job_submit_state = status.status.value
             else:
-                status= "SUBMITTED"
                 job_submit_state = "SUBMITTED"
-        except Exception as err:
-            print(err, type(err).__name__)
-            status = "SUBMITTED"
+        except exceptions.ResourceNotFoundError as err:
             job_submit_state = "SUBMITTED"
         #
         elapsed_time = (datetime.datetime.now() - datetime.datetime.strptime(job_submit_time, "%c")).seconds
 
         return True, dash.no_update, False, 1*1000, 0, \
             job_bar['SUBMITTED'][0], job_bar['SUBMITTED'][1], \
-            out_job_submit_state(job_submit_state), status, \
+            out_job_submit_state(job_submit_state), \
             dash.no_update, f"Elapsed: {elapsed_time} sec.", \
             dash.no_update, dash.no_update
 
-    if job_sm in ['PENDING', 'IN_PROGRESS']:
+    if in_job_submit_state(job_submit_state) in RUNNING:
         p = Problems(endpoint=client.endpoint, token=client.token)
         status = p.get_problem_status(job_id).status.value
         job_submit_state = status
@@ -503,17 +498,17 @@ def cqm_submit(n_clicks, n_intervals, job_id, problem_print_code, job_submit_sta
 
         return True, hide_button, False, 1*1000, 0, \
             job_bar[status][0], job_bar[status][1], \
-            out_job_submit_state(job_submit_state), status, \
+            out_job_submit_state(job_submit_state), \
             dash.no_update, f"Elapsed: {elapsed_time} sec.", \
             sampleset_code, sampleset_human
 
-    if job_sm in ['COMPLETED', 'CANCELLED', 'FAILED']:
+    if in_job_submit_state(job_submit_state) in TERMINATED:
         # Need to enable all buttons
         elapsed_time = (datetime.datetime.now() - datetime.datetime.strptime(job_submit_time, "%c")).seconds
 
         return False, dash.no_update, True, 0.1*1000, 0, \
             dash.no_update, dash.no_update, \
-            dash.no_update, dash.no_update, \
+            dash.no_update, \
             dash.no_update, f"Elapsed: {elapsed_time} sec.", \
             dash.no_update, dash.no_update
 

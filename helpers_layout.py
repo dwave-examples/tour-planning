@@ -13,6 +13,7 @@
 #    limitations under the License.
 
 from dash.dcc import Input, Slider
+import numpy as np
 
 from tour_planning import init_cqm, init_tour
 
@@ -38,11 +39,15 @@ def _dcc_slider(name, config_vals, step=1, discrete_slider=False):
     if "_slider" in name:
         suffix = "_slider"
         name = name.replace("_slider", "")
-    if not discrete_slider:
+    max_range = config_vals[f"{name}"][1]
+    init_val = config_vals[f"{name}"][2]
+    if not discrete_slider: # log slider
+        max_range = np.log10(max_range)
+        init_val = np.log10(init_val)
         marks={config_vals[f"{name}"][0]:
-            {"label": "Soft", "style": {"color": "white"}},
-            config_vals[f"{name}"][1]:
-            {"label": "Hard", "style": {"color": "white"}}}
+                {"label": "Soft", "style": {"color": "white"}},
+            int(max_range):
+                {"label": "Hard", "style": {"color": "white"}}}
     else:
         marks={i: {"label": f"{str(i)}", "style": {"color": "white"}} for i in
         range(config_vals[name][0], init_tour[name][1] + 1, 2*step)}
@@ -50,7 +55,7 @@ def _dcc_slider(name, config_vals, step=1, discrete_slider=False):
     return Slider(
         id=f"{name}{suffix}",
         min=config_vals[f"{name}"][0],
-        max=config_vals[f"{name}"][1],
+        max=max_range,
         marks=marks,
         step=step,
-        value=config_vals[f"{name}"][2],)
+        value=init_val,)

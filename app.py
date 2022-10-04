@@ -399,7 +399,8 @@ def graphics(solutions_print_code, problem_print_code):
 def job_submit(job_submit_time, problem_print_code, max_leg_slope, max_cost, max_time,
     weight_cost, weight_time, weight_slope):
     """
-    Submit job and set job ID.
+    Submit job.
+    Generates the job ID.
     """
     trigger_id = dash.callback_context.triggered[0]["prop_id"].split(".")[0]
 
@@ -413,16 +414,11 @@ def job_submit(job_submit_time, problem_print_code, max_leg_slope, max_cost, max
 
         computation = solver.sample_cqm(problem_data_id,
                     label=f"Examples - Tour Planning, submitted: {job_submit_time}", time_limit=5)
-        submission_id = computation.wait_id()
 
-        print(f"job_submit: submission ID is {submission_id}")
+        return computation.wait_id()
 
-        return submission_id
-
-    return dash.no_update   # For when this callback is triggered by SUBMITTED/RUNNING
+    return dash.no_update
 #
-
-
 @app.callback(
     Output('btn_solve_cqm', 'disabled'),
     Output('btn_cancel', component_property='style'),
@@ -440,22 +436,12 @@ def job_submit(job_submit_time, problem_print_code, max_leg_slope, max_cost, max
     Input('btn_solve_cqm', 'n_clicks'),
     Input('wd_job', 'n_intervals'),
     State('job_id', 'children'),
-    State('max_leg_slope', 'value'),
-    State('max_cost', 'value'),
-    State('max_time', 'value'),
-    State('weight_cost_slider', 'value'),
-    State('weight_cost', 'value'),
-    State('weight_time_slider', 'value'),
-    State('weight_time', 'value'),
-    State('weight_slope_slider', 'value'),
-    State('weight_slope', 'value'),
     State('problem_print_code', 'value'),
     State('job_submit_state', 'children'),
     State('job_sm', 'children'),
     State('job_submit_time', 'children'),)
-def cqm_submit(n_clicks, n_intervals, job_id, max_leg_slope, max_cost, max_time, weight_cost_slider, \
-    weight_cost_input, weight_time_slider, weight_time_input, weight_slope_slider, \
-    weight_slope_input, problem_print_code, job_submit_state, job_sm, job_submit_time):
+def cqm_submit(n_clicks, n_intervals, job_id, problem_print_code, job_submit_state,
+    job_sm, job_submit_time):
     """SM for job submission."""
     trigger_id = dash.callback_context.triggered[0]["prop_id"].split(".")[0]
 
@@ -474,7 +460,6 @@ def cqm_submit(n_clicks, n_intervals, job_id, max_leg_slope, max_cost, max_time,
             dash.no_update, dash.no_update
 
     if job_sm == "disable_cqm_btn":
-        print(f"job_sm = {job_sm}")
 
         elapsed_time = (datetime.datetime.now() - datetime.datetime.strptime(job_submit_time, "%c")).seconds
 
@@ -485,39 +470,22 @@ def cqm_submit(n_clicks, n_intervals, job_id, max_leg_slope, max_cost, max_time,
             dash.no_update, dash.no_update
 
     if job_sm == "SUBMITTED":
-        print(f"job_sm = {job_sm}")
-
-        # Need to disable all buttons
-        # job_submit_state = "SUBMITTED"
-        # solver = client.get_solver(supported_problem_types__issubset={"cqm"})
-        # legs = json.loads(problem_print_code)
-        # cqm = build_cqm(legs, modes, max_cost, max_time, weight_cost_input,
-        #                     weight_time_input, max_leg_slope, weight_slope_input)
-        # problem_data_id = solver.upload_cqm(cqm).result()
-        #
-        # computation = solver.sample_cqm(problem_data_id,
-        #             label="Examples - Tour Planning", time_limit=5)
-        # submission_id = computation.wait_id()
-
-        print(f"job_id = {job_id}")
         p = Problems(endpoint=client.endpoint, token=client.token)
 
         try:
-            status = p.get_problem_status(job_id).status.value
-            job_submit_state = status
-
-            label_time = dict(p.get_problem_status(job_id))["label"].split("submitted: ")[1]
-            print(f"label time: {label_time}; submited time: {job_submit_time}")
-            if label_time != job_submit_time:
-                status = "SUBMITTED"
+            status = p.get_problem_status(job_id)
+            label_time = dict(status)["label"].split("submitted: ")[1]
+            if label_time == job_submit_time:
+                status = status.status.value
+                job_submit_state = status
+            else:
+                status= "SUBMITTED"
                 job_submit_state = "SUBMITTED"
-                print("Staying in sleep ...")
-
         except Exception as err:
-            print(err)
+            print(err, type(err).__name__)
             status = "SUBMITTED"
             job_submit_state = "SUBMITTED"
-
+        #
         elapsed_time = (datetime.datetime.now() - datetime.datetime.strptime(job_submit_time, "%c")).seconds
 
         return True, dash.no_update, False, 1*1000, 0, \
@@ -526,23 +494,7 @@ def cqm_submit(n_clicks, n_intervals, job_id, max_leg_slope, max_cost, max_time,
             dash.no_update, f"Elapsed: {elapsed_time} sec.", \
             dash.no_update, dash.no_update
 
-    # if in_job_submit_state(job_submit_state) == "SUBMITTED":
-    #     p = Problems(endpoint=client.endpoint, token=client.token)
-    #     status = p.get_problem_status(job_id).status.value
-    #
-    #     if status == None:   # First few checks
-    #         job_submit_state = "SUBMITTED"
-    #     else:
-    #         job_submit_state = status
-    #
-    #     elapsed_time = (datetime.datetime.now() - datetime.datetime.strptime(job_submit_time, "%c")).seconds
-    #
-    #     return True, dash.no_update, False, 0.5*1000, 0, job_bar['SUBMITTED'][0], \
-    #         job_bar['SUBMITTED'][1], out_job_submit_state(job_submit_state), \
-    #         dash.no_update, f"Elapsed: {elapsed_time} sec.", dash.no_update, dash.no_update, dash.no_update
-
     if job_sm in ['PENDING', 'IN_PROGRESS']:
-        print(f"job_sm = {job_sm}")
         p = Problems(endpoint=client.endpoint, token=client.token)
         status = p.get_problem_status(job_id).status.value
         job_submit_state = status
@@ -566,7 +518,6 @@ def cqm_submit(n_clicks, n_intervals, job_id, max_leg_slope, max_cost, max_time,
             sampleset_code, sampleset_human
 
     if job_sm in ['COMPLETED', 'CANCELLED', 'FAILED']:
-        print(f"job_sm = {job_sm}")
         # Need to enable all buttons
         elapsed_time = (datetime.datetime.now() - datetime.datetime.strptime(job_submit_time, "%c")).seconds
 

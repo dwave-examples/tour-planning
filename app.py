@@ -42,7 +42,7 @@ num_modes = len(modes)
 app = dash.Dash(__name__, external_stylesheets=[dbc.themes.BOOTSTRAP])
 
 try:
-    client = Client.from_config(profile="test")
+    client = Client.from_config(profile="alpha")
 except Exception as client_err:
     client = None
 
@@ -313,8 +313,11 @@ def graphics(solutions_print_code, problem_print_code):
     trigger_id = trigger[0]["prop_id"].split(".")[0]
 
     samples = None
-    if trigger_id == "solutions_print_code":    # TODO: add case of no solutions
-        samples = get_samples(solutions_print_code)
+    if trigger_id == "solutions_print_code":
+        try:
+            samples = get_samples(solutions_print_code)
+        except json.decoder.JSONDecodeError:
+            samples = None
 
     legs = in_problem_code(problem_print_code)
     fig_space = plot_space(legs, samples)
@@ -374,7 +377,7 @@ def button_control(job_submit_state):
             dash.no_update, dash.no_update
 
     elif in_job_submit_state(job_submit_state) in TERMINATED:
-        return dash.no_update, False, False, False, False, False
+        return dict(display="none"), False, False, False, False, False
 
     else:
         return dash.no_update, dash.no_update, dash.no_update, dash.no_update, \

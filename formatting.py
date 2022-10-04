@@ -17,7 +17,7 @@ import json
 
 __all__ = ["in_job_submit_state", "in_problem_code",
     "out_job_submit_state",  "out_problem_human", "out_problem_code",
-    "out_input_human", "out_transport_human", "out_solutions_human",]
+    "out_input_human", "out_transport_human", "out_solutions_human", "out_solutions_code"]
 
 def in_job_submit_state(human_readable):
     """Strip status from 'Status: <status>'"""
@@ -68,3 +68,8 @@ def out_solutions_human(sampleset):
     for leg in first:
         s += f"{leg}\n"
     return s
+
+def out_solutions_code(sampleset):
+    """Output solutions for code."""
+
+    return json.dumps(sampleset.to_serializable())

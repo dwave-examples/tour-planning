@@ -43,6 +43,7 @@ def out_problem_code(problem):
 def out_input_human(params, last_changed):
     """Output the input ranges."""
     df = pd.DataFrame(params)
+    df.fillna("HARD",inplace=True)
     last_change_row = df.shape[1]*[""]
     if last_changed:
         last_change_row[df.columns.get_loc(last_changed)] = "<<---"

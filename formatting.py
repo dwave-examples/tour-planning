@@ -43,6 +43,7 @@ def out_problem_code(problem):
 def out_input_human(params, last_changed):
     """Output the input ranges."""
     df = pd.DataFrame(params)
+    df.fillna("HARD",inplace=True)
     last_change_row = df.shape[1]*[""]
     if last_changed:
         last_change_row[df.columns.get_loc(last_changed)] = "<<---"
@@ -60,6 +61,8 @@ def out_solutions_human(sampleset):
     """Output solutions for humans."""
     s = ""
     sampleset_feasible = sampleset.filter(lambda row: row.is_feasible)
+    if len(sampleset_feasible) == 0:
+        return "No feasible solutions found."
     first = sorted({int(key.split('_')[1]): key.split('_')[0] for key,val in \
         sampleset_feasible.first.sample.items() if val==1.0}.items())
     ratio = round(len(sampleset_feasible)/len(sampleset), 1)

@@ -46,11 +46,13 @@ def get_status(client, job_id, job_submit_time):
     except exceptions.ResourceNotFoundError as err:
         return None
 
-def get_samples(saved_sampleset):
+def get_samples(saved_sampleset):           # TODO: rename and not use ``in_problem_code``
     """Retrieve saved sampleset."""
 
     sampleset = dimod.SampleSet.from_serializable(in_problem_code(saved_sampleset))
     sampleset_feasible = sampleset.filter(lambda row: row.is_feasible)
+    if len(sampleset_feasible) == 0:
+        return "No feasible solutions found."
     first = sorted({int(key.split("_")[1]): key.split("_")[0] for key,val in \
         sampleset_feasible.first.sample.items() if val==1.0}.items())
 

@@ -247,10 +247,10 @@ def legs(input_print, num_legs, max_leg_length, min_leg_length, max_leg_slope):
     [Input("input_print", "value")],
     [Input("problem_print_code", "value")],
     [State("max_leg_slope", "value")],
-    [State(id, "value") for id in [*constraint_inputs.keys(), *cqm_inputs.keys()]],
+    [State(id, "value") for id in [*cqm_inputs.keys(), *constraint_inputs.keys()]],
     [State(f"{id}_radio", "value") for id in constraint_inputs.keys()])
-def cqm(input_print, problem_print_code, max_leg_slope, max_cost, max_time, \
-    weight_cost, weight_time, weight_slope, \
+def cqm(input_print, problem_print_code, max_leg_slope,
+    max_cost, max_time, weight_cost, weight_time, weight_slope,
     weight_cost_radio, weight_time_radio, weight_slope_radio):
     """
     Create the constrained quadratic model (CQM) for the tour.
@@ -261,6 +261,9 @@ def cqm(input_print, problem_print_code, max_leg_slope, max_cost, max_time, \
 
     if trigger_id in ["input_print", "problem_print_code"]:
         legs = in_problem_code(problem_print_code)
+
+        # weights = {f"{key}_radio": "None" if eval("f'{key}_radio' == 'hard'") else \
+        #     eval(key) for key in set(constraint_inputs.keys())}
         if weight_cost_radio == "hard":
             weight_cost = None
         if weight_time_radio == "hard":
@@ -277,11 +280,13 @@ def cqm(input_print, problem_print_code, max_leg_slope, max_cost, max_time, \
     [Output(id, "value") for id in [*leg_inputs.keys(), *constraint_inputs.keys()]],
     [Output(f"{id}_slider", "value") for id in constraint_inputs.keys()],
     [Input(id, "value") for id in
-        [*leg_inputs.keys(), *constraint_inputs.keys(), *cqm_inputs.keys()]],
-    [Input(f"{id}_slider", "value") for id in constraint_inputs.keys()],)
-def user_inputs(num_legs, max_leg_length, min_leg_length, max_leg_slope, \
-    weight_cost, weight_time, weight_slope, max_cost, max_time, \
-    weight_cost_slider,  weight_time_slider, weight_slope_slider):
+        [*leg_inputs.keys(), *cqm_inputs.keys(), *constraint_inputs.keys()]],
+    [Input(f"{id}_slider", "value") for id in constraint_inputs.keys()],
+    [Input(f"{id}_radio", "value") for id in constraint_inputs.keys()],)
+def user_inputs(num_legs, max_leg_length, min_leg_length, max_leg_slope,
+    max_cost, max_time, weight_cost, weight_time, weight_slope,
+    weight_cost_slider,  weight_time_slider, weight_slope_slider, 
+    weight_cost_radio, weight_time_radio, weight_slope_radio):
     """
     Handle configurable user inputs.
     Generates ``input_print`` readable text.
@@ -304,15 +309,25 @@ def user_inputs(num_legs, max_leg_length, min_leg_length, max_leg_slope, \
             weight_vals[weight] = eval(f"weight_{weight}")
 
     inputs = {**init_tour, **init_cqm}
-    for key in inputs.keys():
+    for key in init_tour.keys():
         inputs[key][2] = eval(key)
+    # for key in init_cqm.keys():
+    #     if eval("f'{key}_radio' == 'hard'"):
+    #         inputs[key][2] = eval(key)
+    #     else:
+    #         inputs[key][2] = None
+    inputs["weight_cost"][2] = None if weight_cost_radio=='hard' else weight_cost
+    inputs["weight_time"][2] = None if weight_time_radio=='hard' else weight_time
+    inputs["weight_slope"][2] = None if weight_slope_radio=='hard' else weight_slope
 
     user_inputs = list(inputs.keys())
     user_inputs.extend([f"{a}_slider" for a in init_cqm.keys()])
+    user_inputs.extend([f"{a}_radio" for a in init_cqm.keys()])
     if trigger_id not in user_inputs:
         trigger_id = None
     else:
-        trigger_id = trigger_id.split("_slider")[0]
+        trigger_id = trigger_id.split("_slider")[0] if "slider" in trigger_id else \
+            trigger_id.split("_radio")[0]
 
     return out_input_human(inputs, trigger_id),  \
         num_legs, max_leg_length, min_leg_length, max_leg_slope, \
@@ -419,11 +434,11 @@ def progress_bar(job_submit_state):
     [Input("job_submit_time", "children")],
     [State("problem_print_code", "value")],
     [State("max_leg_slope", "value")],
-    [State(id, "value") for id in constraint_inputs.keys()],
     [State(id, "value") for id in cqm_inputs.keys()],
+    [State(id, "value") for id in constraint_inputs.keys()],
     [State(f"{id}_radio", "value") for id in constraint_inputs.keys()],)
-def job_submit(job_submit_time, problem_print_code, max_leg_slope, max_cost, max_time,
-    weight_cost, weight_time, weight_slope,
+def job_submit(job_submit_time, problem_print_code, max_leg_slope,
+    max_cost, max_time, weight_cost, weight_time, weight_slope,
     weight_cost_radio, weight_time_radio, weight_slope_radio):
     """
     Submit job.

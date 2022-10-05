@@ -120,19 +120,20 @@ for key, val in single_tabs.items():
 
 constraint_inputs = {f"weight_{constraint.lower()}": f"{constraint}" for
     constraint in ["Cost", "Time", "Slope"]}      # also used for display callback
-constraint_card = [html.H4("CQM Settings", className="card-title")]
+constraint_card = [dbc.Row([html.H4("CQM Settings", className="card-title")])]
 constraint_card.extend([
-    html.Div([
-        dbc.Label(f"{val} Weight"),
-        html.Div([
-            _dcc_input(key, init_cqm, step=1)],
-                style=dict(display="flex", justifyContent="right")),
-            _dcc_slider(f"{key}_slider", init_cqm),
-            dcc.RadioItems([
-                {"label": html.Div(['Soft'], style={'color': 'white', 'font-size': 12}),
-                 "value": "soft",},
-                {"label": html.Div(['Hard'], style={'color': 'white', 'font-size': 12}),
-                 "value": "hard",},], value='soft', id=f"{key}_radio", inline=True)])
+    dbc.Row([
+       dbc.Col([
+            html.Div([
+            dbc.Label(f"{val} Weight"),
+            dbc.Row([
+                dbc.Col([
+                    html.Div([
+                        _dcc_input(key, init_cqm, step=1)],
+                            style=dict(display="flex", justifyContent="right")),
+                        _dcc_slider(f"{key}_slider", init_cqm),]),
+                dbc.Col([
+                    _dcc_radio(key)])])])])])
 for key, val in constraint_inputs.items()])
 
 tour_titles = ["Set Legs", "Set Budget"]

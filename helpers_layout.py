@@ -12,12 +12,13 @@
 #    See the License for the specific language governing permissions and
 #    limitations under the License.
 
-from dash.dcc import Input, Slider
+from dash.dcc import Input, Slider, RadioItems
+from dash import html
 import numpy as np
 
 from tour_planning import init_cqm, init_tour
 
-__all__ = ["_dcc_input", "_dcc_slider",]
+__all__ = ["_dcc_input", "_dcc_slider", "_dcc_radio"]
 
 def _dcc_input(name, config_vals, step=None):
     """Construct ``dash.Input`` element for layout."""
@@ -59,3 +60,11 @@ def _dcc_slider(name, config_vals, step=1, discrete_slider=False):
         marks=marks,
         step=step,
         value=init_val,)
+
+def _dcc_radio(name):
+    """Construct ``dash.RadioItem`` elements for layout."""
+    return RadioItems([
+        {"label": html.Div(['Soft'], style={'color': 'white', 'font-size': 12}),
+        "value": "soft",},
+        {"label": html.Div(['Hard'], style={'color': 'white', 'font-size': 12}),
+        "value": "hard",},], value='soft', id=f"{name}_radio", inline=True)

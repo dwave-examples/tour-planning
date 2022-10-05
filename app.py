@@ -131,9 +131,10 @@ constraint_card.extend([
                     html.Div([
                         _dcc_input(key, init_cqm, step=1)],
                             style=dict(display="flex", justifyContent="right")),
-                        _dcc_slider(f"{key}_slider", init_cqm),]),
+                        _dcc_slider(f"{key}_slider", init_cqm),],
+                    style={"margin-right": "20px"}),
                 dbc.Col([
-                    _dcc_radio(key)])])])])])
+                    _dcc_radio(key)], style={"margin-left": "30px"})])])])])
 for key, val in constraint_inputs.items()])
 
 tour_titles = ["Set Legs", "Set Budget"]

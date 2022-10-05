@@ -64,7 +64,7 @@ def _dcc_slider(name, config_vals, step=1, discrete_slider=False):
 def _dcc_radio(name):
     """Construct ``dash.RadioItem`` elements for layout."""
     return RadioItems([
-        {"label": html.Div(['Soft'], style={'color': 'white', 'font-size': 12}),
+        {"label": html.Div(['Soft   '], style={'color': 'white', 'font-size': 12}),
         "value": "soft",},
-        {"label": html.Div(['Hard'], style={'color': 'white', 'font-size': 12}),
-        "value": "hard",},], value='soft', id=f"{name}_radio", inline=True)
+        {"label": html.Div(['   Hard'], style={'color': 'white', 'font-size': 12}),
+        "value": "hard",},], value='soft', id=f"{name}_radio", inputStyle={"margin-right": "20px"})#labelStyle={'display': 'block'})

@@ -132,7 +132,7 @@ constraint_card.extend([
                 {"label": html.Div(['Soft'], style={'color': 'white', 'font-size': 12}),
                  "value": "soft",},
                 {"label": html.Div(['Hard'], style={'color': 'white', 'font-size': 12}),
-                 "value": "hard",},], value='soft', id=f"{key}_radio",)])
+                 "value": "hard",},], value='soft', id=f"{key}_radio", inline=True)])
 for key, val in constraint_inputs.items()])
 
 tour_titles = ["Set Legs", "Set Budget"]
@@ -179,7 +179,7 @@ layout = [
             tour_config, width=4),
         dbc.Col(
             dbc.Card(constraint_card, body=True, color="secondary"),
-            width=2),
+            width=3),
         dbc.Col([
             dbc.Row([
                 dbc.Col([
@@ -245,9 +245,11 @@ def legs(input_print, num_legs, max_leg_length, min_leg_length, max_leg_slope):
     [Input("input_print", "value")],
     [Input("problem_print_code", "value")],
     [State("max_leg_slope", "value")],
-    [State(id, "value") for id in [*constraint_inputs.keys(), *cqm_inputs.keys()]],)
+    [State(id, "value") for id in [*constraint_inputs.keys(), *cqm_inputs.keys()]],
+    [State(f"{id}_radio", "value") for id in constraint_inputs.keys()])
 def cqm(input_print, problem_print_code, max_leg_slope, max_cost, max_time, \
-    weight_cost, weight_time, weight_slope):
+    weight_cost, weight_time, weight_slope, \
+    weight_cost_radio, weight_time_radio, weight_slope_radio):
     """
     Create the constrained quadratic model (CQM) for the tour.
     Generates ``problem_print`` code & readable text.
@@ -257,6 +259,13 @@ def cqm(input_print, problem_print_code, max_leg_slope, max_cost, max_time, \
 
     if trigger_id in ["input_print", "problem_print_code"]:
         legs = in_problem_code(problem_print_code)
+        if weight_cost_radio == "hard":
+            weight_cost = None
+        if weight_time_radio == "hard":
+            weight_time = None
+        if weight_slope_radio == "hard":
+            weight_slope = None
+
         cqm = build_cqm(legs, modes, max_leg_slope, max_cost, max_time, \
             weight_cost, weight_time, weight_slope)
         return cqm.__str__()
@@ -318,10 +327,10 @@ def graphics(solutions_print_code, problem_print_code):
     trigger_id = trigger[0]["prop_id"].split(".")[0]
 
     samples = None
+
     if trigger_id == "solutions_print_code":
-        try:
-            samples = get_samples(solutions_print_code)
-        except json.decoder.JSONDecodeError:
+        samples = get_samples(solutions_print_code)
+        if not isinstance(samples, dict):
             samples = None
 
     legs = in_problem_code(problem_print_code)
@@ -409,9 +418,11 @@ def progress_bar(job_submit_state):
     [State("problem_print_code", "value")],
     [State("max_leg_slope", "value")],
     [State(id, "value") for id in constraint_inputs.keys()],
-    [State(id, "value") for id in cqm_inputs.keys()],)
+    [State(id, "value") for id in cqm_inputs.keys()],
+    [State(f"{id}_radio", "value") for id in constraint_inputs.keys()],)
 def job_submit(job_submit_time, problem_print_code, max_leg_slope, max_cost, max_time,
-    weight_cost, weight_time, weight_slope):
+    weight_cost, weight_time, weight_slope,
+    weight_cost_radio, weight_time_radio, weight_slope_radio):
     """
     Submit job.
     Generates the job ID.
@@ -419,6 +430,13 @@ def job_submit(job_submit_time, problem_print_code, max_leg_slope, max_cost, max
     trigger_id = dash.callback_context.triggered[0]["prop_id"].split(".")[0]
 
     if trigger_id =="job_submit_time":
+
+        if weight_cost_radio == "hard":
+            weight_cost = None
+        if weight_time_radio == "hard":
+            weight_time = None
+        if weight_slope_radio == "hard":
+            weight_slope = None
 
         solver = client.get_solver(supported_problem_types__issubset={"cqm"})
         legs = in_problem_code(problem_print_code)

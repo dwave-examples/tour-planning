@@ -127,7 +127,12 @@ constraint_card.extend([
         html.Div([
             _dcc_input(key, init_cqm, step=1)],
                 style=dict(display="flex", justifyContent="right")),
-            _dcc_slider(f"{key}_slider", init_cqm),])
+            _dcc_slider(f"{key}_slider", init_cqm),
+            dcc.RadioItems([
+                {"label": html.Div(['Soft'], style={'color': 'white', 'font-size': 12}),
+                 "value": "soft",},
+                {"label": html.Div(['Hard'], style={'color': 'white', 'font-size': 12}),
+                 "value": "hard",},], value='soft', id=f"{key}_radio",)])
 for key, val in constraint_inputs.items()])
 
 tour_titles = ["Set Legs", "Set Budget"]

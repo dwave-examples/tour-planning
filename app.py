@@ -262,17 +262,13 @@ def cqm(input_print, problem_print_code, max_leg_slope,
     if trigger_id in ["input_print", "problem_print_code"]:
         legs = in_problem_code(problem_print_code)
 
-        # weights = {f"{key}_radio": "None" if eval("f'{key}_radio' == 'hard'") else \
-        #     eval(key) for key in set(constraint_inputs.keys())}
-        if weight_cost_radio == "hard":
-            weight_cost = None
-        if weight_time_radio == "hard":
-            weight_time = None
-        if weight_slope_radio == "hard":
-            weight_slope = None
+        weights = {}
+        for key in constraint_inputs.keys():
+            radio_button = f"{key}_radio"
+            weights[key] = None if eval(f"{radio_button} == 'hard'") else eval(key)
 
         cqm = build_cqm(legs, modes, max_leg_slope, max_cost, max_time, \
-            weight_cost, weight_time, weight_slope)
+            weights["weight_cost"], weights["weight_time"], weights["weight_slope"])
         return cqm.__str__()
 
 @app.callback(
@@ -285,7 +281,7 @@ def cqm(input_print, problem_print_code, max_leg_slope,
     [Input(f"{id}_radio", "value") for id in constraint_inputs.keys()],)
 def user_inputs(num_legs, max_leg_length, min_leg_length, max_leg_slope,
     max_cost, max_time, weight_cost, weight_time, weight_slope,
-    weight_cost_slider,  weight_time_slider, weight_slope_slider, 
+    weight_cost_slider,  weight_time_slider, weight_slope_slider,
     weight_cost_radio, weight_time_radio, weight_slope_radio):
     """
     Handle configurable user inputs.
@@ -311,14 +307,14 @@ def user_inputs(num_legs, max_leg_length, min_leg_length, max_leg_slope,
     inputs = {**init_tour, **init_cqm}
     for key in init_tour.keys():
         inputs[key][2] = eval(key)
-    # for key in init_cqm.keys():
-    #     if eval("f'{key}_radio' == 'hard'"):
-    #         inputs[key][2] = eval(key)
-    #     else:
-    #         inputs[key][2] = None
-    inputs["weight_cost"][2] = None if weight_cost_radio=='hard' else weight_cost
-    inputs["weight_time"][2] = None if weight_time_radio=='hard' else weight_time
-    inputs["weight_slope"][2] = None if weight_slope_radio=='hard' else weight_slope
+
+    if any(trigger_id == f"{key}_radio" for key in constraint_inputs.keys()):
+        for key in constraint_inputs.keys():
+            radio_button = f"{key}_radio"
+            if eval(f"{radio_button} == 'hard'"):
+                inputs[key][2] = None
+            else:
+                inputs[key][2] = eval(key)
 
     user_inputs = list(inputs.keys())
     user_inputs.extend([f"{a}_slider" for a in init_cqm.keys()])
@@ -448,17 +444,15 @@ def job_submit(job_submit_time, problem_print_code, max_leg_slope,
 
     if trigger_id =="job_submit_time":
 
-        if weight_cost_radio == "hard":
-            weight_cost = None
-        if weight_time_radio == "hard":
-            weight_time = None
-        if weight_slope_radio == "hard":
-            weight_slope = None
+        weights = {}
+        for key in constraint_inputs.keys():
+            radio_button = f"{key}_radio"
+            weights[key] = None if eval(f"{radio_button} == 'hard'") else eval(key)
 
         solver = client.get_solver(supported_problem_types__issubset={"cqm"})
         legs = in_problem_code(problem_print_code)
         cqm = build_cqm(legs, modes, max_leg_slope, max_cost, max_time, \
-            weight_cost, weight_time, weight_slope)
+            weights["weight_cost"], weights["weight_time"], weights["weight_slope"])
         problem_data_id = solver.upload_cqm(cqm).result()
 
         computation = solver.sample_cqm(problem_data_id,

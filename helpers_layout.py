@@ -18,7 +18,9 @@ import numpy as np
 
 from tour_planning import tour_ranges_init
 
-__all__ = ["_dcc_input", "_dcc_slider", "_dcc_radio"]
+__all__ = ["no_solver_msg", "_dcc_input", "_dcc_slider", "_dcc_radio"]
+
+no_solver_msg = "No solver"
 
 def _dcc_input(name, config_vals, step=None):
     """Construct ``dash.Input`` element for layout."""

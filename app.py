@@ -27,7 +27,7 @@ from helpers_graphics import *
 from helpers_jobs import *
 from helpers_layout import *
 from formatting import *
-from tour_planning import init_cqm, init_tour, init_legs
+from tour_planning import weights_ranges_init, tour_ranges_init
 from tour_planning import build_cqm, set_legs, transport
 from tool_tips import tool_tips
 
@@ -42,7 +42,7 @@ num_modes = len(modes)
 app = dash.Dash(__name__, external_stylesheets=[dbc.themes.BOOTSTRAP])
 
 try:
-    client = Client.from_config(profile="alpha")
+    client = Client.from_config()
 except Exception as client_err:
     client = None
 
@@ -129,9 +129,9 @@ constraint_card.extend([
             dbc.Row([
                 dbc.Col([
                     html.Div([
-                        _dcc_input(key, init_cqm, step=1)],
+                        _dcc_input(key, weights_ranges_init, step=1)],
                             style=dict(display="flex", justifyContent="right")),
-                        _dcc_slider(f"{key}_slider", init_cqm),],
+                        _dcc_slider(f"{key}_slider", weights_ranges_init),],
                     style={"margin-right": "20px"}),
                 dbc.Col([
                     _dcc_radio(key)], style={"margin-left": "30px"})])])])])
@@ -151,8 +151,8 @@ leg_rows_inputs = {**leg_inputs, **cqm_inputs}
 leg_rows = [dbc.Row([
     f"{val}",
     dash.html.Br(),
-    _dcc_input(key, init_tour, step=1) if key != "max_leg_slope" else
-    _dcc_slider(key, init_tour, step=1, discrete_slider=True)])
+    _dcc_input(key, tour_ranges_init, step=1) if key != "max_leg_slope" else
+    _dcc_slider(key, tour_ranges_init, step=1, discrete_slider=True)])
     for key, val in leg_rows_inputs.items()]
 tour_config = dbc.Card(
     [dbc.Row([
@@ -304,8 +304,8 @@ def user_inputs(num_legs, max_leg_length, min_leg_length, max_leg_slope,
         if trigger_id == f"weight_{weight}":
             weight_vals[weight] = eval(f"weight_{weight}")
 
-    inputs = {**init_tour, **init_cqm}
-    for key in init_tour.keys():
+    inputs = {**tour_ranges_init, **weights_ranges_init}
+    for key in tour_ranges_init.keys():
         inputs[key][2] = eval(key)
 
     if any(trigger_id == f"{key}_radio" for key in constraint_inputs.keys()):
@@ -317,8 +317,8 @@ def user_inputs(num_legs, max_leg_length, min_leg_length, max_leg_slope,
                 inputs[key][2] = eval(key)
 
     user_inputs = list(inputs.keys())
-    user_inputs.extend([f"{a}_slider" for a in init_cqm.keys()])
-    user_inputs.extend([f"{a}_radio" for a in init_cqm.keys()])
+    user_inputs.extend([f"{a}_slider" for a in weights_ranges_init.keys()])
+    user_inputs.extend([f"{a}_radio" for a in weights_ranges_init.keys()])
     if trigger_id not in user_inputs:
         trigger_id = None
     else:
@@ -342,7 +342,7 @@ def graphics(solutions_print_code, problem_print_code):
     samples = None
 
     if trigger_id == "solutions_print_code":
-        samples = get_samples(solutions_print_code)
+        samples = in_solutions_code(solutions_print_code)
         if not isinstance(samples, dict):
             samples = None
 

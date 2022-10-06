@@ -11,7 +11,6 @@
 #    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #    See the License for the specific language governing permissions and
 #    limitations under the License.
-import datetime
 import pandas as pd
 import plotly.express as px
 
@@ -21,6 +20,7 @@ __all__ = ["plot_space", "plot_time", "plot_diversity"]
 
 def plot_space(legs, samples=None):
     """Plot legs versus distance and slope, optionally with solutions."""
+
     df_legs = pd.DataFrame({"Length": [l["length"] for l in legs],
                             "Slope": [s["uphill"] for s in legs]})
     df_legs["Tour"] = 0
@@ -30,8 +30,8 @@ def plot_space(legs, samples=None):
 
     fig.add_layout_image(
             dict(source="assets/europe.png", xref="x", yref="y", x=0, y=0.5,
-                 sizex=df_legs["Length"].sum(), sizey=1, sizing="stretch",
-                 opacity=0.25, layer="below"))
+            sizex=df_legs["Length"].sum(), sizey=1, sizing="stretch",
+            opacity=0.25, layer="below"))
 
     x_pos = 0
     for indx, leg in enumerate(legs):
@@ -44,7 +44,7 @@ def plot_space(legs, samples=None):
     fig.update_yaxes(showticklabels=False, title=None, range=(-0.5, 0.5))
     fig.update_traces(width=.1)
     fig.update_layout(font_color="rgb(6, 236, 220)", margin=dict(l=20, r=20, t=20, b=20),
-                      paper_bgcolor="rgba(0,0,0,0)")
+        paper_bgcolor="rgba(0,0,0,0)")
 
     if samples:
 
@@ -54,35 +54,36 @@ def plot_space(legs, samples=None):
         x_pos = 0
         for leg, icon in samples["first"]:
             fig.add_layout_image(dict(source=f"assets/{icon}.png", xref="x",
-                yref="y", x=x_pos, y=-0.1, sizex=2, sizey=2, opacity=1,
-                layer="above"))
+            yref="y", x=x_pos, y=-0.1, sizex=2, sizey=2, opacity=1, layer="above"))
             x_pos += df_legs["Length"][leg]
 
     return fig
 
 def plot_time(legs, transport, samples):
-    """Plot legs versus time and cost, requires solutions."""
+    """Plot legs versus time and cost given solutions."""
 
     if not samples:
         return None
 
-    df_legs = pd.DataFrame({"Time": [l["length"]/transport[f[1]]["Speed"] for l,f in zip(legs, samples["first"])],
-                            "Cost": [transport[f[1]]["Speed"] for f in samples["first"]]})
+    df_legs = pd.DataFrame({"Time": [l["length"]/transport[f[1]]["Speed"] for
+        l,f in zip(legs, samples["first"])],
+        "Cost": [transport[f[1]]["Speed"] for f in samples["first"]]})
     df_legs["Tour"] = 0
 
     fig = px.bar(df_legs, x="Time", y="Tour", color="Cost", orientation="h",
-                 color_continuous_scale=px.colors.diverging.Geyser)
+        color_continuous_scale=px.colors.diverging.Geyser)
 
     fig.add_layout_image(
-            dict(source="assets/clock.png", xref="x", yref="y", x=0, y=0.5,
-                 sizex=df_legs["Time"].sum(), sizey=1, sizing="stretch",
-                 opacity=0.25, layer="below"))
+        dict(source="assets/clock.png", xref="x", yref="y", x=0, y=0.5,
+        sizex=df_legs["Time"].sum(), sizey=1, sizing="stretch",
+        opacity=0.25, layer="below"))
 
     fig.update_xaxes(showticklabels=True, title="Time")
     fig.update_yaxes(showticklabels=False, title=None, range=(-0.5, 0.5))
     fig.update_traces(width=.1)
-    fig.update_layout(font_color="rgb(6, 236, 220)", margin=dict(l=20, r=20, t=20, b=20),
-                      paper_bgcolor="rgba(0,0,0,0)")
+    fig.update_layout(font_color="rgb(6, 236, 220)",
+        margin=dict(l=20, r=20, t=20, b=20),
+        paper_bgcolor="rgba(0,0,0,0)")
 
     fig.update_traces(texttemplate = [transport for leg,transport in samples["first"]],
         textposition = "inside")
@@ -122,11 +123,12 @@ def plot_diversity(legs, transport, samples):
     fig = px.scatter_3d(occurrences, x="Time", y="Cost", z="Energy", color=color,
         size=occurrences["size"])
 
-    fig.for_each_trace(lambda t: t.update(name = legend_names[t.name], legendgroup = legend_names[t.name]))
+    fig.for_each_trace(lambda t: t.update(name = legend_names[t.name],
+        legendgroup = legend_names[t.name]))
     fig.update_scenes(xaxis_title_text="Time",
                       yaxis_title_text="Cost",
                       zaxis_title_text="Exercise")
-    fig.update_layout(font_color="rgb(6, 236, 220)", margin=dict(l=20, r=20, t=20, b=20),
-                      paper_bgcolor="rgba(0,0,0,0)")
+    fig.update_layout(font_color="rgb(6, 236, 220)",
+        margin=dict(l=20, r=20, t=20, b=20), paper_bgcolor="rgba(0,0,0,0)")
 
     return fig

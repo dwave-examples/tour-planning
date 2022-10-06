@@ -22,6 +22,7 @@ __all__ = ["_dcc_input", "_dcc_slider", "_dcc_radio"]
 
 def _dcc_input(name, config_vals, step=None):
     """Construct ``dash.Input`` element for layout."""
+
     suffix = ""
     if "_slider" in name:
         suffix = "_slider"
@@ -36,6 +37,7 @@ def _dcc_input(name, config_vals, step=None):
 
 def _dcc_slider(name, config_vals, step=1, discrete_slider=False):
     """Construct ``dash.Slider`` elements for layout."""
+
     suffix = ""
     if "_slider" in name:
         suffix = "_slider"
@@ -63,8 +65,10 @@ def _dcc_slider(name, config_vals, step=1, discrete_slider=False):
 
 def _dcc_radio(name):
     """Construct ``dash.RadioItem`` elements for layout."""
+
     return RadioItems([
         {"label": html.Div(['Soft   '], style={'color': 'white', 'font-size': 12}),
         "value": "soft",},
         {"label": html.Div(['   Hard'], style={'color': 'white', 'font-size': 12}),
-        "value": "hard",},], value='soft', id=f"{name}_radio", inputStyle={"margin-right": "20px"})#labelStyle={'display': 'block'})
+        "value": "hard",},], value='soft', id=f"{name}_radio",
+        inputStyle={"margin-right": "20px"})

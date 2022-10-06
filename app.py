@@ -203,6 +203,13 @@ tips = [dbc.Tooltip(
             for target, message in tool_tips.items()]
 layout.extend(tips)
 
+modal = [html.Div([
+    dbc.Modal([
+        dbc.ModalHeader(
+            dbc.ModalTitle("Leap Hybrid CQM Solver Inaccessible")),
+        dbc.ModalBody(no_solver_msg),], id="solver_modal", size="sm")])]
+layout.extend(modal)
+
 app.layout = dbc.Container(
     layout, fluid=True,
     style={"backgroundColor": "black", "color": "rgb(6, 236, 220)"})
@@ -221,6 +228,21 @@ job_bar = {"READY": [0, "link"],
 
 TERMINATED = ["COMPLETED", "CANCELLED", "FAILED"]
 RUNNING = ["PENDING", "IN_PROGRESS"]
+
+@app.callback(
+    Output("solver_modal", "is_open"),
+    Input("btn_solve_cqm", "n_clicks"),)
+def no_solver(btn_solve_cqm):
+    """Notify if no Leap hybrid CQM solver is accessible."""
+
+    trigger = dash.callback_context.triggered
+    trigger_id = trigger[0]["prop_id"].split(".")[0]
+
+    if trigger_id == "btn_solve_cqm":
+        if not client:
+            return True
+
+    return False
 
 @app.callback(
     [Output("problem_print_code", "value")],

@@ -117,14 +117,13 @@ def plot_diversity(legs, transport, samples):
     df = pd.DataFrame(data)
 
     occurrences = df.groupby(df.columns.tolist(),as_index=False).size()
-    color = ["blue" if f==True else "black" for f in occurrences["Feasibility"]]
-    legend_names = {"blue":"Feasible", "black": "Infeasible"}
+    occurrences = occurrences.rename({"size": "Occurrences"}, axis=1)
 
-    fig = px.scatter_3d(occurrences, x="Time", y="Cost", z="Energy", color=color,
-        size=occurrences["size"])
+    fig = px.scatter_3d(occurrences, x="Time", y="Cost", z="Energy", color="Feasibility",
+        size="Occurrences", size_max=50, symbol="Feasibility",
+        color_discrete_sequence = ['red', 'blue'], symbol_sequence= ['x', 'circle'],
+        hover_data=["Cost", "Time", "Occurrences", "Energy"])
 
-    fig.for_each_trace(lambda t: t.update(name = legend_names[t.name],
-        legendgroup = legend_names[t.name]))
     fig.update_scenes(xaxis_title_text="Time",
                       yaxis_title_text="Cost",
                       zaxis_title_text="Exercise")

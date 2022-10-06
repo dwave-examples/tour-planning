@@ -29,4 +29,5 @@ tool_tips = {"num_legs": "Number of legs for the tour.",
     "weight_slope_radio": "Hard or soft constraint on on steepest leg to cycle. When hard, input values are ignored",
     "btn_solve_cqm": "Click to submit your problem to a Leap quantum-classical hybrid CQM solver.",
     "btn_cancel": "Click to try cancel your problem before problem begins processing.",
+    "max_runtime": "Maximum runtime for the solver to process the problem. The default is 5 seconds.",
 }

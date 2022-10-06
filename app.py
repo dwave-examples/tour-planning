@@ -62,7 +62,12 @@ solver_card = dbc.Card([
         dbc.Alert(id="alert_cancel", children="", dismissable=True,
             is_open=False,),
         dbc.Button("Cancel Job", id="btn_cancel", color="warning", className="me-1",
-            style = dict(display="none")),]),],
+            style = dict(display="none")),
+        dbc.Row([
+                html.Div([
+                    html.P("Increase runtime limit:"),
+                    dcc.Input(id="max_runtime", type="number", min=5, max=600,
+                        step=5, value=5, style={'marginRight':'10px'}),]),]),]),],
     color="secondary")
 
 # Tab-construction section
@@ -161,7 +166,7 @@ tour_config = dbc.Card(
                 for tour_title in tour_titles]),
      dbc.Row([
         dbc.Col(leg_row_inputs[:4], style={"margin-right": "20px"}),
-        dbc.Col(leg_row_inputs[4:], style={"margin-left": "20px"}),],)],
+        dbc.Col(leg_row_inputs[4:], style={"margin-left": "20px"}),],),],
     body=True, color="secondary")
 
 # Page-layout section

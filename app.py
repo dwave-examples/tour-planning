@@ -358,6 +358,7 @@ def graphics(solutions_print_code, problem_print_code):
     State("job_id", "children"),)
 def cancel_submission(btn_cancel, job_id):
     """Try to cancel the current job submission."""
+
     trigger_id = dash.callback_context.triggered[0]["prop_id"].split(".")[0]
 
     if trigger_id !="btn_cancel":
@@ -370,7 +371,7 @@ def cancel_submission(btn_cancel, job_id):
             else:
                 alert = f"Could not cancel job: {status}"
         except Exception as err:
-            alert = f"Could not cancel job: {status}"
+            alert = f"Could not cancel job: {err}"
         return alert, True
 
 @app.callback(
@@ -379,9 +380,8 @@ def cancel_submission(btn_cancel, job_id):
     [Output(id, "disabled") for id in leg_inputs.keys()],
     Input("job_submit_state", "children"),)
 def button_control(job_submit_state):
-    """
-    Enable and disable tour-effecting user input during job submissions.
-    """
+    """Disable tour-effecting user input during job submissions."""
+
     trigger_id = dash.callback_context.triggered[0]["prop_id"].split(".")[0]
 
     if trigger_id !="job_submit_state":
@@ -398,7 +398,7 @@ def button_control(job_submit_state):
         return dict(display="none"), True, dash.no_update, dash.no_update, \
             dash.no_update, dash.no_update
 
-    elif job_status_to_str(job_submit_state) in TERMINATED:
+    elif any(job_status_to_str(job_submit_state) == status for status in TERMINATED):
         return dict(display="none"), False, False, False, False, False
 
     else:
@@ -431,25 +431,24 @@ def progress_bar(job_submit_state):
 def job_submit(job_submit_time, problem_print_code, max_leg_slope,
     max_cost, max_time, weight_cost, weight_time, weight_slope,
     weight_cost_radio, weight_time_radio, weight_slope_radio):
-    """
-    Submit job.
-    Generates the job ID.
-    """
+    """Submit job and provide job ID."""
+
     trigger_id = dash.callback_context.triggered[0]["prop_id"].split(".")[0]
 
     if trigger_id =="job_submit_time":
 
-        weights = {}
+        weight_or_none = {}
         for key in constraint_inputs.keys():
             radio_button = f"{key}_radio"
-            weights[key] = None if eval(f"{radio_button} == 'hard'") else eval(key)
+            weight_or_none[key] = None if eval(f"{radio_button} == 'hard'") else eval(key)
 
         solver = client.get_solver(supported_problem_types__issubset={"cqm"})
         legs = tour_from_json(problem_print_code)
         cqm = build_cqm(legs, modes, max_leg_slope, max_cost, max_time, \
-            weights["weight_cost"], weights["weight_time"], weights["weight_slope"])
-        problem_data_id = solver.upload_cqm(cqm).result()
+            weight_or_none["weight_cost"], weight_or_none["weight_time"], \
+            weight_or_none["weight_slope"])
 
+        problem_data_id = solver.upload_cqm(cqm).result()
         computation = solver.sample_cqm(problem_data_id,
                     label=f"Examples - Tour Planning, submitted: {job_submit_time}",
                     time_limit=5)
@@ -464,21 +463,19 @@ def job_submit(job_submit_time, problem_print_code, max_leg_slope,
     Input("job_submit_state", "children"),
     State("job_id", "children"),)
 def solutions(job_submit_state, job_id):
-    """
-    Update solutions.
-    Generates the solutions_print_* content.
-    """
+    """Update solutions and write to json & readable text."""
+
     trigger_id = dash.callback_context.triggered[0]["prop_id"].split(".")[0]
 
     if trigger_id != "job_submit_state":
         return dash.no_update, dash.no_update
 
-    if job_status_to_str(job_submit_state) in TERMINATED:
+    if any(job_status_to_str(job_submit_state) == status for status in TERMINATED):
         if job_status_to_str(job_submit_state) == "COMPLETED":
             sampleset = client.retrieve_answer(job_id).sampleset
             return sampleset_to_json(sampleset), solutions_to_display(sampleset)
         else:
-            return "No solutions for this submission", "No solutions for this submission"
+            return "No solutions for last submission", "No solutions for last submission"
     else: # Other submission states like PENDING
         return dash.no_update, dash.no_update
 
@@ -497,9 +494,10 @@ def solutions(job_submit_state, job_id):
     State("job_submit_time", "children"),)
 def submission_manager(n_clicks, n_intervals, job_id, job_submit_state, job_submit_time):
     """Manage job submission."""
+
     trigger_id = dash.callback_context.triggered[0]["prop_id"].split(".")[0]
 
-    if not trigger_id in ["btn_solve_cqm", "wd_job"]:
+    if not any(trigger_id == input for input in ["btn_solve_cqm", "wd_job"]):
         return dash.no_update, dash.no_update, dash.no_update, dash.no_update, \
             dash.no_update, dash.no_update, dash.no_update
 
@@ -510,21 +508,26 @@ def submission_manager(n_clicks, n_intervals, job_id, job_submit_state, job_subm
         disable_watchdog = False
 
         return disable_btn, disable_watchdog, 0.2*1000, 0, \
-            job_status_to_display("SUBMITTED"), \
-            submit_time, f"Elapsed: 0 sec.", \
+            job_status_to_display("SUBMITTED"), submit_time, f"Elapsed: 0 sec."
 
-    if job_status_to_str(job_submit_state) in ["SUBMITTED", *RUNNING]:
+    if any(job_status_to_str(job_submit_state) == status for status in
+        ["SUBMITTED", *RUNNING]):
 
         job_submit_state = get_status(client, job_id, job_submit_time)
         if not job_submit_state:
             job_submit_state = "SUBMITTED"
+            wd_time = 0.2*1000
+        else:
+            wd_time = 1*1000
+
         elapsed_time = elapsed(job_submit_time)
 
-        return True, False, 1*1000, 0, \
+        return True, False, wd_time, 0, \
             job_status_to_display(job_submit_state), dash.no_update, \
             f"Elapsed: {elapsed_time} sec."
 
-    if job_status_to_str(job_submit_state) in TERMINATED:
+    if any(job_status_to_str(job_submit_state) == status for status in TERMINATED):
+
         elapsed_time = elapsed(job_submit_time)
         disable_btn = False
         disable_watchdog = True

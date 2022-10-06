@@ -40,10 +40,15 @@ num_modes = len(modes)
 
 app = dash.Dash(__name__, external_stylesheets=[dbc.themes.BOOTSTRAP])
 
+client = Client.from_config()
 try:
-    client = Client.from_config()
+    client.get_solver(supported_problem_types__issubset={"cqm"})
+    init_job_status = "READY"
+    job_status_color = dict()
 except Exception as client_err:
     client = None
+    init_job_status = "NO_SOLVER"
+    job_status_color = dict(color="red")
 
 # Problem-submission section
 ############################
@@ -53,8 +58,10 @@ solver_card = dbc.Card([
     dbc.Col([
         dbc.Button("Solve CQM", id="btn_solve_cqm", color="primary", className="me-1"),
         dcc.Interval(id="wd_job", interval=None, n_intervals=0, disabled=True, max_intervals=1),
-        dbc.Progress(id="bar_job_status", value=0, color="info", className="mb-3"),
-        html.P(id="job_submit_state", children=job_status_to_display("READY")),   # if no client change ready
+        dbc.Progress(id="bar_job_status", value=job_bar[init_job_status][0],
+            color=job_bar[init_job_status][1], className="mb-3"),
+        html.P(id="job_submit_state", children=job_status_to_display(init_job_status),
+            style=job_status_color),
         html.P(id="job_submit_time", children="", style = dict(display="none")),
         html.P(id="job_sm", children="ready", style = dict(display="none")),
         html.P(id="job_id", children="", style = dict(display="none")),
@@ -203,6 +210,13 @@ tips = [dbc.Tooltip(
             for target, message in tool_tips.items()]
 layout.extend(tips)
 
+modal = [html.Div([
+    dbc.Modal([
+        dbc.ModalHeader(
+            dbc.ModalTitle("Leap Hybrid CQM Solver Inaccessible")),
+        dbc.ModalBody(no_solver_msg),], id="solver_modal", size="sm")])]
+layout.extend(modal)
+
 app.layout = dbc.Container(
     layout, fluid=True,
     style={"backgroundColor": "black", "color": "rgb(6, 236, 220)"})
@@ -210,17 +224,20 @@ app.layout = dbc.Container(
 # Callbacks Section
 ###################
 
-job_bar = {"READY": [0, "link"],
-#           "WAITING": [0, "dark"],     Placeholder, to remember the color
-           "SUBMITTED": [10, "info"],
-           "PENDING": [50, "warning"],
-           "IN_PROGRESS": [75 ,"primary"],
-           "COMPLETED": [100, "success"],
-           "CANCELLED": [100, "light"],
-           "FAILED": [100, "danger"], }
+@app.callback(
+    Output("solver_modal", "is_open"),
+    Input("btn_solve_cqm", "n_clicks"),)
+def no_solver(btn_solve_cqm):
+    """Notify if no Leap hybrid CQM solver is accessible."""
 
-TERMINATED = ["COMPLETED", "CANCELLED", "FAILED"]
-RUNNING = ["PENDING", "IN_PROGRESS"]
+    trigger = dash.callback_context.triggered
+    trigger_id = trigger[0]["prop_id"].split(".")[0]
+
+    if trigger_id == "btn_solve_cqm":
+        if not client:
+            return True
+
+    return False
 
 @app.callback(
     [Output("problem_print_code", "value")],

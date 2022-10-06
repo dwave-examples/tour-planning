@@ -33,8 +33,7 @@ from tool_tips import tool_tips
 
 import dimod
 from dwave.cloud.hybrid import Client
-from dwave.cloud.api import Problems
-from dwave.cloud.api import exceptions
+from dwave.cloud.api import Problems, exceptions
 
 modes = transport.keys()  # global, but not user modified
 num_modes = len(modes)
@@ -55,7 +54,7 @@ solver_card = dbc.Card([
         dbc.Button("Solve CQM", id="btn_solve_cqm", color="primary", className="me-1"),
         dcc.Interval(id="wd_job", interval=None, n_intervals=0, disabled=True, max_intervals=1),
         dbc.Progress(id="bar_job_status", value=0, color="info", className="mb-3"),
-        html.P(id="job_submit_state", children=out_job_submit_state("READY")),   # if no client change ready
+        html.P(id="job_submit_state", children=job_status_to_display("READY")),   # if no client change ready
         html.P(id="job_submit_time", children="", style = dict(display="none")),
         html.P(id="job_sm", children="ready", style = dict(display="none")),
         html.P(id="job_id", children="", style = dict(display="none")),
@@ -135,7 +134,7 @@ constraint_card.extend([
                     style={"margin-right": "20px"}),
                 dbc.Col([
                     _dcc_radio(key)], style={"margin-left": "30px"})])])])])
-for key, val in constraint_inputs.items()])
+    for key, val in constraint_inputs.items()])
 
 tour_titles = ["Set Legs", "Set Budget"]
 leg_inputs = {      # also used for callbacks
@@ -143,17 +142,16 @@ leg_inputs = {      # also used for callbacks
     "max_leg_length": "Longest Leg:",
     "min_leg_length": "Shortest Leg:",
     "max_leg_slope": "Steepest Leg:",}
-cqm_inputs = {      # also used for callbacks
+constraints_inputs = {      # also used for callbacks
     "max_cost": "Highest Cost:",
     "max_time": "Longest Time:"}
-leg_rows_inputs = {**leg_inputs, **cqm_inputs}
 
-leg_rows = [dbc.Row([
+leg_row_inputs = [dbc.Row([
     f"{val}",
     dash.html.Br(),
     _dcc_input(key, tour_ranges_init, step=1) if key != "max_leg_slope" else
     _dcc_slider(key, tour_ranges_init, step=1, discrete_slider=True)])
-    for key, val in leg_rows_inputs.items()]
+    for key, val in {**leg_inputs, **constraints_inputs}.items()]
 tour_config = dbc.Card(
     [dbc.Row([
         html.H4("Tour Settings", className="card-title", style={"textAlign": "left"})]),
@@ -162,8 +160,8 @@ tour_config = dbc.Card(
             html.B(f"{tour_title}", style={"text-decoration": "underline"},) ])
                 for tour_title in tour_titles]),
      dbc.Row([
-        dbc.Col(leg_rows[:4], style={"margin-right": "20px"}),
-        dbc.Col(leg_rows[4:], style={"margin-left": "20px"}),],)],
+        dbc.Col(leg_row_inputs[:4], style={"margin-right": "20px"}),
+        dbc.Col(leg_row_inputs[4:], style={"margin-left": "20px"}),],)],
     body=True, color="secondary")
 
 # Page-layout section
@@ -208,7 +206,7 @@ app.layout = dbc.Container(
 ###################
 
 job_bar = {"READY": [0, "link"],
-           "WAITING": [0, "dark"],
+#           "WAITING": [0, "dark"],     Placeholder, to remember the color
            "SUBMITTED": [10, "info"],
            "PENDING": [50, "warning"],
            "IN_PROGRESS": [75 ,"primary"],
@@ -225,10 +223,8 @@ RUNNING = ["PENDING", "IN_PROGRESS"]
     [Input("input_print", "value")],
     [State(id, "value") for id in leg_inputs.keys()])
 def legs(input_print, num_legs, max_leg_length, min_leg_length, max_leg_slope):
-    """
-    Set the tour legs.
-    Generates ``problem_print`` code & readable text.
-    """
+    """Generate the tour legs and write to json & readable text."""
+
     trigger = dash.callback_context.triggered
     trigger_id = trigger[0]["prop_id"].split(".")[0]
 
@@ -237,38 +233,37 @@ def legs(input_print, num_legs, max_leg_length, min_leg_length, max_leg_slope):
         find_changed = [line for line in input_print.split("\n") if "<<--" in line]
 
         if find_changed and find_changed[0].split(" ")[0] not in leg_inputs.keys():
-            return dash.no_update, dash.no_update   # CQM-affecting inputs only
+            return dash.no_update, dash.no_update   # CQM-affecting only inputs
         else:
             legs = set_legs(num_legs, [min_leg_length, max_leg_length], max_leg_slope)
-            return out_problem_code(legs), out_problem_human(legs)
+            return tour_to_json(legs), tour_to_display(legs)
 
 @app.callback(
     Output("cqm_print", "value"),
     [Input("input_print", "value")],
     [Input("problem_print_code", "value")],
     [State("max_leg_slope", "value")],
-    [State(id, "value") for id in [*cqm_inputs.keys(), *constraint_inputs.keys()]],
+    [State(id, "value") for id in [*constraints_inputs.keys(), *constraint_inputs.keys()]],
     [State(f"{id}_radio", "value") for id in constraint_inputs.keys()])
 def cqm(input_print, problem_print_code, max_leg_slope,
     max_cost, max_time, weight_cost, weight_time, weight_slope,
     weight_cost_radio, weight_time_radio, weight_slope_radio):
-    """
-    Create the constrained quadratic model (CQM) for the tour.
-    Generates ``problem_print`` code & readable text.
-    """
+    """Create the CQM and write to json & readable text."""
+
     trigger = dash.callback_context.triggered
     trigger_id = trigger[0]["prop_id"].split(".")[0]
 
-    if trigger_id in ["input_print", "problem_print_code"]:
-        legs = in_problem_code(problem_print_code)
+    if any(trigger_id == input for input in ["input_print", "problem_print_code"]):
+        legs = tour_from_json(problem_print_code)
 
-        weights = {}
+        weight_or_none = {}
         for key in constraint_inputs.keys():
             radio_button = f"{key}_radio"
-            weights[key] = None if eval(f"{radio_button} == 'hard'") else eval(key)
+            weight_or_none[key] = None if eval(f"{radio_button} == 'hard'") else eval(key)
 
-        cqm = build_cqm(legs, modes, max_leg_slope, max_cost, max_time, \
-            weights["weight_cost"], weights["weight_time"], weights["weight_slope"])
+        cqm = build_cqm(legs, modes, max_leg_slope, max_cost, max_time,
+            weight_or_none["weight_cost"], weight_or_none["weight_time"],
+            weight_or_none["weight_slope"])
         return cqm.__str__()
 
 @app.callback(
@@ -276,17 +271,15 @@ def cqm(input_print, problem_print_code, max_leg_slope,
     [Output(id, "value") for id in [*leg_inputs.keys(), *constraint_inputs.keys()]],
     [Output(f"{id}_slider", "value") for id in constraint_inputs.keys()],
     [Input(id, "value") for id in
-        [*leg_inputs.keys(), *cqm_inputs.keys(), *constraint_inputs.keys()]],
+        [*leg_inputs.keys(), *constraints_inputs.keys(), *constraint_inputs.keys()]],
     [Input(f"{id}_slider", "value") for id in constraint_inputs.keys()],
     [Input(f"{id}_radio", "value") for id in constraint_inputs.keys()],)
 def user_inputs(num_legs, max_leg_length, min_leg_length, max_leg_slope,
     max_cost, max_time, weight_cost, weight_time, weight_slope,
     weight_cost_slider,  weight_time_slider, weight_slope_slider,
     weight_cost_radio, weight_time_radio, weight_slope_radio):
-    """
-    Handle configurable user inputs.
-    Generates ``input_print`` readable text.
-    """
+    """Handle user inputs and write to readable text."""
+
     trigger = dash.callback_context.triggered
     trigger_id = trigger[0]["prop_id"].split(".")[0]
 
@@ -304,28 +297,29 @@ def user_inputs(num_legs, max_leg_length, min_leg_length, max_leg_slope,
         if trigger_id == f"weight_{weight}":
             weight_vals[weight] = eval(f"weight_{weight}")
 
-    inputs = {**tour_ranges_init, **weights_ranges_init}
+    tour_inputs = {**tour_ranges_init, **weights_ranges_init}
     for key in tour_ranges_init.keys():
-        inputs[key][2] = eval(key)
+        tour_inputs[key][2] = eval(key)
 
     if any(trigger_id == f"{key}_radio" for key in constraint_inputs.keys()):
         for key in constraint_inputs.keys():
             radio_button = f"{key}_radio"
             if eval(f"{radio_button} == 'hard'"):
-                inputs[key][2] = None
+                tour_inputs[key][2] = None
             else:
-                inputs[key][2] = eval(key)
+                tour_inputs[key][2] = eval(key)
 
-    user_inputs = list(inputs.keys())
-    user_inputs.extend([f"{a}_slider" for a in weights_ranges_init.keys()])
-    user_inputs.extend([f"{a}_radio" for a in weights_ranges_init.keys()])
-    if trigger_id not in user_inputs:
-        trigger_id = None
+    tour_inputs_names = list(tour_inputs.keys())
+    tour_inputs_names.extend([f"{a}_slider" for a in weights_ranges_init.keys()])
+    tour_inputs_names.extend([f"{a}_radio" for a in weights_ranges_init.keys()])
+
+    if all(trigger_id != input for input in tour_inputs_names):
+        trigger = None
     else:
-        trigger_id = trigger_id.split("_slider")[0] if "slider" in trigger_id else \
+        trigger = trigger_id.split("_slider")[0] if "slider" in trigger_id else \
             trigger_id.split("_radio")[0]
 
-    return out_input_human(inputs, trigger_id),  \
+    return tour_params_to_df(tour_inputs, trigger), \
         num_legs, max_leg_length, min_leg_length, max_leg_slope, \
         weight_vals["cost"], weight_vals["time"], weight_vals["slope"], \
         np.log10(weight_vals["cost"]), np.log10(weight_vals["time"]), np.log10(weight_vals["slope"])
@@ -336,17 +330,18 @@ def user_inputs(num_legs, max_leg_length, min_leg_length, max_leg_slope,
     Input("problem_print_code", "value"))
 def graphics(solutions_print_code, problem_print_code):
     """Generate graphics for legs and samples."""
+
     trigger = dash.callback_context.triggered
     trigger_id = trigger[0]["prop_id"].split(".")[0]
 
-    samples = None
+    legs = tour_from_json(problem_print_code)
 
+    samples = None
     if trigger_id == "solutions_print_code":
-        samples = in_solutions_code(solutions_print_code)
+        samples = sampleset_from_json(solutions_print_code)
         if not isinstance(samples, dict):
             samples = None
 
-    legs = in_problem_code(problem_print_code)
     fig_space = plot_space(legs, samples)
     fig_time = plot_time(legs, transport, samples)
     fig_diversity = plot_diversity(legs, transport, samples)
@@ -393,17 +388,17 @@ def button_control(job_submit_state):
         return dash.no_update, dash.no_update, dash.no_update, dash.no_update, \
             dash.no_update, dash.no_update
 
-    if in_job_submit_state(job_submit_state) == "SUBMITTED":
+    if job_status_to_str(job_submit_state) == "SUBMITTED":
         return  dict(), True, True, True, True, True
 
-    if in_job_submit_state(job_submit_state) == "PENDING":
+    if job_status_to_str(job_submit_state) == "PENDING":
         return  dict(), False, True, True, True, True
 
-    elif in_job_submit_state(job_submit_state) == "IN_PROGRESS":
+    elif job_status_to_str(job_submit_state) == "IN_PROGRESS":
         return dict(display="none"), True, dash.no_update, dash.no_update, \
             dash.no_update, dash.no_update
 
-    elif in_job_submit_state(job_submit_state) in TERMINATED:
+    elif job_status_to_str(job_submit_state) in TERMINATED:
         return dict(display="none"), False, False, False, False, False
 
     else:
@@ -422,7 +417,7 @@ def progress_bar(job_submit_state):
     if trigger_id != "job_submit_state":
         return job_bar["READY"][0], job_bar["READY"][1]
     else:
-        state = in_job_submit_state(job_submit_state)
+        state = job_status_to_str(job_submit_state)
         return job_bar[state][0], job_bar[state][1]
 
 @app.callback(
@@ -430,7 +425,7 @@ def progress_bar(job_submit_state):
     [Input("job_submit_time", "children")],
     [State("problem_print_code", "value")],
     [State("max_leg_slope", "value")],
-    [State(id, "value") for id in cqm_inputs.keys()],
+    [State(id, "value") for id in constraints_inputs.keys()],
     [State(id, "value") for id in constraint_inputs.keys()],
     [State(f"{id}_radio", "value") for id in constraint_inputs.keys()],)
 def job_submit(job_submit_time, problem_print_code, max_leg_slope,
@@ -450,7 +445,7 @@ def job_submit(job_submit_time, problem_print_code, max_leg_slope,
             weights[key] = None if eval(f"{radio_button} == 'hard'") else eval(key)
 
         solver = client.get_solver(supported_problem_types__issubset={"cqm"})
-        legs = in_problem_code(problem_print_code)
+        legs = tour_from_json(problem_print_code)
         cqm = build_cqm(legs, modes, max_leg_slope, max_cost, max_time, \
             weights["weight_cost"], weights["weight_time"], weights["weight_slope"])
         problem_data_id = solver.upload_cqm(cqm).result()
@@ -478,10 +473,10 @@ def solutions(job_submit_state, job_id):
     if trigger_id != "job_submit_state":
         return dash.no_update, dash.no_update
 
-    if in_job_submit_state(job_submit_state) in TERMINATED:
-        if in_job_submit_state(job_submit_state) == "COMPLETED":
+    if job_status_to_str(job_submit_state) in TERMINATED:
+        if job_status_to_str(job_submit_state) == "COMPLETED":
             sampleset = client.retrieve_answer(job_id).sampleset
-            return out_solutions_code(sampleset), out_solutions_human(sampleset)
+            return sampleset_to_json(sampleset), solutions_to_display(sampleset)
         else:
             return "No solutions for this submission", "No solutions for this submission"
     else: # Other submission states like PENDING
@@ -515,10 +510,10 @@ def submission_manager(n_clicks, n_intervals, job_id, job_submit_state, job_subm
         disable_watchdog = False
 
         return disable_btn, disable_watchdog, 0.2*1000, 0, \
-            out_job_submit_state("SUBMITTED"), \
+            job_status_to_display("SUBMITTED"), \
             submit_time, f"Elapsed: 0 sec.", \
 
-    if in_job_submit_state(job_submit_state) in ["SUBMITTED", *RUNNING]:
+    if job_status_to_str(job_submit_state) in ["SUBMITTED", *RUNNING]:
 
         job_submit_state = get_status(client, job_id, job_submit_time)
         if not job_submit_state:
@@ -526,10 +521,10 @@ def submission_manager(n_clicks, n_intervals, job_id, job_submit_state, job_subm
         elapsed_time = elapsed(job_submit_time)
 
         return True, False, 1*1000, 0, \
-            out_job_submit_state(job_submit_state), dash.no_update, \
+            job_status_to_display(job_submit_state), dash.no_update, \
             f"Elapsed: {elapsed_time} sec."
 
-    if in_job_submit_state(job_submit_state) in TERMINATED:
+    if job_status_to_str(job_submit_state) in TERMINATED:
         elapsed_time = elapsed(job_submit_time)
         disable_btn = False
         disable_watchdog = True

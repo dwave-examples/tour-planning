@@ -17,7 +17,20 @@ from formatting import *
 from dwave.cloud.api import exceptions, Problems
 
 
-__all__ = ["cancel", "elapsed", "get_status", ]
+__all__ = ["job_bar", "TERMINATED", "RUNNING", "cancel", "elapsed", "get_status", ]
+
+job_bar = {"READY": [0, "link"],
+#           "WAITING": [0, "dark"],     Placeholder, to remember the color
+           "NO_SOLVER": [100, "danger"],
+           "SUBMITTED": [10, "info"],
+           "PENDING": [50, "warning"],
+           "IN_PROGRESS": [75 ,"primary"],
+           "COMPLETED": [100, "success"],
+           "CANCELLED": [100, "light"],
+           "FAILED": [100, "danger"], }
+
+TERMINATED = ["COMPLETED", "CANCELLED", "FAILED"]
+RUNNING = ["PENDING", "IN_PROGRESS"]
 
 def cancel(client, job_id):
     """Try to cancel a job submission."""

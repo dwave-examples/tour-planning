@@ -62,7 +62,12 @@ solver_card = dbc.Card([
         dbc.Alert(id="alert_cancel", children="", dismissable=True,
             is_open=False,),
         dbc.Button("Cancel Job", id="btn_cancel", color="warning", className="me-1",
-            style = dict(display="none")),]),],
+            style = dict(display="none")),
+        dbc.Row([
+                html.Div([
+                    html.P("Runtime limit:"),
+                    dcc.Input(id="max_runtime", type="number", min=5, max=600,
+                        step=5, value=5, style={'marginRight':'10px'}),]),]),]),],
     color="secondary")
 
 # Tab-construction section
@@ -161,7 +166,7 @@ tour_config = dbc.Card(
                 for tour_title in tour_titles]),
      dbc.Row([
         dbc.Col(leg_row_inputs[:4], style={"margin-right": "20px"}),
-        dbc.Col(leg_row_inputs[4:], style={"margin-left": "20px"}),],)],
+        dbc.Col(leg_row_inputs[4:], style={"margin-left": "20px"}),],),],
     body=True, color="secondary")
 
 # Page-layout section
@@ -427,10 +432,11 @@ def progress_bar(job_submit_state):
     [State("max_leg_slope", "value")],
     [State(id, "value") for id in constraints_inputs.keys()],
     [State(id, "value") for id in constraint_inputs.keys()],
-    [State(f"{id}_radio", "value") for id in constraint_inputs.keys()],)
+    [State(f"{id}_radio", "value") for id in constraint_inputs.keys()],
+    [State("max_runtime", "value")],)
 def job_submit(job_submit_time, problem_print_code, max_leg_slope,
     max_cost, max_time, weight_cost, weight_time, weight_slope,
-    weight_cost_radio, weight_time_radio, weight_slope_radio):
+    weight_cost_radio, weight_time_radio, weight_slope_radio, max_runtime):
     """Submit job and provide job ID."""
 
     trigger_id = dash.callback_context.triggered[0]["prop_id"].split(".")[0]
@@ -451,7 +457,7 @@ def job_submit(job_submit_time, problem_print_code, max_leg_slope,
         problem_data_id = solver.upload_cqm(cqm).result()
         computation = solver.sample_cqm(problem_data_id,
                     label=f"Examples - Tour Planning, submitted: {job_submit_time}",
-                    time_limit=5)
+                    time_limit=max_runtime)
 
         return computation.wait_id()
 

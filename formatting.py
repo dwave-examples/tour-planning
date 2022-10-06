@@ -17,7 +17,8 @@ import json
 
 __all__ = ["in_job_submit_state", "in_problem_code",
     "out_job_submit_state",  "out_problem_human", "out_problem_code",
-    "out_input_human", "out_transport_human", "out_solutions_human", "out_solutions_code"]
+    "out_input_human", "out_transport_human", "out_solutions_human",
+    "out_solutions_code", "in_solutions_code"]
 
 def in_job_submit_state(human_readable):
     """Strip status from 'Status: <status>'"""
@@ -76,3 +77,15 @@ def out_solutions_code(sampleset):
     """Output solutions for code."""
 
     return json.dumps(sampleset.to_serializable())
+
+def in_solutions_code(saved_sampleset):
+    """Retrieve saved sampleset."""
+
+    sampleset = dimod.SampleSet.from_serializable(json.loads(saved_sampleset))
+    sampleset_feasible = sampleset.filter(lambda row: row.is_feasible)
+    if len(sampleset_feasible) == 0:
+        return "No feasible solutions found."
+    first = sorted({int(key.split("_")[1]): key.split("_")[0] for key,val in \
+        sampleset_feasible.first.sample.items() if val==1.0}.items())
+
+    return {"sampleset": sampleset, "feasible": sampleset_feasible, "first": first}

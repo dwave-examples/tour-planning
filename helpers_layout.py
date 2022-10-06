@@ -16,7 +16,7 @@ from dash.dcc import Input, Slider, RadioItems
 from dash import html
 import numpy as np
 
-from tour_planning import init_cqm, init_tour
+from tour_planning import tour_ranges_init
 
 __all__ = ["_dcc_input", "_dcc_slider", "_dcc_radio"]
 
@@ -51,7 +51,7 @@ def _dcc_slider(name, config_vals, step=1, discrete_slider=False):
                 {"label": "Softish", "style": {"color": "white"}}}
     else:
         marks={i: {"label": f"{str(i)}", "style": {"color": "white"}} for i in
-        range(config_vals[name][0], init_tour[name][1] + 1, 2*step)}
+        range(config_vals[name][0], tour_ranges_init[name][1] + 1, 2*step)}
 
     return Slider(
         id=f"{name}{suffix}",

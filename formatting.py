@@ -17,38 +17,38 @@ import json
 
 import dimod
 
-__all__ = ["in_job_submit_state", "in_problem_code",
-    "out_job_submit_state",  "out_problem_human", "out_problem_code",
-    "out_input_human", "out_transport_human", "out_solutions_human",
-    "out_solutions_code", "in_solutions_code"]
+__all__ = ["job_status_to_str", "tour_from_json",
+    "job_status_to_display",  "tour_to_display", "tour_to_json",
+    "tour_params_to_df", "out_transport_human", "solutions_to_display",
+    "sampleset_to_json", "sampleset_from_json"]
 
-def in_job_submit_state(human_readable):
+def job_status_to_str(human_readable):
     """Strip status from 'Status: <status>'"""
 
     return human_readable.split()[1]
 
-def in_problem_code(code):
+def tour_from_json(code):
     """Input problem from code."""
 
     return json.loads(code)
 
-def out_job_submit_state(code):
+def job_status_to_display(code):
     """Output status as 'Status: <status>'."""
 
     return f"Status: {code}"
 
-def out_problem_human(problem):
+def tour_to_display(problem):
     """Output problem for humans."""
 
     df = pd.DataFrame(problem)
     return df.to_string()
 
-def out_problem_code(problem):
+def tour_to_json(problem):
     """Output problem for code."""
 
     return json.dumps(problem)
 
-def out_input_human(params, last_changed):
+def tour_params_to_df(params, last_changed):
     """Output the input ranges."""
 
     df = pd.DataFrame(params)
@@ -64,9 +64,9 @@ def out_input_human(params, last_changed):
 """
     return header + df_t.to_string()
 
-out_transport_human = out_problem_human
+out_transport_human = tour_to_display
 
-def out_solutions_human(sampleset):
+def solutions_to_display(sampleset):
     """Output solutions for humans."""
 
     s = ""
@@ -82,12 +82,12 @@ def out_solutions_human(sampleset):
         s += f"{leg}\n"
     return s
 
-def out_solutions_code(sampleset):
+def sampleset_to_json(sampleset):
     """Output solutions for code."""
 
     return json.dumps(sampleset.to_serializable())
 
-def in_solutions_code(saved_sampleset):
+def sampleset_from_json(saved_sampleset):
     """Retrieve saved sampleset."""
 
     sampleset = dimod.SampleSet.from_serializable(json.loads(saved_sampleset))

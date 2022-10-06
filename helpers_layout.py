@@ -16,12 +16,13 @@ from dash.dcc import Input, Slider, RadioItems
 from dash import html
 import numpy as np
 
-from tour_planning import init_cqm, init_tour
+from tour_planning import tour_ranges_init
 
 __all__ = ["_dcc_input", "_dcc_slider", "_dcc_radio"]
 
 def _dcc_input(name, config_vals, step=None):
     """Construct ``dash.Input`` element for layout."""
+
     suffix = ""
     if "_slider" in name:
         suffix = "_slider"
@@ -36,6 +37,7 @@ def _dcc_input(name, config_vals, step=None):
 
 def _dcc_slider(name, config_vals, step=1, discrete_slider=False):
     """Construct ``dash.Slider`` elements for layout."""
+
     suffix = ""
     if "_slider" in name:
         suffix = "_slider"
@@ -51,7 +53,7 @@ def _dcc_slider(name, config_vals, step=1, discrete_slider=False):
                 {"label": "Softish", "style": {"color": "white"}}}
     else:
         marks={i: {"label": f"{str(i)}", "style": {"color": "white"}} for i in
-        range(config_vals[name][0], init_tour[name][1] + 1, 2*step)}
+        range(config_vals[name][0], tour_ranges_init[name][1] + 1, 2*step)}
 
     return Slider(
         id=f"{name}{suffix}",
@@ -63,8 +65,10 @@ def _dcc_slider(name, config_vals, step=1, discrete_slider=False):
 
 def _dcc_radio(name):
     """Construct ``dash.RadioItem`` elements for layout."""
+
     return RadioItems([
         {"label": html.Div(['Soft   '], style={'color': 'white', 'font-size': 12}),
         "value": "soft",},
         {"label": html.Div(['   Hard'], style={'color': 'white', 'font-size': 12}),
-        "value": "hard",},], value='soft', id=f"{name}_radio", inputStyle={"margin-right": "20px"})#labelStyle={'display': 'block'})
+        "value": "hard",},], value='soft', id=f"{name}_radio",
+        inputStyle={"margin-right": "20px"})

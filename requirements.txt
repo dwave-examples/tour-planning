@@ -1,5 +1,4 @@
-dwave-ocean-sdk==5.4.0      # to be updated
-dimod==0.11.6.dev0          # to be removed
+dwave-ocean-sdk==5.5.0
 dash==2.6.0
 dash-bootstrap-components==1.2.1
 pandas==1.4.2

@@ -15,6 +15,8 @@
 import pandas as pd
 import json
 
+import dimod
+
 __all__ = ["in_job_submit_state", "in_problem_code",
     "out_job_submit_state",  "out_problem_human", "out_problem_code",
     "out_input_human", "out_transport_human", "out_solutions_human",
@@ -22,27 +24,33 @@ __all__ = ["in_job_submit_state", "in_problem_code",
 
 def in_job_submit_state(human_readable):
     """Strip status from 'Status: <status>'"""
+
     return human_readable.split()[1]
 
 def in_problem_code(code):
     """Input problem from code."""
+
     return json.loads(code)
 
 def out_job_submit_state(code):
     """Output status as 'Status: <status>'."""
+
     return f"Status: {code}"
 
 def out_problem_human(problem):
     """Output problem for humans."""
+
     df = pd.DataFrame(problem)
     return df.to_string()
 
 def out_problem_code(problem):
     """Output problem for code."""
+
     return json.dumps(problem)
 
 def out_input_human(params, last_changed):
     """Output the input ranges."""
+
     df = pd.DataFrame(params)
     df.fillna("HARD",inplace=True)
     last_change_row = df.shape[1]*[""]
@@ -60,6 +68,7 @@ out_transport_human = out_problem_human
 
 def out_solutions_human(sampleset):
     """Output solutions for humans."""
+
     s = ""
     sampleset_feasible = sampleset.filter(lambda row: row.is_feasible)
     if len(sampleset_feasible) == 0:

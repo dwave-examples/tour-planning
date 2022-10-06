@@ -12,15 +12,16 @@
 #    See the License for the specific language governing permissions and
 #    limitations under the License.
 import datetime
+from formatting import *
 
 from dwave.cloud.api import exceptions, Problems
-import dimod
-from formatting import *
+
 
 __all__ = ["cancel", "elapsed", "get_status", ]
 
 def cancel(client, job_id):
     """Try to cancel a job submission."""
+
     p = Problems(endpoint=client.endpoint, token=client.token)
     try:
         status = p.cancel_problem(job_id)
@@ -30,11 +31,13 @@ def cancel(client, job_id):
 
 def elapsed(ref_time):
     """Return elapsed time in seconds."""
+
     return (datetime.datetime.now() -
         datetime.datetime.strptime(ref_time, "%c")).seconds
 
 def get_status(client, job_id, job_submit_time):
-    """Return elapsed time in seconds."""
+    """Return status of submitted job."""
+
     p = Problems(endpoint=client.endpoint, token=client.token)
     try:
         status = p.get_problem_status(job_id)

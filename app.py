@@ -241,7 +241,6 @@ def legs(input_print, num_legs, max_leg_length, min_leg_length, max_leg_slope):
     trigger_id = trigger[0]["prop_id"].split(".")[0]
 
     if trigger_id == "input_print":
-
         find_changed = [line for line in input_print.split("\n") if "<<--" in line]
 
         if find_changed and find_changed[0].split(" ")[0] not in names_leg_inputs:

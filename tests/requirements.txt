@@ -1,0 +1,3 @@
+parameterized
+py-test
+pytest-mock

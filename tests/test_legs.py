@@ -81,7 +81,7 @@ def test_legs(mocker, input_print_val, num_legs_val,
 
     input_print.set(vars()["input_print_val"])
     for key in app.leg_inputs.keys():
-        globals()[key].set(vars()[key + "_val"])
+        globals()[key].set(vars()[f"{key}_val"])
 
     ctx = copy_context()
 

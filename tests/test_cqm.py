@@ -51,11 +51,16 @@ cqm_placeholder = ""
     ", " + ", ".join([f'{key}_radio_val ' for key in app.constraint_inputs.keys()]) +
     ", cqm_print_val",
     [(in_print, in_print_code, 8, 200, 20, 33, 44, 55, "soft", "soft", "soft", cqm_placeholder),
-    (in_print, in_print_code, 8, 200, 20, 33, 44, 55, "soft", "soft", "soft", cqm_placeholder)])
+    (in_print, in_print_code, 8, 200, 20, 33, 44, 55, "hard", "soft", "soft", cqm_placeholder)])
 def test_cqm(mocker, input_print_val, problem_print_code_val, max_leg_slope_val,
     max_cost_val, max_time_val, weight_cost_val, weight_time_val, weight_slope_val,
     weight_cost_radio_val, weight_time_radio_val, weight_slope_radio_val,
     cqm_print_val):
+
+    def mock_print(self):
+        return self
+
+    mocker.patch.object(app.dimod.ConstrainedQuadraticModel, '__str__', mock_print)
 
     def run_callback():
         context_value.set(AttributeDict(
@@ -81,4 +86,6 @@ def test_cqm(mocker, input_print_val, problem_print_code_val, max_leg_slope_val,
 
     output = ctx.run(run_callback)
 
-    assert "Constrained quadratic model" in output
+    assert type(output) == app.dimod.ConstrainedQuadraticModel
+    assert type(output.constraints["One-hot leg0"]) == app.dimod.sym.Eq
+    assert type(output.constraints["Total time"]) == app.dimod.sym.Le

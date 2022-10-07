@@ -66,7 +66,7 @@ for key in app.leg_inputs.keys():
     [(in_print_no_update, 10, 10, 3, 8, no_update, no_update),
     (in_print_generate_legs, 10, 10, 3, 8, output_placeholder, output_placeholder),
     (in_print_no_last_change, 10, 10, 3, 8, output_placeholder, output_placeholder)])
-def test_legs(mocker, input_print_val, num_legs_val,
+def test_legs(input_print_val, num_legs_val,
     max_leg_length_val, min_leg_length_val, max_leg_slope_val,
     problem_print_code_val, problem_print_human_val):
 

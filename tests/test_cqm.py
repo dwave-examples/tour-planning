@@ -50,8 +50,8 @@ cqm_placeholder = ""
     ", ".join([f'{key}_val ' for key in [*app.constraints_inputs.keys(), *app.constraint_inputs.keys()]]) +
     ", " + ", ".join([f'{key}_radio_val ' for key in app.constraint_inputs.keys()]) +
     ", cqm_print_val",
-    [(in_print, in_print_code, 8, 200, 20, 33, 44, 55, "soft", "soft", "soft", cqm_placeholder),
-    (in_print, in_print_code, 8, 200, 20, 33, 44, 55, "hard", "soft", "soft", cqm_placeholder)])
+    [(in_print, in_print_code, 8, 200, 20, 33, 44, 55, "soft", "soft", "hard", cqm_placeholder),
+    (in_print, in_print_code, 5, 100, 54, 18, 66, 93, "hard", "soft", "soft", cqm_placeholder)])
 def test_cqm(mocker, input_print_val, problem_print_code_val, max_leg_slope_val,
     max_cost_val, max_time_val, weight_cost_val, weight_time_val, weight_slope_val,
     weight_cost_radio_val, weight_time_radio_val, weight_slope_radio_val,
@@ -89,3 +89,10 @@ def test_cqm(mocker, input_print_val, problem_print_code_val, max_leg_slope_val,
     assert type(output) == app.dimod.ConstrainedQuadraticModel
     assert type(output.constraints["One-hot leg0"]) == app.dimod.sym.Eq
     assert type(output.constraints["Total time"]) == app.dimod.sym.Le
+
+    #  Temporary use of internal method until a non-internal methos is availibele
+    if weight_cost_radio_val == "soft":
+        output._soft["Total cost"] == app.dimod.constrained.SoftConstraint(weight=weight_cost_val,
+            penalty='quadratic')
+        output._soft["Total time"] == app.dimod.constrained.SoftConstraint(weight=weight_time_val,
+            penalty='quadratic')

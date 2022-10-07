@@ -42,6 +42,16 @@ weight_cost       0  100000           100 <<--
 ...
 """
 
+in_print_no_last_change = """
+Configurable inputs have these supported ranges and current values:
+               Min.    Max. Current Value Last Updated Input
+num_legs          5     100            10
+...
+max_time          0  100000            13
+weight_cost       0  100000           100
+...
+"""
+
 output_placeholder = " "
 
 import app
@@ -50,17 +60,12 @@ input_print = ContextVar("input_print")
 for key in app.leg_inputs.keys():
     vars()[key] = ContextVar(f"{key}")
 
-
-# num_legs = ContextVar("num_legs")
-# max_leg_length = ContextVar("max_leg_length")
-# min_leg_length = ContextVar("min_leg_length")
-# max_leg_slope = ContextVar("max_leg_slope")
-
 @pytest.mark.parametrize("input_print_val, " +
     ",".join([f'{key}_val' for key in app.leg_inputs.keys()]) +
     ", problem_print_code_val, problem_print_human_val",
     [(in_print_no_update, 10, 10, 3, 8, no_update, no_update),
-    (in_print_generate_legs, 10, 10, 3, 8, output_placeholder, output_placeholder)])
+    (in_print_generate_legs, 10, 10, 3, 8, output_placeholder, output_placeholder),
+    (in_print_no_last_change, 10, 10, 3, 8, output_placeholder, output_placeholder)])
 def test_legs(mocker, input_print_val, num_legs_val,
     max_leg_length_val, min_leg_length_val, max_leg_slope_val,
     problem_print_code_val, problem_print_human_val):
@@ -84,7 +89,8 @@ def test_legs(mocker, input_print_val, num_legs_val,
 
     if input_print_val == in_print_no_update:
         assert output == (no_update, no_update)
-    if input_print_val == in_print_generate_legs:
+
+    if input_print_val in [in_print_generate_legs, in_print_no_last_change]:
         output_code = tour_from_json(output[0])
         assert set(output_code[0]) - \
                 set({"length": 2.6, "uphill": 7.1, "toll": True}) == set()

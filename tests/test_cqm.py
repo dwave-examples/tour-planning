@@ -28,9 +28,7 @@ in_print = """
 Configurable inputs have these supported ranges and current values:
 """
 
-in_print_code = """
-Configurable inputs have these supported ranges and current values:
-"""
+in_print_code = """[{"length": 2.6, "uphill": 7.1, "toll": true}, {"length": 8.3, "uphill": 5.3, "toll": true}, {"length": 5.8, "uphill": 1.1, "toll": false}, {"length": 5.0, "uphill": 0.1, "toll": false}, {"length": 8.5, "uphill": 4.4, "toll": false}, {"length": 9.2, "uphill": 3.1, "toll": false}, {"length": 7.3, "uphill": 4.8, "toll": false}, {"length": 7.4, "uphill": 0.3, "toll": false}, {"length": 3.9, "uphill": 4.7, "toll": false}, {"length": 4.2, "uphill": 4.3, "toll": false}]"""
 
 input_print = ContextVar("input_print")
 problem_print_code = ContextVar("problem_print_code")
@@ -83,4 +81,4 @@ def test_cqm(mocker, input_print_val, problem_print_code_val, max_leg_slope_val,
 
     output = ctx.run(run_callback)
 
-    assert output == (no_update, no_update)
+    assert "Constrained quadratic model" in output

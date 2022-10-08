@@ -312,7 +312,6 @@ def user_inputs(num_legs, max_leg_length, min_leg_length, max_leg_slope,
 
     weights = ["cost", "time", "slope"]
     weight_vals = {}
-    weight_adds_slider = {"cost": 0, "time": 0, "slope": 0}
     for weight in weights:
 
         weight_vals[weight] = eval(f"weight_{weight}")
@@ -321,11 +320,8 @@ def user_inputs(num_legs, max_leg_length, min_leg_length, max_leg_slope,
         if trigger_id == f"weight_{weight}":
             weight_vals[weight] = eval(f"weight_{weight}")
 
-        if weight_vals[weight] == 0:
-            weight_adds_slider[weight] = 1
-
     tour_inputs = {**tour_ranges_init, **weights_ranges_init}
-    for key in tour_ranges_init.keys():
+    for key in tour_inputs.keys():
         tour_inputs[key][2] = eval(key)
 
     if any(trigger_id == f"{key}_radio" for key in constraint_inputs.keys()):
@@ -349,9 +345,8 @@ def user_inputs(num_legs, max_leg_length, min_leg_length, max_leg_slope,
     return tour_params_to_df(tour_inputs, trigger), \
         num_legs, max_leg_length, min_leg_length, max_leg_slope, \
         weight_vals["cost"], weight_vals["time"], weight_vals["slope"], \
-        np.log10(weight_vals["cost"] + weight_adds_slider["cost"]), \
-        np.log10(weight_vals["time"] + weight_adds_slider["time"]), \
-        np.log10(weight_vals["slope"] + weight_adds_slider["slope"])
+        np.log10(weight_vals["cost"] + 1),  np.log10(weight_vals["time"] + 1), \
+        np.log10(weight_vals["slope"] + 1)
 
 @app.callback(
     [Output(f"{key.lower()}_graph", "figure") for key in graphs.keys()],

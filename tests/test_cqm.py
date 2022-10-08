@@ -46,6 +46,9 @@ state_vals.extend([{"prop_id": f"{key}_radio.value"} for key in
 
 cqm_placeholder = ""
 
+def mock_print(self):
+    return self
+
 @pytest.mark.parametrize("input_print_val, problem_print_code_val, max_leg_slope_val, " +
     ", ".join([f'{key}_val ' for key in [*app.constraints_inputs.keys(), *app.constraint_inputs.keys()]]) +
     ", " + ", ".join([f'{key}_radio_val ' for key in app.constraint_inputs.keys()]) +
@@ -56,9 +59,6 @@ def test_cqm(mocker, input_print_val, problem_print_code_val, max_leg_slope_val,
     max_cost_val, max_time_val, weight_cost_val, weight_time_val, weight_slope_val,
     weight_cost_radio_val, weight_time_radio_val, weight_slope_radio_val,
     cqm_print_val):
-
-    def mock_print(self):
-        return self
 
     mocker.patch.object(app.dimod.ConstrainedQuadraticModel, '__str__', mock_print)
 

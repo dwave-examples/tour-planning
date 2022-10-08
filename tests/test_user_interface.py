@@ -1,0 +1,111 @@
+# Copyright 2022 D-Wave Systems Inc.
+#
+#    Licensed under the Apache License, Version 2.0 (the "License");
+#    you may not use this file except in compliance with the License.
+#    You may obtain a copy of the License at
+#
+#        http://www.apache.org/licenses/LICENSE-2.0
+#
+#    Unless required by applicable law or agreed to in writing, software
+#    distributed under the License is distributed on an "AS IS" BASIS,
+#    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#    See the License for the specific language governing permissions and
+#    limitations under the License.
+import copy
+import numpy as np
+from parameterized import parameterized
+import pytest
+import random
+
+from contextvars import copy_context, ContextVar
+from dash._callback_context import context_value
+from dash._utils import AttributeDict
+from dash import no_update
+
+from formatting import tour_from_json
+
+import app
+from tour_planning import tour_ranges_init, weights_ranges_init
+
+input_print_placeholder = """
+Configurable inputs have these supported ranges and current values:
+"""
+
+for key in [*app.leg_inputs.keys(), *app.constraints_inputs.keys(),  
+    *app.constraint_inputs.keys()]:
+        vars()[key] = ContextVar(f"{key}")
+for key in app.constraint_inputs.keys():
+    vars()[f"{key}_slider"] = ContextVar(f"{key}_slider")
+for key in app.constraint_inputs.keys():
+    vars()[f"{key}_radio"] = ContextVar(f"{key}_radio")
+
+input_vals = [{"prop_id": f"{key}.value"} for key in
+    [*app.leg_inputs.keys(), *app.constraint_inputs.keys()]]
+input_vals.extend([{"prop_id": f"{key}_slider.value"} for key in
+    app.constraint_inputs.keys()])
+input_vals.extend([{"prop_id": f"{key}_radio.value"} for key in
+    app.constraint_inputs.keys()])
+
+test_vals = []
+for i in range(2):
+    an_input = []
+    tour_vals = [random.randint(tour_ranges_init[key][0], tour_ranges_init[key][1])
+        for key in tour_ranges_init.keys()]
+    weight_vals = [random.randint(weights_ranges_init[key][0], 3*weights_ranges_init[key][2])
+        for key in weights_ranges_init.keys()]
+    radio_vals = random.choices(["soft", "hard"], k=3)
+    an_input.extend(tour_vals)
+    an_input.extend(weight_vals)
+    an_input.extend(list(np.log10(weight_vals)))      # sliders
+    an_input.extend(radio_vals)
+    an_input.extend([input_print_placeholder])
+    an_input.extend(tour_vals[0:4])
+    an_input.extend(weight_vals)
+    an_input.extend(list(np.log10(weight_vals)))
+    test_vals.append(tuple(an_input))
+
+@pytest.mark.parametrize(", ".join([f'{key}_in ' for key in [*app.leg_inputs.keys(),
+    *app.constraints_inputs.keys(), *app.constraint_inputs.keys()]]) +
+    ", " + ", ".join([f'{key}_slider_in ' for key in app.constraint_inputs.keys()]) +
+    ", " + ", ".join([f'{key}_radio_in ' for key in app.constraint_inputs.keys()]) +
+    ", input_print_val, " +
+    ", ".join([f'{key}_out ' for key in [*app.leg_inputs.keys(),
+    *app.constraint_inputs.keys()]]) +
+    ", " + ", ".join([f'{key}_slider_out ' for key in app.constraint_inputs.keys()]),
+    test_vals)
+def test_user_inputs(mocker, num_legs_in, max_leg_length_in, min_leg_length_in,
+    max_leg_slope_in, max_cost_in, max_time_in, weight_cost_in, weight_time_in,
+    weight_slope_in, weight_cost_slider_in, weight_time_slider_in,
+    weight_slope_slider_in, weight_cost_radio_in, weight_time_radio_in,
+    weight_slope_radio_in, input_print_val, num_legs_out, max_leg_length_out,
+    min_leg_length_out, max_leg_slope_out, weight_cost_out, weight_time_out,
+    weight_slope_out, weight_cost_slider_out, weight_time_slider_out,
+    weight_slope_slider_out):
+
+    untriggered = copy.deepcopy(input_vals)
+    untriggered.remove({'prop_id': 'num_legs.value'})
+
+    def run_callback():
+        context_value.set(AttributeDict(
+            **{
+            "triggered_inputs": [{"prop_id": "num_legs.value"}],
+            "input_values": untriggered}))
+
+        return app.user_inputs(num_legs.get(), max_leg_length.get(), \
+            min_leg_length.get(), max_leg_slope.get(), max_cost.get(), \
+            max_time.get(), weight_cost.get(), weight_time.get(), \
+            weight_slope.get(), weight_cost_slider.get(), weight_time_slider.get(), \
+            weight_slope_slider.get(), weight_cost_radio.get(), weight_time_radio.get(), \
+            weight_slope_radio.get())
+
+    for key in [*app.leg_inputs.keys(), *app.constraints_inputs.keys(),
+        *app.constraint_inputs.keys()]:
+            globals()[key].set(vars()[key + "_in"])
+    for key in app.constraint_inputs.keys():
+        globals()[f"{key}_slider"].set(vars()[f"{key}_radio_in"])
+    for key in app.constraint_inputs.keys():
+        globals()[f"{key}_radio"].set(vars()[f"{key}_radio_in"])
+
+    ctx = copy_context()
+
+    output = ctx.run(run_callback)

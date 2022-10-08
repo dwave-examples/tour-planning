@@ -321,8 +321,10 @@ def user_inputs(num_legs, max_leg_length, min_leg_length, max_leg_slope,
             weight_vals[weight] = eval(f"weight_{weight}")
 
     tour_inputs = {**tour_ranges_init, **weights_ranges_init}
-    for key in tour_inputs.keys():
+    for key in tour_ranges_init.keys():
         tour_inputs[key][2] = eval(key)
+    for key in weights:
+        tour_inputs[f"weight_{key}"][2] = weight_vals[key]
 
     if any(trigger_id == f"{key}_radio" for key in constraint_inputs.keys()):
         for key in constraint_inputs.keys():

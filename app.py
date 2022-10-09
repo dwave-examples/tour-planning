@@ -255,10 +255,10 @@ def legs(input_print, num_legs, max_leg_length, min_leg_length, max_leg_slope):
     [Input("problem_print_code", "value")],
     [State("max_leg_slope", "value")],
     [State(id, "value") for id in names_budget_inputs + names_weight_inputs],
-    [State(f"{id}_radio", "value") for id in names_weight_inputs])
+    [State(f"{id}_hardsoft", "value") for id in names_weight_inputs])
 def cqm(input_print, problem_print_code, max_leg_slope,
     max_cost, max_time, weight_cost, weight_time, weight_slope,
-    weight_cost_radio, weight_time_radio, weight_slope_radio):
+    weight_cost_hardsoft, weight_time_hardsoft, weight_slope_hardsoft):
     """Create the CQM and write to json & readable text."""
 
     trigger = dash.callback_context.triggered
@@ -269,7 +269,7 @@ def cqm(input_print, problem_print_code, max_leg_slope,
 
         weight_or_none = {}
         for key in names_weight_inputs:
-            radio_button = f"{key}_radio"
+            radio_button = f"{key}_hardsoft"
             weight_or_none[key] = None if eval(f"{radio_button} == 'hard'") else eval(key)
 
         cqm = build_cqm(legs, modes, max_leg_slope, max_cost, max_time,
@@ -284,11 +284,11 @@ def cqm(input_print, problem_print_code, max_leg_slope,
     [Input(id, "value") for id in
         names_leg_inputs + names_budget_inputs + names_weight_inputs],
     [Input(f"{id}_slider", "value") for id in names_weight_inputs],
-    [Input(f"{id}_radio", "value") for id in names_weight_inputs],)
+    [Input(f"{id}_hardsoft", "value") for id in names_weight_inputs],)
 def user_inputs(num_legs, max_leg_length, min_leg_length, max_leg_slope,
     max_cost, max_time, weight_cost, weight_time, weight_slope,
     weight_cost_slider,  weight_time_slider, weight_slope_slider,
-    weight_cost_radio, weight_time_radio, weight_slope_radio):
+    weight_cost_hardsoft, weight_time_hardsoft, weight_slope_hardsoft):
     """Handle user inputs and write to readable text."""
 
     trigger = dash.callback_context.triggered
@@ -315,9 +315,9 @@ def user_inputs(num_legs, max_leg_length, min_leg_length, max_leg_slope,
     for key in names_weight_inputs:
         updated_inputs[key] = weight_vals[key]
 
-    if any(trigger_id == f"{key}_radio" for key in names_weight_inputs):
+    if any(trigger_id == f"{key}_hardsoft" for key in names_weight_inputs):
         for key in names_weight_inputs:
-            if eval(f"{key}_radio == 'hard'"):
+            if eval(f"{key}_hardsoft == 'hard'"):
                 updated_inputs[key] = None
             else:
                 updated_inputs[key] = eval(key)
@@ -431,11 +431,11 @@ def progress_bar(job_submit_state):
     [State("max_leg_slope", "value")],
     [State(id, "value") for id in names_budget_inputs],
     [State(id, "value") for id in names_weight_inputs],
-    [State(f"{id}_radio", "value") for id in names_weight_inputs],
+    [State(f"{id}_hardsoft", "value") for id in names_weight_inputs],
     [State("max_runtime", "value")],)
 def job_submit(job_submit_time, problem_print_code, max_leg_slope,
     max_cost, max_time, weight_cost, weight_time, weight_slope,
-    weight_cost_radio, weight_time_radio, weight_slope_radio, max_runtime):
+    weight_cost_hardsoft, weight_time_hardsoft, weight_slope_hardsoft, max_runtime):
     """Submit job and provide job ID."""
 
     trigger_id = dash.callback_context.triggered[0]["prop_id"].split(".")[0]
@@ -444,7 +444,7 @@ def job_submit(job_submit_time, problem_print_code, max_leg_slope,
 
         weight_or_none = {}
         for key in names_weight_inputs:
-            radio_button = f"{key}_radio"
+            radio_button = f"{key}_hardsoft"
             weight_or_none[key] = None if eval(f"{radio_button} == 'hard'") else eval(key)
 
         solver = client.get_solver(supported_problem_types__issubset={"cqm"})

@@ -56,7 +56,7 @@ parametrize_names = ", ".join([f'{key}_in ' for key in
     ", " + ", ".join([f'{key}_slider_out ' for key in names_weight_inputs])
 
 parametrize_vals = []
-for i in range(2):
+for i in range(10):
     leg_vals = [random.randint(leg_ranges[key][0], leg_ranges[key][1])
         for key in names_leg_inputs]
     budget_vals = [random.randint(budget_ranges[key][0], budget_ranges[key][1])
@@ -68,16 +68,16 @@ for i in range(2):
     an_input.extend(leg_vals)
     an_input.extend(budget_vals)
     an_input.extend(weight_vals)
-    an_input.extend(list(np.log10(weight_vals)))      # sliders
+    an_input.extend(list(np.log10([w + 1 for w in weight_vals])))      # sliders
     an_input.extend(radio_vals)
     an_input.extend([input_print_placeholder])
     an_input.extend(leg_vals)
     an_input.extend(weight_vals)
-    an_input.extend(list(np.log10(weight_vals)))
+    an_input.extend(list(np.power(10, weight_vals)))
     parametrize_vals.append(tuple(an_input))
 
 @pytest.mark.parametrize(parametrize_names, parametrize_vals)
-def test_user_inputs(mocker, num_legs_in, max_leg_length_in, min_leg_length_in,
+def test_user_inputs_expected_outputs(mocker, num_legs_in, max_leg_length_in, min_leg_length_in,
     max_leg_slope_in, max_cost_in, max_time_in, weight_cost_in, weight_time_in,
     weight_slope_in, weight_cost_slider_in, weight_time_slider_in,
     weight_slope_slider_in, weight_cost_radio_in, weight_time_radio_in,
@@ -112,3 +112,7 @@ def test_user_inputs(mocker, num_legs_in, max_leg_length_in, min_leg_length_in,
     ctx = copy_context()
 
     output = ctx.run(run_callback)
+
+    assert output[1:] == (num_legs_in, max_leg_length_in, min_leg_length_in,
+        max_leg_slope_in, weight_cost_in, weight_time_in, weight_slope_in,
+        weight_cost_slider_in, weight_time_slider_in, weight_slope_slider_in)

@@ -16,9 +16,15 @@ from dash.dcc import Input, Slider, RadioItems
 from dash import html
 import numpy as np
 
+from tour_planning import leg_ranges, weight_ranges, budget_ranges
+from tour_planning import leg_init_values, weight_init_values, budget_init_values
+
 __all__ = ["_dcc_input", "_dcc_slider", "_dcc_radio"]
 
-def _dcc_input(name, ranges, init_vals, step=None):
+ranges = {**leg_ranges, **weight_ranges, **budget_ranges}
+init_values = {**leg_init_values, **weight_init_values, **budget_init_values}
+
+def _dcc_input(name, step=None):
     """Construct ``dash.Input`` element for layout."""
 
     suffix = ""
@@ -31,9 +37,9 @@ def _dcc_input(name, ranges, init_vals, step=None):
         min=ranges[name][0],
         max=ranges[name][1],
         step=step,
-        value=init_vals[name])
+        value=init_values[name])
 
-def _dcc_slider(name, ranges, init_vals, step=1, discrete_slider=False):
+def _dcc_slider(name, step=1, discrete_slider=False):
     """Construct ``dash.Slider`` elements for layout."""
 
     suffix = ""
@@ -41,7 +47,7 @@ def _dcc_slider(name, ranges, init_vals, step=1, discrete_slider=False):
         suffix = "_slider"
         name = name.replace("_slider", "")
     max_range = ranges[f"{name}"][1]
-    init_val = init_vals[f"{name}"]
+    init_val = init_values[f"{name}"]
     if not discrete_slider: # log slider
         max_range = np.log10(max_range)
         init_val = np.log10(init_val)

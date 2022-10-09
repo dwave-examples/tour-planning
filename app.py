@@ -27,8 +27,9 @@ from helpers_graphics import *
 from helpers_jobs import *
 from helpers_layout import *
 from formatting import *
-from tour_planning import weights_ranges_init, tour_ranges_init
+from tour_planning import weights_ranges, weights_init_values, tour_ranges, tour_init_values
 from tour_planning import build_cqm, set_legs, transport
+from tour_planning import names_leg_inputs, names_weight_inputs, names_budget_inputs
 from tool_tips import tool_tips
 
 import dimod
@@ -140,9 +141,9 @@ constraint_card.extend([
             dbc.Row([
                 dbc.Col([
                     html.Div([
-                        _dcc_input(key, weights_ranges_init, step=1)],
+                        _dcc_input(key, weights_ranges, weights_init_values, step=1)],
                             style=dict(display="flex", justifyContent="right")),
-                        _dcc_slider(f"{key}_slider", weights_ranges_init),],
+                        _dcc_slider(f"{key}_slider", weights_ranges, weights_init_values),],
                     style={"margin-right": "20px"}),
                 dbc.Col([
                     _dcc_radio(key)], style={"margin-left": "30px"})])])])])
@@ -161,8 +162,8 @@ constraints_inputs = {      # also used for callbacks
 leg_row_inputs = [dbc.Row([
     f"{val}",
     dash.html.Br(),
-    _dcc_input(key, tour_ranges_init, step=1) if key != "max_leg_slope" else
-    _dcc_slider(key, tour_ranges_init, step=1, discrete_slider=True)])
+    _dcc_input(key, tour_ranges, tour_init_values, step=1) if key != "max_leg_slope" else
+    _dcc_slider(key, tour_ranges, tour_init_values, step=1, discrete_slider=True)])
     for key, val in {**leg_inputs, **constraints_inputs}.items()]
 tour_config = dbc.Card(
     [dbc.Row([
@@ -257,7 +258,7 @@ def legs(input_print, num_legs, max_leg_length, min_leg_length, max_leg_slope):
         if find_changed and find_changed[0].split(" ")[0] not in leg_inputs.keys():
             return dash.no_update, dash.no_update   # CQM-affecting only inputs
         else:
-            legs = set_legs(num_legs, [min_leg_length, max_leg_length], max_leg_slope)
+            legs = set_legs(num_legs, min_leg_length, max_leg_length, max_leg_slope)
             return tour_to_json(legs), tour_to_display(legs)
 
 @app.callback(
@@ -310,45 +311,35 @@ def user_inputs(num_legs, max_leg_length, min_leg_length, max_leg_slope,
     if trigger_id == "min_leg_length" and min_leg_length >= max_leg_length:
         max_leg_length = min_leg_length
 
-    weights = ["cost", "time", "slope"]
     weight_vals = {}
-    for weight in weights:
+    for weight in names_weight_inputs:
+        weight_vals[weight] = eval(f"{weight}")
+        if trigger_id == f"{weight}_slider":
+            weight_vals[weight] = pow(10, eval(f"{weight}_slider"))
+        if trigger_id == f"{weight}":
+            weight_vals[weight] = eval(f"{weight}")
 
-        weight_vals[weight] = eval(f"weight_{weight}")
-        if trigger_id == f"weight_{weight}_slider":
-            weight_vals[weight] = pow(10, eval(f"weight_{weight}_slider"))
-        if trigger_id == f"weight_{weight}":
-            weight_vals[weight] = eval(f"weight_{weight}")
+    updated_inputs = {key: 0 for key in names_leg_inputs + names_weight_inputs +
+        names_budget_inputs}
 
-    tour_inputs = {**tour_ranges_init, **weights_ranges_init}
-    for key in tour_ranges_init.keys():
-        tour_inputs[key][2] = eval(key)
-    for key in weights:
-        tour_inputs[f"weight_{key}"][2] = weight_vals[key]
+    for key in names_leg_inputs + names_budget_inputs:
+        updated_inputs[key] = eval(key)
+    for key in names_weight_inputs:
+        updated_inputs[f"{key}"] = weight_vals[key]
 
-    if any(trigger_id == f"{key}_radio" for key in constraint_inputs.keys()):
-        for key in constraint_inputs.keys():
+    if any(trigger_id == f"{key}_radio" for key in names_weight_inputs):
+        for key in names_weight_inputs:
             radio_button = f"{key}_radio"
             if eval(f"{radio_button} == 'hard'"):
-                tour_inputs[key][2] = None
+                updated_inputs[key] = None
             else:
-                tour_inputs[key][2] = eval(key)
+                updated_inputs[key] = eval(key)
 
-    tour_inputs_names = list(tour_inputs.keys())
-    tour_inputs_names.extend([f"{a}_slider" for a in weights_ranges_init.keys()])
-    tour_inputs_names.extend([f"{a}_radio" for a in weights_ranges_init.keys()])
-
-    if all(trigger_id != input for input in tour_inputs_names):
-        trigger = None
-    else:
-        trigger = trigger_id.split("_slider")[0] if "slider" in trigger_id else \
-            trigger_id.split("_radio")[0]
-
-    return tour_params_to_df(tour_inputs, trigger), \
+    return tour_params_to_df(updated_inputs, trigger_id), \
         num_legs, max_leg_length, min_leg_length, max_leg_slope, \
-        weight_vals["cost"], weight_vals["time"], weight_vals["slope"], \
-        np.log10(weight_vals["cost"] + 1),  np.log10(weight_vals["time"] + 1), \
-        np.log10(weight_vals["slope"] + 1)
+        weight_vals["weight_cost"], weight_vals["weight_time"], weight_vals["weight_slope"], \
+        np.log10(weight_vals["weight_cost"] + 1),  np.log10(weight_vals["weight_time"] + 1), \
+        np.log10(weight_vals["weight_slope"] + 1)
 
 @app.callback(
     [Output(f"{key.lower()}_graph", "figure") for key in graphs.keys()],

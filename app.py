@@ -138,10 +138,10 @@ weights_card.extend([
                     html.Div([
                         _dcc_input(key, step=1)],
                             style=dict(display="flex", justifyContent="right")),
-                        _dcc_slider(f"{key}_slider"),],
+                        _dcc_radio_penalty(key)],
                     style={"margin-right": "20px"}),
                 dbc.Col([
-                    _dcc_radio(key)], style={"margin-left": "30px"})])])])])
+                    _dcc_radio_hardsoft(key)], style={"margin-left": "30px"})])])])])
     for key, val in zip(names_weight_inputs, ["Cost", "Time", "Slope"])])
 
 tour_titles = ["Set Legs", "Set Budget"]
@@ -152,7 +152,7 @@ leg_fields = [dbc.Row([
     f"{val}",
     dash.html.Br(),
     _dcc_input(key, step=1) if key != "max_leg_slope" else
-    _dcc_slider(key, step=1, discrete_slider=True)])
+    _dcc_slider(key, step=1)])
     for key, val in zip(names_leg_inputs + names_budget_inputs, field_titles)]
 tour_config = dbc.Card(
     [dbc.Row([
@@ -163,7 +163,8 @@ tour_config = dbc.Card(
                 for tour_title in tour_titles]),
      dbc.Row([
         dbc.Col(leg_fields[:4], style={"margin-right": "20px"}),
-        dbc.Col(leg_fields[4:], style={"margin-left": "20px"}),],),],
+        dbc.Col(leg_fields[4:], style={"margin-left": "20px"}),],),
+     html.P(id="last_updated_input", children="", style = dict(display="none")),],
     body=True, color="secondary")
 
 # Page-layout section
@@ -255,10 +256,12 @@ def legs(input_print, num_legs, max_leg_length, min_leg_length, max_leg_slope):
     [Input("problem_print_code", "value")],
     [State("max_leg_slope", "value")],
     [State(id, "value") for id in names_budget_inputs + names_weight_inputs],
-    [State(f"{id}_hardsoft", "value") for id in names_weight_inputs])
+    [State(f"{id}_hardsoft", "value") for id in names_weight_inputs],
+    [State(f"{id}_penalty", "value") for id in names_weight_inputs])
 def cqm(input_print, problem_print_code, max_leg_slope,
     max_cost, max_time, weight_cost, weight_time, weight_slope,
-    weight_cost_hardsoft, weight_time_hardsoft, weight_slope_hardsoft):
+    weight_cost_hardsoft, weight_time_hardsoft, weight_slope_hardsoft,
+    weight_cost_penalty, weight_time_penalty, weight_slope_penalty):
     """Create the CQM and write to json & readable text."""
 
     trigger = dash.callback_context.triggered
@@ -267,7 +270,7 @@ def cqm(input_print, problem_print_code, max_leg_slope,
     if any(trigger_id == input for input in ["input_print", "problem_print_code"]):
         legs = tour_from_json(problem_print_code)
 
-        weight_or_none = {}
+        weight_or_none = {}             # TODO: Add penalties
         for key in names_weight_inputs:
             radio_button = f"{key}_hardsoft"
             weight_or_none[key] = None if eval(f"{radio_button} == 'hard'") else eval(key)
@@ -278,16 +281,18 @@ def cqm(input_print, problem_print_code, max_leg_slope,
         return cqm.__str__()
 
 @app.callback(
+    [Output("last_updated_input", "children")],
     [Output("input_print", "value")],
-    [Output(id, "value") for id in names_leg_inputs + names_weight_inputs],
-    [Output(f"{id}_slider", "value") for id in names_weight_inputs],
+    [Output(id, "value") for id in names_weight_inputs],
+    [Output("min_leg_length", "value")],
+    [Output("max_leg_length", "value")],
     [Input(id, "value") for id in
         names_leg_inputs + names_budget_inputs + names_weight_inputs],
-    [Input(f"{id}_slider", "value") for id in names_weight_inputs],
+    [Input(f"{id}_penalty", "value") for id in names_weight_inputs],
     [Input(f"{id}_hardsoft", "value") for id in names_weight_inputs],)
 def user_inputs(num_legs, max_leg_length, min_leg_length, max_leg_slope,
     max_cost, max_time, weight_cost, weight_time, weight_slope,
-    weight_cost_slider,  weight_time_slider, weight_slope_slider,
+    weight_cost_penalty,  weight_time_penalty, weight_slope_penalty,
     weight_cost_hardsoft, weight_time_hardsoft, weight_slope_hardsoft):
     """Handle user inputs and write to readable text."""
 
@@ -302,31 +307,28 @@ def user_inputs(num_legs, max_leg_length, min_leg_length, max_leg_slope,
     weight_vals = {}
     for weight in names_weight_inputs:
         weight_vals[weight] = eval(f"{weight}")
-        if trigger_id == f"{weight}_slider":
-            weight_vals[weight] = pow(10, eval(f"{weight}_slider"))
-        if trigger_id == f"{weight}":
-            weight_vals[weight] = eval(f"{weight}")
+        # if trigger_id == f"{weight}_penalty":
+        #     weight_vals[weight] = pow(10, eval(f"{weight}_spenalty"))
+        # if trigger_id == f"{weight}":
+        #     weight_vals[weight] = eval(f"{weight}")
 
-    updated_inputs = {key: 0 for key in names_leg_inputs + names_weight_inputs +
-        names_budget_inputs}
+    # updated_inputs = {key: 0 for key in names_leg_inputs + names_weight_inputs +
+    #     names_budget_inputs}
+    #
+    # for key in names_leg_inputs + names_budget_inputs:
+    #     updated_inputs[key] = eval(key)
+    # for key in names_weight_inputs:
+    #     updated_inputs[key] = weight_vals[key]
 
-    for key in names_leg_inputs + names_budget_inputs:
-        updated_inputs[key] = eval(key)
     for key in names_weight_inputs:
-        updated_inputs[key] = weight_vals[key]
+        if eval(f"{key}_hardsoft == 'hard'"):
+            weight_vals[key] = None
+        else:
+            weight_vals[key] = eval(key)
 
-    if any(trigger_id == f"{key}_hardsoft" for key in names_weight_inputs):
-        for key in names_weight_inputs:
-            if eval(f"{key}_hardsoft == 'hard'"):
-                updated_inputs[key] = None
-            else:
-                updated_inputs[key] = eval(key)
-
-    return tour_inputs_to_df(updated_inputs, trigger_id), \
-        num_legs, max_leg_length, min_leg_length, max_leg_slope, \
+    return trigger_id, trigger_id, \
         weight_vals["weight_cost"], weight_vals["weight_time"], weight_vals["weight_slope"], \
-        np.log10(weight_vals["weight_cost"] + 1),  np.log10(weight_vals["weight_time"] + 1), \
-        np.log10(weight_vals["weight_slope"] + 1)
+        min_leg_length, max_leg_length
 
 @app.callback(
     [Output(f"{key.lower()}_graph", "figure") for key in graphs.keys()],

@@ -21,22 +21,22 @@ from dash._utils import AttributeDict
 
 btn_solve_cqm = ContextVar('btn_solve_cqm')
 
-import app
+from app import no_solver
 
 @pytest.mark.parametrize("input_val, output_val",
     [(0, True), (1, True), (0, False), (1, False)])
 def test_no_solver(mocker, input_val, output_val):
 
     if output_val == True:
-        mocker.patch.object(app, 'client', None)
+        mocker.patch('app.client', None)
     else:
-        mocker.patch.object(app, 'client', "Henry")
+        mocker.patch('app.client', "Henry")
 
     def run_callback():
         context_value.set(AttributeDict(**{"triggered_inputs":
             [{"prop_id": "btn_solve_cqm.n_clicks"}]}))
 
-        return app.no_solver(btn_solve_cqm.get())
+        return no_solver(btn_solve_cqm.get())
 
     btn_solve_cqm.set(input_val)
 

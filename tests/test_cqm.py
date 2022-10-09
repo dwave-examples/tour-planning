@@ -14,6 +14,7 @@
 
 from parameterized import parameterized
 import pytest
+from unittest.mock import patch
 
 from contextvars import copy_context, ContextVar
 from dash._callback_context import context_value
@@ -57,12 +58,11 @@ def mock_print(self):
     ", cqm_print_val",
     [(in_print, in_print_code, 8, 200, 20, 33, 44, 55, "soft", "soft", "hard", cqm_placeholder),
     (in_print, in_print_code, 5, 100, 54, 18, 66, 93, "hard", "soft", "soft", cqm_placeholder)])
-def test_cqm(mocker, input_print_val, problem_print_code_val, max_leg_slope_val,
+@patch("dimod.ConstrainedQuadraticModel.__str__", mock_print)
+def test_cqm(input_print_val, problem_print_code_val, max_leg_slope_val,
     max_cost_val, max_time_val, weight_cost_val, weight_time_val, weight_slope_val,
     weight_cost_radio_val, weight_time_radio_val, weight_slope_radio_val,
     cqm_print_val):
-
-    mocker.patch.object(dimod.ConstrainedQuadraticModel, '__str__', mock_print)
 
     def run_callback():
         context_value.set(AttributeDict(

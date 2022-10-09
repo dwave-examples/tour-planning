@@ -26,16 +26,16 @@ transport = {
 modes = transport.keys()  # global
 num_modes = len(modes)
 
-def set_legs(num_legs, leg_length_range, max_leg_slope):
+def set_legs(num_legs, min_leg_length, max_leg_length, max_leg_slope):
     """Create legs of random length within the configured ranges."""
 
-    return [{"length": round((leg_length_range[1] - leg_length_range[0])*random.random() \
-        + leg_length_range[0], 1),
+    return [{"length": round((max_leg_length - min_leg_length)*random.random() \
+        + min_leg_length, 1),
              "uphill": round(max_leg_slope*random.random(), 1),
              "toll": bool(np.random.choice([True, False], 1, p=[0.2, 0.8])[0])}
         for i in range(num_legs)]
 
-def average_tour_params(legs):
+def average_tour_budget(legs):
     """Return average values of tour cost & time for the given legs."""
 
     legs_total = sum(l["length"] for l in legs)
@@ -46,25 +46,30 @@ def average_tour_params(legs):
 
     return max_cost, max_time
 
-weights_ranges_init = {"weight_cost": [0, 100000, 100],
-    "weight_time": [0, 100000, 30],
-    "weight_slope": [0, 100000, 150],}
+leg_ranges = {"num_legs": [5, 100],
+    "max_leg_length": [1, 20],
+    "min_leg_length": [1, 20],
+    "max_leg_slope": [0, 10],}
 
-tour_ranges_init = {"num_legs": [5, 100, 10],
-    "max_leg_length": [1, 20, 10],
-    "min_leg_length": [1, 20, 2],
-    "max_leg_slope": [0, 10, 8],
-    "max_cost": [0, 100000, 0],
-    "max_time": [0, 100000, 0],}
+weight_ranges = {"weight_cost": [0, 100000],
+    "weight_time": [0, 100000],
+    "weight_slope": [0, 100000],}
 
-legs_init = {"legs": set_legs(
-    tour_ranges_init["num_legs"][2],
-    [tour_ranges_init["min_leg_length"][2],
-     tour_ranges_init["max_leg_length"][2]],
-    tour_ranges_init["max_leg_slope"][2])}
+budget_ranges =  {"max_cost": [0, 100000],
+    "max_time": [0, 100000]}
 
-tour_ranges_init["max_cost"][2], tour_ranges_init["max_time"][2] = \
-    average_tour_params(legs_init["legs"])
+leg_init_values = {"num_legs": 10, "max_leg_length": 10, "min_leg_length": 2,
+    "max_leg_slope": 8}
+
+weight_init_values = {"weight_cost": 100, "weight_time": 30, "weight_slope": 150}
+
+budget_init_values = {}
+budget_init_values["max_cost"], budget_init_values["max_time"] = \
+    average_tour_budget(set_legs(**leg_init_values))
+
+names_leg_inputs = list(leg_ranges.keys())
+names_weight_inputs = list(weight_ranges.keys())
+names_budget_inputs = list(budget_ranges.keys())
 
 def _calculate_total(t, measure, legs):
     """Helper function for building the CQM."""

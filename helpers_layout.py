@@ -16,11 +16,15 @@ from dash.dcc import Input, Slider, RadioItems
 from dash import html
 import numpy as np
 
-from tour_planning import tour_ranges_init
+from tour_planning import leg_ranges, weight_ranges, budget_ranges
+from tour_planning import leg_init_values, weight_init_values, budget_init_values
 
 __all__ = ["_dcc_input", "_dcc_slider", "_dcc_radio"]
 
-def _dcc_input(name, config_vals, step=None):
+ranges = {**leg_ranges, **weight_ranges, **budget_ranges}
+init_values = {**leg_init_values, **weight_init_values, **budget_init_values}
+
+def _dcc_input(name, step=None):
     """Construct ``dash.Input`` element for layout."""
 
     suffix = ""
@@ -30,34 +34,34 @@ def _dcc_input(name, config_vals, step=None):
     return Input(
         id=f"{name}{suffix}",
         type="number",
-        min=config_vals[name][0],
-        max=config_vals[name][1],
+        min=ranges[name][0],
+        max=ranges[name][1],
         step=step,
-        value=config_vals[name][2])
+        value=init_values[name])
 
-def _dcc_slider(name, config_vals, step=1, discrete_slider=False):
+def _dcc_slider(name, step=1, discrete_slider=False):
     """Construct ``dash.Slider`` elements for layout."""
 
     suffix = ""
     if "_slider" in name:
         suffix = "_slider"
         name = name.replace("_slider", "")
-    max_range = config_vals[f"{name}"][1]
-    init_val = config_vals[f"{name}"][2]
+    max_range = ranges[f"{name}"][1]
+    init_val = init_values[f"{name}"]
     if not discrete_slider: # log slider
         max_range = np.log10(max_range)
         init_val = np.log10(init_val)
-        marks={config_vals[f"{name}"][0]:
+        marks={ranges[f"{name}"][0]:
                 {"label": "Soft", "style": {"color": "white"}},
             int(max_range):
                 {"label": "Softish", "style": {"color": "white"}}}
     else:
         marks={i: {"label": f"{str(i)}", "style": {"color": "white"}} for i in
-        range(config_vals[name][0], tour_ranges_init[name][1] + 1, 2*step)}
+        range(ranges[name][0], ranges[name][1] + 1, 2*step)}
 
     return Slider(
         id=f"{name}{suffix}",
-        min=config_vals[f"{name}"][0],
+        min=ranges[f"{name}"][0],
         max=max_range,
         marks=marks,
         step=step,

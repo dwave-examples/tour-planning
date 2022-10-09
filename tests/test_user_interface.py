@@ -22,9 +22,10 @@ from dash._callback_context import context_value
 from dash._utils import AttributeDict
 from dash import no_update
 
-from formatting import tour_from_json
+from app import names_leg_inputs, names_budget_inputs, names_weight_inputs
+from app import user_inputs
 
-import app
+from formatting import tour_from_json
 from tour_planning import leg_ranges, budget_ranges, weight_ranges
 from tour_planning import weight_init_values
 
@@ -32,29 +33,29 @@ input_print_placeholder = """
 Configurable inputs have these supported ranges and current values:
 """
 
-for key in app.names_leg_inputs + app.names_budget_inputs + app.names_weight_inputs:
+for key in names_leg_inputs + names_budget_inputs + names_weight_inputs:
         vars()[key] = ContextVar(f"{key}")
-for key in app.names_weight_inputs:
+for key in names_weight_inputs:
     vars()[f"{key}_slider"] = ContextVar(f"{key}_slider")
-for key in app.names_weight_inputs:
+for key in names_weight_inputs:
     vars()[f"{key}_radio"] = ContextVar(f"{key}_radio")
 
 input_vals = [{"prop_id": f"{key}.value"} for key in
-    app.names_leg_inputs + app.names_weight_inputs]
+    names_leg_inputs + names_weight_inputs]
 input_vals.extend([{"prop_id": f"{key}_slider.value"} for key in
-    app.names_weight_inputs])
+    names_weight_inputs])
 input_vals.extend([{"prop_id": f"{key}_radio.value"} for key in
-    app.names_weight_inputs])
+    names_weight_inputs])
 
 test_vals = []
 for i in range(2):
     an_input = []
     leg_vals = [random.randint(leg_ranges[key][0], leg_ranges[key][1])
-        for key in app.names_leg_inputs]
+        for key in names_leg_inputs]
     budget_vals = [random.randint(budget_ranges[key][0], budget_ranges[key][1])
-        for key in app.names_budget_inputs]
+        for key in names_budget_inputs]
     weight_vals = [random.randint(weight_ranges[key][0], 3*weight_init_values[key])
-        for key in app.names_weight_inputs]
+        for key in names_weight_inputs]
     radio_vals = random.choices(["soft", "hard"], k=3)
     an_input.extend(leg_vals)
     an_input.extend(budget_vals)
@@ -67,14 +68,14 @@ for i in range(2):
     an_input.extend(list(np.log10(weight_vals)))
     test_vals.append(tuple(an_input))
 
-@pytest.mark.parametrize(", ".join([f'{key}_in ' for key in app.names_leg_inputs +
-    app.names_budget_inputs + app.names_weight_inputs]) +
-    ", " + ", ".join([f'{key}_slider_in ' for key in app.names_weight_inputs]) +
-    ", " + ", ".join([f'{key}_radio_in ' for key in app.names_weight_inputs]) +
+@pytest.mark.parametrize(", ".join([f'{key}_in ' for key in names_leg_inputs +
+    names_budget_inputs + names_weight_inputs]) +
+    ", " + ", ".join([f'{key}_slider_in ' for key in names_weight_inputs]) +
+    ", " + ", ".join([f'{key}_radio_in ' for key in names_weight_inputs]) +
     ", input_print_val, " +
-    ", ".join([f'{key}_out ' for key in app.names_leg_inputs +
-    app.names_weight_inputs]) +
-    ", " + ", ".join([f'{key}_slider_out ' for key in app.names_weight_inputs]),
+    ", ".join([f'{key}_out ' for key in names_leg_inputs +
+    names_weight_inputs]) +
+    ", " + ", ".join([f'{key}_slider_out ' for key in names_weight_inputs]),
     test_vals)
 def test_user_inputs(mocker, num_legs_in, max_leg_length_in, min_leg_length_in,
     max_leg_slope_in, max_cost_in, max_time_in, weight_cost_in, weight_time_in,
@@ -94,18 +95,18 @@ def test_user_inputs(mocker, num_legs_in, max_leg_length_in, min_leg_length_in,
             "triggered_inputs": [{"prop_id": "num_legs.value"}],
             "input_values": untriggered}))
 
-        return app.user_inputs(num_legs.get(), max_leg_length.get(), \
+        return user_inputs(num_legs.get(), max_leg_length.get(), \
             min_leg_length.get(), max_leg_slope.get(), max_cost.get(), \
             max_time.get(), weight_cost.get(), weight_time.get(), \
             weight_slope.get(), weight_cost_slider.get(), weight_time_slider.get(), \
             weight_slope_slider.get(), weight_cost_radio.get(), weight_time_radio.get(), \
             weight_slope_radio.get())
 
-    for key in app.names_leg_inputs + app.names_budget_inputs + app.names_weight_inputs:
+    for key in names_leg_inputs + names_budget_inputs + names_weight_inputs:
             globals()[key].set(vars()[key + "_in"])
-    for key in app.names_weight_inputs:
+    for key in names_weight_inputs:
         globals()[f"{key}_slider"].set(vars()[f"{key}_radio_in"])
-    for key in app.names_weight_inputs:
+    for key in names_weight_inputs:
         globals()[f"{key}_radio"].set(vars()[f"{key}_radio_in"])
 
     ctx = copy_context()

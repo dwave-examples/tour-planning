@@ -54,14 +54,15 @@ weight_cost       0  100000           100
 
 output_placeholder = " "
 
-import app
+from app import names_leg_inputs
+from app import legs
 
 input_print = ContextVar("input_print")
-for key in app.names_leg_inputs:
+for key in names_leg_inputs:
     vars()[key] = ContextVar(f"{key}")
 
 @pytest.mark.parametrize("input_print_val, " +
-    ",".join([f'{key}_val' for key in app.names_leg_inputs]) +
+    ",".join([f'{key}_val' for key in names_leg_inputs]) +
     ", problem_print_code_val, problem_print_human_val",
     [(in_print_no_update, 10, 10, 3, 8, no_update, no_update),
     (in_print_generate_legs, 10, 10, 3, 8, output_placeholder, output_placeholder),
@@ -74,13 +75,13 @@ def test_legs(input_print_val, num_legs_val,
         context_value.set(AttributeDict(
             **{
             "triggered_inputs": [{"prop_id": "input_print.value"}],
-            "state_values": [{"prop_id": f"{key}.value"} for key in app.names_leg_inputs]}))
+            "state_values": [{"prop_id": f"{key}.value"} for key in names_leg_inputs]}))
 
-        return app.legs(input_print.get(), num_legs.get(), max_leg_length.get(),\
+        return legs(input_print.get(), num_legs.get(), max_leg_length.get(),\
             min_leg_length.get(), max_leg_slope.get())
 
     input_print.set(vars()["input_print_val"])
-    for key in app.names_leg_inputs:
+    for key in names_leg_inputs:
         globals()[key].set(vars()[f"{key}_val"])
 
     ctx = copy_context()

@@ -25,53 +25,56 @@ from dash import no_update
 from formatting import tour_from_json
 
 import app
-from tour_planning import tour_ranges_init, weights_ranges_init
+from tour_planning import leg_ranges, budget_ranges, weight_ranges
+from tour_planning import weight_init_values
 
 input_print_placeholder = """
 Configurable inputs have these supported ranges and current values:
 """
 
-for key in [*app.leg_inputs.keys(), *app.constraints_inputs.keys(),  
-    *app.constraint_inputs.keys()]:
+for key in app.names_leg_inputs + app.names_budget_inputs + app.names_weight_inputs:
         vars()[key] = ContextVar(f"{key}")
-for key in app.constraint_inputs.keys():
+for key in app.names_weight_inputs:
     vars()[f"{key}_slider"] = ContextVar(f"{key}_slider")
-for key in app.constraint_inputs.keys():
+for key in app.names_weight_inputs:
     vars()[f"{key}_radio"] = ContextVar(f"{key}_radio")
 
 input_vals = [{"prop_id": f"{key}.value"} for key in
-    [*app.leg_inputs.keys(), *app.constraint_inputs.keys()]]
+    app.names_leg_inputs + app.names_weight_inputs]
 input_vals.extend([{"prop_id": f"{key}_slider.value"} for key in
-    app.constraint_inputs.keys()])
+    app.names_weight_inputs])
 input_vals.extend([{"prop_id": f"{key}_radio.value"} for key in
-    app.constraint_inputs.keys()])
+    app.names_weight_inputs])
 
 test_vals = []
 for i in range(2):
     an_input = []
-    tour_vals = [random.randint(tour_ranges_init[key][0], tour_ranges_init[key][1])
-        for key in tour_ranges_init.keys()]
-    weight_vals = [random.randint(weights_ranges_init[key][0], 3*weights_ranges_init[key][2])
-        for key in weights_ranges_init.keys()]
+    leg_vals = [random.randint(leg_ranges[key][0], leg_ranges[key][1])
+        for key in app.names_leg_inputs]
+    budget_vals = [random.randint(budget_ranges[key][0], budget_ranges[key][1])
+        for key in app.names_budget_inputs]
+    weight_vals = [random.randint(weight_ranges[key][0], 3*weight_init_values[key])
+        for key in app.names_weight_inputs]
     radio_vals = random.choices(["soft", "hard"], k=3)
-    an_input.extend(tour_vals)
+    an_input.extend(leg_vals)
+    an_input.extend(budget_vals)
     an_input.extend(weight_vals)
     an_input.extend(list(np.log10(weight_vals)))      # sliders
     an_input.extend(radio_vals)
     an_input.extend([input_print_placeholder])
-    an_input.extend(tour_vals[0:4])
+    an_input.extend(leg_vals)
     an_input.extend(weight_vals)
     an_input.extend(list(np.log10(weight_vals)))
     test_vals.append(tuple(an_input))
 
-@pytest.mark.parametrize(", ".join([f'{key}_in ' for key in [*app.leg_inputs.keys(),
-    *app.constraints_inputs.keys(), *app.constraint_inputs.keys()]]) +
-    ", " + ", ".join([f'{key}_slider_in ' for key in app.constraint_inputs.keys()]) +
-    ", " + ", ".join([f'{key}_radio_in ' for key in app.constraint_inputs.keys()]) +
+@pytest.mark.parametrize(", ".join([f'{key}_in ' for key in app.names_leg_inputs +
+    app.names_budget_inputs + app.names_weight_inputs]) +
+    ", " + ", ".join([f'{key}_slider_in ' for key in app.names_weight_inputs]) +
+    ", " + ", ".join([f'{key}_radio_in ' for key in app.names_weight_inputs]) +
     ", input_print_val, " +
-    ", ".join([f'{key}_out ' for key in [*app.leg_inputs.keys(),
-    *app.constraint_inputs.keys()]]) +
-    ", " + ", ".join([f'{key}_slider_out ' for key in app.constraint_inputs.keys()]),
+    ", ".join([f'{key}_out ' for key in app.names_leg_inputs +
+    app.names_weight_inputs]) +
+    ", " + ", ".join([f'{key}_slider_out ' for key in app.names_weight_inputs]),
     test_vals)
 def test_user_inputs(mocker, num_legs_in, max_leg_length_in, min_leg_length_in,
     max_leg_slope_in, max_cost_in, max_time_in, weight_cost_in, weight_time_in,
@@ -98,12 +101,11 @@ def test_user_inputs(mocker, num_legs_in, max_leg_length_in, min_leg_length_in,
             weight_slope_slider.get(), weight_cost_radio.get(), weight_time_radio.get(), \
             weight_slope_radio.get())
 
-    for key in [*app.leg_inputs.keys(), *app.constraints_inputs.keys(),
-        *app.constraint_inputs.keys()]:
+    for key in app.names_leg_inputs + app.names_budget_inputs + app.names_weight_inputs:
             globals()[key].set(vars()[key + "_in"])
-    for key in app.constraint_inputs.keys():
+    for key in app.names_weight_inputs:
         globals()[f"{key}_slider"].set(vars()[f"{key}_radio_in"])
-    for key in app.constraint_inputs.keys():
+    for key in app.names_weight_inputs:
         globals()[f"{key}_radio"].set(vars()[f"{key}_radio_in"])
 
     ctx = copy_context()

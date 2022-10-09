@@ -148,7 +148,7 @@ tour_titles = ["Set Legs", "Set Budget"]
 field_titles = ["How Many:", "Longest Leg:", "Shortest Leg:", "Steepest Leg:",
     "Highest Cost:", "Longest Time:"]
 
-leg_row_inputs = [dbc.Row([
+leg_fields = [dbc.Row([
     f"{val}",
     dash.html.Br(),
     _dcc_input(key, step=1) if key != "max_leg_slope" else
@@ -162,8 +162,8 @@ tour_config = dbc.Card(
             html.B(f"{tour_title}", style={"text-decoration": "underline"},) ])
                 for tour_title in tour_titles]),
      dbc.Row([
-        dbc.Col(leg_row_inputs[:4], style={"margin-right": "20px"}),
-        dbc.Col(leg_row_inputs[4:], style={"margin-left": "20px"}),],),],
+        dbc.Col(leg_fields[:4], style={"margin-right": "20px"}),
+        dbc.Col(leg_fields[4:], style={"margin-left": "20px"}),],),],
     body=True, color="secondary")
 
 # Page-layout section
@@ -314,12 +314,11 @@ def user_inputs(num_legs, max_leg_length, min_leg_length, max_leg_slope,
     for key in names_leg_inputs + names_budget_inputs:
         updated_inputs[key] = eval(key)
     for key in names_weight_inputs:
-        updated_inputs[f"{key}"] = weight_vals[key]
+        updated_inputs[key] = weight_vals[key]
 
     if any(trigger_id == f"{key}_radio" for key in names_weight_inputs):
         for key in names_weight_inputs:
-            radio_button = f"{key}_radio"
-            if eval(f"{radio_button} == 'hard'"):
+            if eval(f"{key}_radio == 'hard'"):
                 updated_inputs[key] = None
             else:
                 updated_inputs[key] = eval(key)

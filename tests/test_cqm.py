@@ -63,6 +63,7 @@ def test_cqm(input_print_val, problem_print_code_val, max_leg_slope_val,
     max_cost_val, max_time_val, weight_cost_val, weight_time_val, weight_slope_val,
     weight_cost_radio_val, weight_time_radio_val, weight_slope_radio_val,
     cqm_print_val):
+    """Test that a CQM is correctly generated."""
 
     def run_callback():
         context_value.set(AttributeDict(

@@ -17,6 +17,10 @@ import json
 
 import dimod
 
+from tour_planning import weights_ranges, legs_ranges, budget_ranges
+
+df_ranges = pd.DataFrame({**weights_ranges, **legs_ranges, **budget_ranges})
+
 __all__ = ["job_status_to_str", "tour_from_json",
     "job_status_to_display",  "tour_to_display", "tour_to_json",
     "tour_params_to_df", "out_transport_human", "solutions_to_display",
@@ -48,15 +52,25 @@ def tour_to_json(problem):
 
     return json.dumps(problem)
 
-def tour_params_to_df(params, last_changed):
+
+
+def tour_params_to_df(updated_inputs, last_changed):
     """Output the input ranges."""
 
-    df = pd.DataFrame(params)
+    df_row = pd.DataFrame(columns=df_ranges.columns, data=updated_inputs, index=[0])
+    df = pd.concat([df_ranges, df_row], axis=0)
+
     df.fillna("HARD",inplace=True)
+
     last_change_row = df.shape[1]*[""]
     if last_changed:
+        suffix = [suffix for suffix in ["slider", "radio"] if suffix in last_changed]
+        if len(suffix) > 0:
+            suffix = suffix[0]
+            last_changed = last_changed.split(f"_{suffix}")[0]
         last_change_row[df.columns.get_loc(last_changed)] = "<<---"
     df.loc[len(df)] = last_change_row
+
     df_t = df.T
     df_t.columns = ["Min.", "Max.", "Current Value", "Last Updated Input"]
 

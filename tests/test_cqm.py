@@ -33,16 +33,15 @@ in_print_code = """[{"length": 2.6, "uphill": 7.1, "toll": true}, {"length": 8.3
 input_print = ContextVar("input_print")
 problem_print_code = ContextVar("problem_print_code")
 max_leg_slope = ContextVar("max_leg_slope")
-for key in [*app.constraints_inputs.keys(), *app.constraint_inputs.keys()]:
+for key in app.names_budget_inputs + app.names_weight_inputs:
     vars()[key] = ContextVar(f"{key}")
-for key in app.constraint_inputs.keys():
+for key in app.names_weight_inputs:
     vars()[f"{key}_radio"] = ContextVar(f"{key}_radio")
 
 state_vals = [{"prop_id": "max_leg_slope"}]
 state_vals.extend([{"prop_id": f"{key}.value"} for key in
-    [*app.constraints_inputs.keys(), *app.constraint_inputs.keys()]])
-state_vals.extend([{"prop_id": f"{key}_radio.value"} for key in
-    app.constraint_inputs.keys()])
+    app.names_budget_inputs + app.names_weight_inputs])
+state_vals.extend([{"prop_id": f"{key}_radio.value"} for key in app.names_weight_inputs])
 
 cqm_placeholder = ""
 
@@ -50,8 +49,8 @@ def mock_print(self):
     return self
 
 @pytest.mark.parametrize("input_print_val, problem_print_code_val, max_leg_slope_val, " +
-    ", ".join([f'{key}_val ' for key in [*app.constraints_inputs.keys(), *app.constraint_inputs.keys()]]) +
-    ", " + ", ".join([f'{key}_radio_val ' for key in app.constraint_inputs.keys()]) +
+    ", ".join([f'{key}_val ' for key in app.names_budget_inputs + app.names_weight_inputs]) +
+    ", " + ", ".join([f'{key}_radio_val ' for key in app.names_weight_inputs]) +
     ", cqm_print_val",
     [(in_print, in_print_code, 8, 200, 20, 33, 44, 55, "soft", "soft", "hard", cqm_placeholder),
     (in_print, in_print_code, 5, 100, 54, 18, 66, 93, "hard", "soft", "soft", cqm_placeholder)])
@@ -77,9 +76,9 @@ def test_cqm(mocker, input_print_val, problem_print_code_val, max_leg_slope_val,
     input_print.set(vars()["input_print_val"])
     problem_print_code.set(vars()["problem_print_code_val"])
     max_leg_slope.set(vars()["max_leg_slope_val"])
-    for key in [*app.constraints_inputs.keys(), *app.constraint_inputs.keys()]:
+    for key in app.names_budget_inputs + app.names_weight_inputs:
         globals()[key].set(vars()[key + "_val"])
-    for key in app.constraint_inputs.keys():
+    for key in app.names_weight_inputs:
         globals()[f"{key}_radio"].set(vars()[f"{key}_radio_val"])
 
     ctx = copy_context()

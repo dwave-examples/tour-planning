@@ -26,6 +26,7 @@ from app import no_solver
 @pytest.mark.parametrize("input_val, output_val",
     [(0, True), (1, True), (0, False), (1, False)])
 def test_no_solver(mocker, input_val, output_val):
+    """Test that a failed cloud-client client is identified."""
 
     if output_val == True:
         mocker.patch('app.client', None)

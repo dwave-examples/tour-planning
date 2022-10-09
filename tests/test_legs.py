@@ -74,6 +74,7 @@ parametrize_vals = [
 def test_legs(input_print_val, num_legs_val,
     max_leg_length_val, min_leg_length_val, max_leg_slope_val,
     problem_print_code_val, problem_print_human_val):
+    """Test that new legs are correctly generated only when needed."""
 
     def run_callback():
         context_value.set(AttributeDict(

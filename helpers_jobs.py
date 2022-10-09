@@ -22,7 +22,7 @@ __all__ = ["job_bar", "TERMINATED", "RUNNING", "cancel", "elapsed", "get_status"
     "no_solver_msg", ]
 
 job_bar = {"READY": [0, "link"],
-#           "WAITING": [0, "dark"],     Placeholder, to remember the color
+#          "WAITING": [0, "dark"],     Placeholder, to remember the color
            "NO_SOLVER": [100, "danger"],
            "SUBMITTED": [10, "info"],
            "PENDING": [50, "warning"],

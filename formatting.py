@@ -17,13 +17,11 @@ import json
 
 import dimod
 
-from tour_planning import weights_ranges, legs_ranges, budget_ranges
-
-df_ranges = pd.DataFrame({**weights_ranges, **legs_ranges, **budget_ranges})
+from tour_planning import weight_ranges, leg_ranges, budget_ranges
 
 __all__ = ["job_status_to_str", "tour_from_json",
     "job_status_to_display",  "tour_to_display", "tour_to_json",
-    "tour_params_to_df", "out_transport_human", "solutions_to_display",
+    "tour_inputs_to_df", "transport_to_display", "solutions_to_display",
     "sampleset_to_json", "sampleset_from_json"]
 
 def job_status_to_str(human_readable):
@@ -47,14 +45,16 @@ def tour_to_display(problem):
     df = pd.DataFrame(problem)
     return df.to_string()
 
+transport_to_display = tour_to_display
+
 def tour_to_json(problem):
     """Output problem for code."""
 
     return json.dumps(problem)
 
+df_ranges = pd.DataFrame({**weight_ranges, **leg_ranges, **budget_ranges})
 
-
-def tour_params_to_df(updated_inputs, last_changed):
+def tour_inputs_to_df(updated_inputs, last_changed):
     """Output the input ranges."""
 
     df_row = pd.DataFrame(columns=df_ranges.columns, data=updated_inputs, index=[0])
@@ -77,8 +77,6 @@ def tour_params_to_df(updated_inputs, last_changed):
     header = f"""Configurable inputs have these supported ranges and current values:
 """
     return header + df_t.to_string()
-
-out_transport_human = tour_to_display
 
 def solutions_to_display(sampleset):
     """Output solutions for humans."""

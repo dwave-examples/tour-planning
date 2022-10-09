@@ -16,18 +16,15 @@ import dash
 import dash_bootstrap_components as dbc
 from dash import dcc, html, Input, Output, State
 import json
-import plotly.express as px
+import numpy as np
 import pandas as pd
 import random
-import numpy as np
-from pprint import pprint
 import time, datetime
 
+from formatting import *
 from helpers_graphics import *
 from helpers_jobs import *
 from helpers_layout import *
-from formatting import *
-from tour_planning import weights_ranges, weights_init_values, tour_ranges, tour_init_values
 from tour_planning import build_cqm, set_legs, transport
 from tour_planning import names_leg_inputs, names_weight_inputs, names_budget_inputs
 from tool_tips import tool_tips
@@ -119,7 +116,7 @@ for key, val in double_tabs.items():
 single_tabs = {
     "CQM": "",
     "Input": "",
-    "Transport": out_transport_human(transport)}
+    "Transport": transport_to_display(transport)}
 for key, val in single_tabs.items():
     tabs[key] = dbc.Card([
         dbc.Row([
@@ -130,10 +127,8 @@ for key, val in single_tabs.items():
 # Configuration sections
 ########################
 
-constraint_inputs = {f"weight_{constraint.lower()}": f"{constraint}" for
-    constraint in ["Cost", "Time", "Slope"]}      # also used for display callback
-constraint_card = [dbc.Row([html.H4("CQM Settings", className="card-title")])]
-constraint_card.extend([
+weights_card = [dbc.Row([html.H4("CQM Settings", className="card-title")])]
+weights_card.extend([
     dbc.Row([
        dbc.Col([
             html.Div([
@@ -141,30 +136,24 @@ constraint_card.extend([
             dbc.Row([
                 dbc.Col([
                     html.Div([
-                        _dcc_input(key, weights_ranges, weights_init_values, step=1)],
+                        _dcc_input(key, step=1)],
                             style=dict(display="flex", justifyContent="right")),
-                        _dcc_slider(f"{key}_slider", weights_ranges, weights_init_values),],
+                        _dcc_slider(f"{key}_slider"),],
                     style={"margin-right": "20px"}),
                 dbc.Col([
                     _dcc_radio(key)], style={"margin-left": "30px"})])])])])
-    for key, val in constraint_inputs.items()])
+    for key, val in zip(names_weight_inputs, ["Cost", "Time", "Slope"])])
 
 tour_titles = ["Set Legs", "Set Budget"]
-leg_inputs = {      # also used for callbacks
-    "num_legs": "How Many:",
-    "max_leg_length": "Longest Leg:",
-    "min_leg_length": "Shortest Leg:",
-    "max_leg_slope": "Steepest Leg:",}
-constraints_inputs = {      # also used for callbacks
-    "max_cost": "Highest Cost:",
-    "max_time": "Longest Time:"}
+field_titles = ["How Many:", "Longest Leg:", "Shortest Leg:", "Steepest Leg:",
+    "Highest Cost:", "Longest Time:"]
 
 leg_row_inputs = [dbc.Row([
     f"{val}",
     dash.html.Br(),
-    _dcc_input(key, tour_ranges, tour_init_values, step=1) if key != "max_leg_slope" else
-    _dcc_slider(key, tour_ranges, tour_init_values, step=1, discrete_slider=True)])
-    for key, val in {**leg_inputs, **constraints_inputs}.items()]
+    _dcc_input(key, step=1) if key != "max_leg_slope" else
+    _dcc_slider(key, step=1, discrete_slider=True)])
+    for key, val in zip(names_leg_inputs + names_budget_inputs, field_titles)]
 tour_config = dbc.Card(
     [dbc.Row([
         html.H4("Tour Settings", className="card-title", style={"textAlign": "left"})]),
@@ -191,7 +180,7 @@ layout = [
         dbc.Col(
             tour_config, width=4),
         dbc.Col(
-            dbc.Card(constraint_card, body=True, color="secondary"),
+            dbc.Card(weights_card, body=True, color="secondary"),
             width=3),
         dbc.Col([
             dbc.Row([
@@ -244,7 +233,7 @@ def no_solver(btn_solve_cqm):
     [Output("problem_print_code", "value")],
     [Output("problem_print_human", "value")],
     [Input("input_print", "value")],
-    [State(id, "value") for id in leg_inputs.keys()])
+    [State(id, "value") for id in names_leg_inputs])
 def legs(input_print, num_legs, max_leg_length, min_leg_length, max_leg_slope):
     """Generate the tour legs and write to json & readable text."""
 
@@ -255,7 +244,7 @@ def legs(input_print, num_legs, max_leg_length, min_leg_length, max_leg_slope):
 
         find_changed = [line for line in input_print.split("\n") if "<<--" in line]
 
-        if find_changed and find_changed[0].split(" ")[0] not in leg_inputs.keys():
+        if find_changed and find_changed[0].split(" ")[0] not in names_leg_inputs:
             return dash.no_update, dash.no_update   # CQM-affecting only inputs
         else:
             legs = set_legs(num_legs, min_leg_length, max_leg_length, max_leg_slope)
@@ -266,8 +255,8 @@ def legs(input_print, num_legs, max_leg_length, min_leg_length, max_leg_slope):
     [Input("input_print", "value")],
     [Input("problem_print_code", "value")],
     [State("max_leg_slope", "value")],
-    [State(id, "value") for id in [*constraints_inputs.keys(), *constraint_inputs.keys()]],
-    [State(f"{id}_radio", "value") for id in constraint_inputs.keys()])
+    [State(id, "value") for id in names_budget_inputs + names_weight_inputs],
+    [State(f"{id}_radio", "value") for id in names_weight_inputs])
 def cqm(input_print, problem_print_code, max_leg_slope,
     max_cost, max_time, weight_cost, weight_time, weight_slope,
     weight_cost_radio, weight_time_radio, weight_slope_radio):
@@ -280,7 +269,7 @@ def cqm(input_print, problem_print_code, max_leg_slope,
         legs = tour_from_json(problem_print_code)
 
         weight_or_none = {}
-        for key in constraint_inputs.keys():
+        for key in names_weight_inputs:
             radio_button = f"{key}_radio"
             weight_or_none[key] = None if eval(f"{radio_button} == 'hard'") else eval(key)
 
@@ -291,12 +280,12 @@ def cqm(input_print, problem_print_code, max_leg_slope,
 
 @app.callback(
     [Output("input_print", "value")],
-    [Output(id, "value") for id in [*leg_inputs.keys(), *constraint_inputs.keys()]],
-    [Output(f"{id}_slider", "value") for id in constraint_inputs.keys()],
+    [Output(id, "value") for id in names_leg_inputs + names_weight_inputs],
+    [Output(f"{id}_slider", "value") for id in names_weight_inputs],
     [Input(id, "value") for id in
-        [*leg_inputs.keys(), *constraints_inputs.keys(), *constraint_inputs.keys()]],
-    [Input(f"{id}_slider", "value") for id in constraint_inputs.keys()],
-    [Input(f"{id}_radio", "value") for id in constraint_inputs.keys()],)
+        names_leg_inputs + names_budget_inputs + names_weight_inputs],
+    [Input(f"{id}_slider", "value") for id in names_weight_inputs],
+    [Input(f"{id}_radio", "value") for id in names_weight_inputs],)
 def user_inputs(num_legs, max_leg_length, min_leg_length, max_leg_slope,
     max_cost, max_time, weight_cost, weight_time, weight_slope,
     weight_cost_slider,  weight_time_slider, weight_slope_slider,
@@ -335,7 +324,7 @@ def user_inputs(num_legs, max_leg_length, min_leg_length, max_leg_slope,
             else:
                 updated_inputs[key] = eval(key)
 
-    return tour_params_to_df(updated_inputs, trigger_id), \
+    return tour_inputs_to_df(updated_inputs, trigger_id), \
         num_legs, max_leg_length, min_leg_length, max_leg_slope, \
         weight_vals["weight_cost"], weight_vals["weight_time"], weight_vals["weight_slope"], \
         np.log10(weight_vals["weight_cost"] + 1),  np.log10(weight_vals["weight_time"] + 1), \
@@ -394,7 +383,7 @@ def cancel_submission(btn_cancel, job_id):
 @app.callback(
     Output("btn_cancel", component_property="style"),
     Output("btn_cancel", "disabled"),
-    [Output(id, "disabled") for id in leg_inputs.keys()],
+    [Output(id, "disabled") for id in names_leg_inputs],
     Input("job_submit_state", "children"),)
 def button_control(job_submit_state):
     """Disable tour-effecting user input during job submissions."""
@@ -442,9 +431,9 @@ def progress_bar(job_submit_state):
     [Input("job_submit_time", "children")],
     [State("problem_print_code", "value")],
     [State("max_leg_slope", "value")],
-    [State(id, "value") for id in constraints_inputs.keys()],
-    [State(id, "value") for id in constraint_inputs.keys()],
-    [State(f"{id}_radio", "value") for id in constraint_inputs.keys()],
+    [State(id, "value") for id in names_budget_inputs],
+    [State(id, "value") for id in names_weight_inputs],
+    [State(f"{id}_radio", "value") for id in names_weight_inputs],
     [State("max_runtime", "value")],)
 def job_submit(job_submit_time, problem_print_code, max_leg_slope,
     max_cost, max_time, weight_cost, weight_time, weight_slope,
@@ -456,7 +445,7 @@ def job_submit(job_submit_time, problem_print_code, max_leg_slope,
     if trigger_id =="job_submit_time":
 
         weight_or_none = {}
-        for key in constraint_inputs.keys():
+        for key in names_weight_inputs:
             radio_button = f"{key}_radio"
             weight_or_none[key] = None if eval(f"{radio_button} == 'hard'") else eval(key)
 

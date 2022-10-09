@@ -40,12 +40,12 @@ max_leg_slope = ContextVar("max_leg_slope")
 for key in names_budget_inputs + names_weight_inputs:
     vars()[key] = ContextVar(f"{key}")
 for key in names_weight_inputs:
-    vars()[f"{key}_radio"] = ContextVar(f"{key}_radio")
+    vars()[f"{key}_hardsoft"] = ContextVar(f"{key}_hardsoft")
 
 state_vals = [{"prop_id": "max_leg_slope"}]
 state_vals.extend([{"prop_id": f"{key}.value"} for key in
     names_budget_inputs + names_weight_inputs])
-state_vals.extend([{"prop_id": f"{key}_radio.value"} for key in names_weight_inputs])
+state_vals.extend([{"prop_id": f"{key}_hardsoft.value"} for key in names_weight_inputs])
 
 cqm_placeholder = ""
 
@@ -54,14 +54,14 @@ def mock_print(self):
 
 @pytest.mark.parametrize("input_print_val, problem_print_code_val, max_leg_slope_val, " +
     ", ".join([f'{key}_val ' for key in names_budget_inputs + names_weight_inputs]) +
-    ", " + ", ".join([f'{key}_radio_val ' for key in names_weight_inputs]) +
+    ", " + ", ".join([f'{key}_hardsoft_val ' for key in names_weight_inputs]) +
     ", cqm_print_val",
     [(in_print, in_print_code, 8, 200, 20, 33, 44, 55, "soft", "soft", "hard", cqm_placeholder),
     (in_print, in_print_code, 5, 100, 54, 18, 66, 93, "hard", "soft", "soft", cqm_placeholder)])
 @patch("dimod.ConstrainedQuadraticModel.__str__", mock_print)
 def test_cqm(input_print_val, problem_print_code_val, max_leg_slope_val,
     max_cost_val, max_time_val, weight_cost_val, weight_time_val, weight_slope_val,
-    weight_cost_radio_val, weight_time_radio_val, weight_slope_radio_val,
+    weight_cost_hardsoft_val, weight_time_hardsoft_val, weight_slope_hardsoft_val,
     cqm_print_val):
     """Test that a CQM is correctly generated."""
 
@@ -74,8 +74,8 @@ def test_cqm(input_print_val, problem_print_code_val, max_leg_slope_val,
 
         return cqm(input_print.get(), problem_print_code.get(), max_leg_slope.get(),\
             max_cost.get(), max_time.get(), weight_cost.get(), weight_time.get(), \
-            weight_slope.get(), weight_cost_radio.get(), weight_time_radio.get(), \
-            weight_slope_radio.get())
+            weight_slope.get(), weight_cost_hardsoft.get(), weight_time_hardsoft.get(), \
+            weight_slope_hardsoft.get())
 
     input_print.set(vars()["input_print_val"])
     problem_print_code.set(vars()["problem_print_code_val"])
@@ -83,7 +83,7 @@ def test_cqm(input_print_val, problem_print_code_val, max_leg_slope_val,
     for key in names_budget_inputs + names_weight_inputs:
         globals()[key].set(vars()[key + "_val"])
     for key in names_weight_inputs:
-        globals()[f"{key}_radio"].set(vars()[f"{key}_radio_val"])
+        globals()[f"{key}_hardsoft"].set(vars()[f"{key}_hardsoft_val"])
 
     ctx = copy_context()
 
@@ -94,7 +94,7 @@ def test_cqm(input_print_val, problem_print_code_val, max_leg_slope_val,
     assert type(output.constraints["Total time"]) == dimod.sym.Le
 
     #  Temporary use of internal method until a non-internal methos is availibele
-    if weight_cost_radio_val == "soft":
+    if weight_cost_hardsoft_val == "soft":
         output._soft["Total cost"] == dimod.constrained.SoftConstraint(weight=weight_cost_val,
             penalty='quadratic')
         output._soft["Total time"] == dimod.constrained.SoftConstraint(weight=weight_time_val,

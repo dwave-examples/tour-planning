@@ -289,6 +289,8 @@ def generate_cqm(changed_input, problem_print_code, max_leg_slope,
 
         return cqm.__str__()
 
+    return dash.no_update
+
 @app.callback(
     [Output("changed_input", "children")],
     [Output("min_leg_length", "value")],

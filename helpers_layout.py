@@ -19,7 +19,7 @@ import numpy as np
 from tour_planning import leg_ranges, weight_ranges, budget_ranges
 from tour_planning import leg_init_values, weight_init_values, budget_init_values
 
-__all__ = ["_dcc_input", "_dcc_slider", "_dcc_radio_penalty", "_dcc_radio_hardsoft"]
+__all__ = ["_dcc_input", "_dcc_slider", "_dcc_radio"]
 
 ranges = {**leg_ranges, **weight_ranges, **budget_ranges}
 init_values = {**leg_init_values, **weight_init_values, **budget_init_values}
@@ -51,22 +51,24 @@ def _dcc_slider(name, step=1):
         step=step,
         value=init_val,)
 
-def _dcc_radio_hardsoft(name):
+labels = {"hardsoft": ["Hard", "Soft"], "penalty": ["Linear", "Quadratic"]}
+
+def _dcc_radio(name, suffix):
     """Construct ``dash.RadioItem`` elements for layout."""
 
     return RadioItems([
-        {"label": html.Div(['Soft   '], style={'color': 'white', 'font-size': 12}),
-        "value": "soft",},
-        {"label": html.Div(['   Hard'], style={'color': 'white', 'font-size': 12}),
-        "value": "hard",},], value='soft', id=f"{name}_hardsoft",
+        {"label": html.Div([labels[suffix][0]], style={'color': 'white', 'font-size': 12}),
+        "value": labels[suffix][0].lower(),},
+        {"label": html.Div([labels[suffix][1]], style={'color': 'white', 'font-size': 12}),
+        "value": labels[suffix][1].lower(),},], value='soft', id=f"{name}_{suffix}",
         inputStyle={"margin-right": "20px"})
 
-def _dcc_radio_penalty(name):
-    """Construct ``dash.RadioItem`` elements for layout."""
-
-    return RadioItems([
-        {"label": html.Div(['Linear   '], style={'color': 'white', 'font-size': 12}),
-        "value": "linear",},
-        {"label": html.Div(['   Quadratic'], style={'color': 'white', 'font-size': 12}),
-        "value": "quadratic",},], value='linear', id=f"{name}_penalty",
-        inputStyle={"margin-right": "20px"})
+# def _dcc_radio_penalty(name, suffix):
+#     """Construct ``dash.RadioItem`` elements for layout."""
+#
+#     return RadioItems([
+#         {"label": html.Div(['Linear   '], style={'color': 'white', 'font-size': 12}),
+#         "value": "linear",},
+#         {"label": html.Div(['   Quadratic'], style={'color': 'white', 'font-size': 12}),
+#         "value": "quadratic",},], value='linear', id=f"{name}_penalty",
+#         inputStyle={"margin-right": "20px"})

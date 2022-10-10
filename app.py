@@ -138,10 +138,10 @@ weights_card.extend([
                     html.Div([
                         _dcc_input(key, step=1)],
                             style=dict(display="flex", justifyContent="right")),
-                        _dcc_radio_penalty(key)],
+                        _dcc_radio(key, "penalty")],
                     style={"margin-right": "20px"}),
                 dbc.Col([
-                    _dcc_radio_hardsoft(key)], style={"margin-left": "30px"})])])])])
+                    _dcc_radio(key, "hardsoft")], style={"margin-left": "30px"})])])])])
     for key, val in zip(names_weight_inputs, ["Cost", "Time", "Slope"])])
 
 tour_titles = ["Set Legs", "Set Budget"]
@@ -241,6 +241,8 @@ def update_legs(changed_input, num_legs, max_leg_length, min_leg_length, max_leg
     trigger = dash.callback_context.triggered
     trigger_id = trigger[0]["prop_id"].split(".")[0]
 
+# This ``trigger_id and not changed_input`` enables the chain of
+# callbacks at startup for initial displays.
     if trigger_id and not changed_input or any(changed_input == key for key in
         names_leg_inputs):
 
@@ -271,7 +273,7 @@ def cqm(changed_input, problem_print_code, max_leg_slope,
     if any(trigger_id == input for input in ["changed_input", "problem_print_code"]):
         legs = tour_from_json(problem_print_code)
 
-        weight_or_none = {}             # TODO: Add penalties
+        weight_or_none = {}             # TODO: Add penalties, move into func defintion
         for key in names_weight_inputs:
             radio_button = f"{key}_hardsoft"
             weight_or_none[key] = None if eval(f"{radio_button} == 'hard'") else eval(key)

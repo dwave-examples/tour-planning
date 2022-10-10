@@ -164,7 +164,7 @@ tour_config = dbc.Card(
      dbc.Row([
         dbc.Col(leg_fields[:4], style={"margin-right": "20px"}),
         dbc.Col(leg_fields[4:], style={"margin-left": "20px"}),],),
-     html.P(id="last_updated_input", children="", style = dict(display="none")),],
+     html.P(id="changed_input", children="", style = dict(display="none")),],
     body=True, color="secondary")
 
 # Page-layout section
@@ -233,32 +233,33 @@ def no_solver(btn_solve_cqm):
 @app.callback(
     [Output("problem_print_code", "value")],
     [Output("problem_print_human", "value")],
-    [Input("input_print", "value")],
+    [Input("changed_input", "children")],
     [State(id, "value") for id in names_leg_inputs])
-def legs(input_print, num_legs, max_leg_length, min_leg_length, max_leg_slope):
+def update_legs(changed_input, num_legs, max_leg_length, min_leg_length, max_leg_slope):
     """Generate the tour legs and write to json & readable text."""
 
     trigger = dash.callback_context.triggered
     trigger_id = trigger[0]["prop_id"].split(".")[0]
 
-    if trigger_id == "input_print":
-        find_changed = [line for line in input_print.split("\n") if "<<--" in line]
+    if trigger_id and not changed_input or any(changed_input == key for key in
+        names_leg_inputs):
 
-        if find_changed and find_changed[0].split(" ")[0] not in names_leg_inputs:
-            return dash.no_update, dash.no_update   # CQM-affecting only inputs
-        else:
-            legs = set_legs(num_legs, min_leg_length, max_leg_length, max_leg_slope)
-            return tour_to_json(legs), tour_to_display(legs)
+        legs = set_legs(num_legs, min_leg_length, max_leg_length, max_leg_slope)
+        return tour_to_json(legs), tour_to_display(legs)
+
+    else:       # other user inputs update the CQM but not the legs
+
+        return dash.no_update, dash.no_update
 
 @app.callback(
     Output("cqm_print", "value"),
-    [Input("input_print", "value")],
+    [Input("changed_input", "children")],
     [Input("problem_print_code", "value")],
     [State("max_leg_slope", "value")],
     [State(id, "value") for id in names_budget_inputs + names_weight_inputs],
     [State(f"{id}_hardsoft", "value") for id in names_weight_inputs],
     [State(f"{id}_penalty", "value") for id in names_weight_inputs])
-def cqm(input_print, problem_print_code, max_leg_slope,
+def cqm(changed_input, problem_print_code, max_leg_slope,
     max_cost, max_time, weight_cost, weight_time, weight_slope,
     weight_cost_hardsoft, weight_time_hardsoft, weight_slope_hardsoft,
     weight_cost_penalty, weight_time_penalty, weight_slope_penalty):
@@ -267,7 +268,7 @@ def cqm(input_print, problem_print_code, max_leg_slope,
     trigger = dash.callback_context.triggered
     trigger_id = trigger[0]["prop_id"].split(".")[0]
 
-    if any(trigger_id == input for input in ["input_print", "problem_print_code"]):
+    if any(trigger_id == input for input in ["changed_input", "problem_print_code"]):
         legs = tour_from_json(problem_print_code)
 
         weight_or_none = {}             # TODO: Add penalties
@@ -281,9 +282,7 @@ def cqm(input_print, problem_print_code, max_leg_slope,
         return cqm.__str__()
 
 @app.callback(
-    [Output("last_updated_input", "children")],
-    [Output("input_print", "value")],
-    [Output(id, "value") for id in names_weight_inputs],
+    [Output("changed_input", "children")],
     [Output("min_leg_length", "value")],
     [Output("max_leg_length", "value")],
     [Input(id, "value") for id in
@@ -307,28 +306,8 @@ def user_inputs(num_legs, max_leg_length, min_leg_length, max_leg_slope,
     weight_vals = {}
     for weight in names_weight_inputs:
         weight_vals[weight] = eval(f"{weight}")
-        # if trigger_id == f"{weight}_penalty":
-        #     weight_vals[weight] = pow(10, eval(f"{weight}_spenalty"))
-        # if trigger_id == f"{weight}":
-        #     weight_vals[weight] = eval(f"{weight}")
 
-    # updated_inputs = {key: 0 for key in names_leg_inputs + names_weight_inputs +
-    #     names_budget_inputs}
-    #
-    # for key in names_leg_inputs + names_budget_inputs:
-    #     updated_inputs[key] = eval(key)
-    # for key in names_weight_inputs:
-    #     updated_inputs[key] = weight_vals[key]
-
-    for key in names_weight_inputs:
-        if eval(f"{key}_hardsoft == 'hard'"):
-            weight_vals[key] = None
-        else:
-            weight_vals[key] = eval(key)
-
-    return trigger_id, trigger_id, \
-        weight_vals["weight_cost"], weight_vals["weight_time"], weight_vals["weight_slope"], \
-        min_leg_length, max_leg_length
+    return trigger_id, min_leg_length, max_leg_length
 
 @app.callback(
     [Output(f"{key.lower()}_graph", "figure") for key in graphs.keys()],

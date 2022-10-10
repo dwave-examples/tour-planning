@@ -68,5 +68,5 @@ def _dcc_radio_penalty(name):
         {"label": html.Div(['Linear   '], style={'color': 'white', 'font-size': 12}),
         "value": "linear",},
         {"label": html.Div(['   Quadratic'], style={'color': 'white', 'font-size': 12}),
-        "value": "quadratic",},], value='quadratic', id=f"{name}_penalty",
+        "value": "quadratic",},], value='linear', id=f"{name}_penalty",
         inputStyle={"margin-right": "20px"})

@@ -57,32 +57,6 @@ def test_build_cqm(changed_input_val, problem_print_code_val, max_leg_slope_val,
     cqm_print_val):
     """Test that a CQM is generated based on input signals."""
 
-    def run_callback():
-        context_value.set(AttributeDict(
-            **{
-            "triggered_inputs": [{"prop_id": f"{changed_input_val}.value"},
-                {"prop_id": "problem_print_code.value"}],
-            "state_values": state_vals}))
-
-        return generate_cqm(changed_input.get(), problem_print_code.get(), max_leg_slope.get(),\
-            max_cost.get(), max_time.get(), weight_cost.get(), weight_time.get(), \
-            weight_slope.get(), weight_cost_hardsoft.get(), weight_time_hardsoft.get(), \
-            weight_slope_hardsoft.get(), weight_cost_penalty.get(), \
-            weight_time_penalty.get(), weight_slope_penalty.get())
-
-    changed_input.set(vars()["changed_input_val"])
-    problem_print_code.set(vars()["problem_print_code_val"])
-    max_leg_slope.set(vars()["max_leg_slope_val"])
-    for key in names_budget_inputs + names_weight_inputs:
-        globals()[key].set(vars()[key + "_val"])
-    for key in names_weight_inputs:
-        globals()[f"{key}_hardsoft"].set(vars()[f"{key}_hardsoft_val"])
-    for key in names_weight_inputs:
-        globals()[f"{key}_penalty"].set(vars()[f"{key}_penalty_val"])
-
-    ctx = copy_context()
-
-    output = ctx.run(run_callback)
 
     assert type(output) == dimod.ConstrainedQuadraticModel
     assert type(output.constraints["One-hot leg0"]) == dimod.sym.Eq

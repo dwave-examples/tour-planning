@@ -15,6 +15,7 @@
 from parameterized import parameterized
 import pytest
 from unittest.mock import patch
+from itertools import product
 
 from contextvars import copy_context, ContextVar
 from dash._callback_context import context_value
@@ -60,7 +61,8 @@ parametrize_names = "trigger, changed_input_val, problem_print_code_val, max_leg
 parametrize_constants = ["num_legs", problem_print_placeholder, 8, 200, 20, 33, 44, 55, "soft", "soft", "hard", "linear",
     "linear", "quadratic"]
 parametrize_vals = [("changed_input", *parametrize_constants, cqm_placeholder),
-("problem_print_code", *parametrize_constants, cqm_placeholder)]
+    ("problem_print_code", *parametrize_constants, cqm_placeholder),
+    (no_update, *parametrize_constants, cqm_placeholder)]
 
 @pytest.mark.parametrize(parametrize_names, parametrize_vals)
 @patch("dimod.ConstrainedQuadraticModel.__str__", mock_print)
@@ -74,7 +76,57 @@ def test_cqm_generation(trigger, changed_input_val, problem_print_code_val, max_
     def run_callback():
         context_value.set(AttributeDict(
             **{
-            "triggered_inputs": [{"prop_id": f"{trigger}.value"},
+            "triggered_inputs": [{"prop_id": f"{trigger}.value"}],
+            "state_values": state_vals}))
+
+        return generate_cqm(changed_input.get(), problem_print_code.get(), max_leg_slope.get(),\
+            max_cost.get(), max_time.get(), weight_cost.get(), weight_time.get(), \
+            weight_slope.get(), weight_cost_hardsoft.get(), weight_time_hardsoft.get(), \
+            weight_slope_hardsoft.get(), weight_cost_penalty.get(), \
+            weight_time_penalty.get(), weight_slope_penalty.get())
+
+    changed_input.set(vars()["changed_input_val"])
+    problem_print_code.set(vars()["problem_print_code_val"])
+    max_leg_slope.set(vars()["max_leg_slope_val"])
+    for key in names_budget_inputs + names_weight_inputs:
+        globals()[key].set(vars()[key + "_val"])
+    for key in names_weight_inputs:
+        globals()[f"{key}_hardsoft"].set(vars()[f"{key}_hardsoft_val"])
+    for key in names_weight_inputs:
+        globals()[f"{key}_penalty"].set(vars()[f"{key}_penalty_val"])
+
+    ctx = copy_context()
+
+    output = ctx.run(run_callback)
+
+    if trigger == "changed_input":
+        assert type(output) == dimod.ConstrainedQuadraticModel
+    if trigger == "problem_print_code":
+        assert type(output) == dimod.ConstrainedQuadraticModel
+    if trigger == no_update:
+        assert output == None
+
+parametrize_names = parametrize_names.split("trigger,")[1]
+parametrize_constants = ["num_legs", problem_print_placeholder, 8, 200, 20, 33, 44, 55]
+parametrize_vals = []
+hardsoft = [h for h in product(["soft", "hard"], repeat=3)]
+penalty = [p for p in product(["linear", "quadratic"], repeat=3)]
+for h, p in zip(hardsoft, penalty):
+    parametrize_vals.append(tuple([*parametrize_constants, *h, *p, cqm_placeholder]))
+
+@pytest.mark.parametrize(parametrize_names, parametrize_vals)
+@patch("dimod.ConstrainedQuadraticModel.__str__", mock_print)
+def test_cqm_weights(changed_input_val, problem_print_code_val, max_leg_slope_val,
+    max_cost_val, max_time_val, weight_cost_val, weight_time_val, weight_slope_val,
+    weight_cost_hardsoft_val, weight_time_hardsoft_val, weight_slope_hardsoft_val,
+    weight_cost_penalty_val, weight_time_penalty_val, weight_slope_penalty_val,
+    cqm_print_val):
+    """Test that CQM incorporates penalties correctly."""
+
+    def run_callback():
+        context_value.set(AttributeDict(
+            **{
+            "triggered_inputs": [{"prop_id": "changed_input.value"},
                 {"prop_id": "problem_print_code.value"}],
             "state_values": state_vals}))
 
@@ -98,7 +150,10 @@ def test_cqm_generation(trigger, changed_input_val, problem_print_code_val, max_
 
     output = ctx.run(run_callback)
 
-    if trigger == "num_legs":
-        assert type(output) == dimod.ConstrainedQuadraticModel
-    if trigger == "problem_print_code":
-        assert type(output) == dimod.ConstrainedQuadraticModel
+    if weight_cost_hardsoft_val == "soft":
+        assert output._soft["Total cost"] == dimod.constrained.SoftConstraint(weight=weight_cost_val,
+            penalty=weight_cost_penalty_val)
+    else:
+        with pytest.raises(Exception):
+            output.constraint["Total cost"] == dimod.constrained.SoftConstraint(weight=weight_cost_val,
+                penalty=weight_cost_penalty_val)

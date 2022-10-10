@@ -27,52 +27,40 @@ init_values = {**leg_init_values, **weight_init_values, **budget_init_values}
 def _dcc_input(name, step=None):
     """Construct ``dash.Input`` element for layout."""
 
-    suffix = ""
-    if "_slider" in name:
-        suffix = "_slider"
-        name = name.replace("_slider", "")
     return Input(
-        id=f"{name}{suffix}",
+        id=name,
         type="number",
         min=ranges[name][0],
         max=ranges[name][1],
         step=step,
         value=init_values[name])
 
-def _dcc_slider(name, step=1, discrete_slider=False):
+def _dcc_slider(name, step=1):
     """Construct ``dash.Slider`` elements for layout."""
 
-    suffix = ""
-    if "_slider" in name:
-        suffix = "_slider"
-        name = name.replace("_slider", "")
     max_range = ranges[f"{name}"][1]
     init_val = init_values[f"{name}"]
-    if not discrete_slider: # log slider
-        max_range = np.log10(max_range)
-        init_val = np.log10(init_val)
-        marks={ranges[f"{name}"][0]:
-                {"label": "Soft", "style": {"color": "white"}},
-            int(max_range):
-                {"label": "Softish", "style": {"color": "white"}}}
-    else:
-        marks={i: {"label": f"{str(i)}", "style": {"color": "white"}} for i in
-        range(ranges[name][0], ranges[name][1] + 1, 2*step)}
+    marks={i: {"label": f"{str(i)}", "style": {"color": "white"}} for i in
+    range(ranges[name][0], ranges[name][1] + 1, 2*step)}
 
     return Slider(
-        id=f"{name}{suffix}",
+        id=f"{name}",
         min=ranges[f"{name}"][0],
         max=max_range,
         marks=marks,
         step=step,
         value=init_val,)
 
-def _dcc_radio(name):
+labels = {"hardsoft": ["Soft", "Hard"], "penalty": ["Linear", "Quadratic"]}
+
+def _dcc_radio(name, suffix):
     """Construct ``dash.RadioItem`` elements for layout."""
 
+    margin = {"hardsoft": {"margin-right": "20px"}, "penalty": {"margin-right": "30px"}}
+
     return RadioItems([
-        {"label": html.Div(['Soft   '], style={'color': 'white', 'font-size': 12}),
-        "value": "soft",},
-        {"label": html.Div(['   Hard'], style={'color': 'white', 'font-size': 12}),
-        "value": "hard",},], value='soft', id=f"{name}_radio",
-        inputStyle={"margin-right": "20px"})
+        {"label": html.Div([labels[suffix][0]], style={'color': 'white', 'font-size': 12}),
+        "value": labels[suffix][0].lower(),},
+        {"label": html.Div([labels[suffix][1]], style={'color': 'white', 'font-size': 12}),
+        "value": labels[suffix][1].lower(),},], value=labels[suffix][0].lower(),
+        id=f"{name}_{suffix}", inputStyle=margin[suffix])

@@ -36,19 +36,19 @@ for key in names_leg_inputs + names_budget_inputs + names_weight_inputs:
 for key in names_weight_inputs:
     vars()[f"{key}_slider"] = ContextVar(f"{key}_slider")
 for key in names_weight_inputs:
-    vars()[f"{key}_radio"] = ContextVar(f"{key}_radio")
+    vars()[f"{key}_hardsoft"] = ContextVar(f"{key}_hardsoft")
 
 input_vals = [{"prop_id": f"{key}.value"} for key in
     names_leg_inputs + names_budget_inputs + names_weight_inputs]
 input_vals.extend([{"prop_id": f"{key}_slider.value"} for key in
     names_weight_inputs])
-input_vals.extend([{"prop_id": f"{key}_radio.value"} for key in
+input_vals.extend([{"prop_id": f"{key}_hardsoft.value"} for key in
     names_weight_inputs])
 
 parametrize_names = ", ".join([f'{key}_in ' for key in
         names_leg_inputs +  names_budget_inputs + names_weight_inputs]) + \
     ", " + ", ".join([f'{key}_slider_in ' for key in names_weight_inputs]) + \
-    ", " + ", ".join([f'{key}_radio_in ' for key in names_weight_inputs]) + \
+    ", " + ", ".join([f'{key}_hardsoft_in ' for key in names_weight_inputs]) + \
     ", input_print_val, " + \
     ", ".join([f'{key}_out ' for key in names_leg_inputs + names_weight_inputs]) + \
     ", " + ", ".join([f'{key}_slider_out ' for key in names_weight_inputs])
@@ -78,8 +78,8 @@ for i in range(10):
 def test_user_inputs_expected_outputs(mocker, num_legs_in, max_leg_length_in, min_leg_length_in,
     max_leg_slope_in, max_cost_in, max_time_in, weight_cost_in, weight_time_in,
     weight_slope_in, weight_cost_slider_in, weight_time_slider_in,
-    weight_slope_slider_in, weight_cost_radio_in, weight_time_radio_in,
-    weight_slope_radio_in, input_print_val, num_legs_out, max_leg_length_out,
+    weight_slope_slider_in, weight_cost_hardsoft_in, weight_time_hardsoft_in,
+    weight_slope_hardsoft_in, input_print_val, num_legs_out, max_leg_length_out,
     min_leg_length_out, max_leg_slope_out, weight_cost_out, weight_time_out,
     weight_slope_out, weight_cost_slider_out, weight_time_slider_out,
     weight_slope_slider_out):
@@ -98,15 +98,15 @@ def test_user_inputs_expected_outputs(mocker, num_legs_in, max_leg_length_in, mi
             min_leg_length.get(), max_leg_slope.get(), max_cost.get(), \
             max_time.get(), weight_cost.get(), weight_time.get(), \
             weight_slope.get(), weight_cost_slider.get(), weight_time_slider.get(), \
-            weight_slope_slider.get(), weight_cost_radio.get(), weight_time_radio.get(), \
-            weight_slope_radio.get())
+            weight_slope_slider.get(), weight_cost_hardsoft.get(), weight_time_hardsoft.get(), \
+            weight_slope_hardsoft.get())
 
     for key in names_leg_inputs + names_budget_inputs + names_weight_inputs:
             globals()[key].set(vars()[key + "_in"])
     for key in names_weight_inputs:
-        globals()[f"{key}_slider"].set(vars()[f"{key}_radio_in"])
+        globals()[f"{key}_slider"].set(vars()[f"{key}_hardsoft_in"])
     for key in names_weight_inputs:
-        globals()[f"{key}_radio"].set(vars()[f"{key}_radio_in"])
+        globals()[f"{key}_hardsoft"].set(vars()[f"{key}_hardsoft_in"])
 
     ctx = copy_context()
 
@@ -125,8 +125,8 @@ parametrize_vals_triggers = [(*parametrize_vals[0], triggers)]
 def test_user_inputs_print_last_change(mocker, num_legs_in, max_leg_length_in, min_leg_length_in,
     max_leg_slope_in, max_cost_in, max_time_in, weight_cost_in, weight_time_in,
     weight_slope_in, weight_cost_slider_in, weight_time_slider_in,
-    weight_slope_slider_in, weight_cost_radio_in, weight_time_radio_in,
-    weight_slope_radio_in, input_print_val, num_legs_out, max_leg_length_out,
+    weight_slope_slider_in, weight_cost_hardsoft_in, weight_time_hardsoft_in,
+    weight_slope_hardsoft_in, input_print_val, num_legs_out, max_leg_length_out,
     min_leg_length_out, max_leg_slope_out, weight_cost_out, weight_time_out,
     weight_slope_out, weight_cost_slider_out, weight_time_slider_out,
     weight_slope_slider_out, triggers):
@@ -146,15 +146,15 @@ def test_user_inputs_print_last_change(mocker, num_legs_in, max_leg_length_in, m
             min_leg_length.get(), max_leg_slope.get(), max_cost.get(), \
             max_time.get(), weight_cost.get(), weight_time.get(), \
             weight_slope.get(), weight_cost_slider.get(), weight_time_slider.get(), \
-            weight_slope_slider.get(), weight_cost_radio.get(), weight_time_radio.get(), \
-            weight_slope_radio.get())
+            weight_slope_slider.get(), weight_cost_hardsoft.get(), weight_time_hardsoft.get(), \
+            weight_slope_hardsoft.get())
 
     for key in names_leg_inputs + names_budget_inputs + names_weight_inputs:
             globals()[key].set(vars()[key + "_in"])
     for key in names_weight_inputs:
-        globals()[f"{key}_slider"].set(vars()[f"{key}_radio_in"])
+        globals()[f"{key}_slider"].set(vars()[f"{key}_hardsoft_in"])
     for key in names_weight_inputs:
-        globals()[f"{key}_radio"].set(vars()[f"{key}_radio_in"])
+        globals()[f"{key}_hardsoft"].set(vars()[f"{key}_hardsoft_in"])
 
     ctx = copy_context()
 

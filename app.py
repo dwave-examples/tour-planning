@@ -115,7 +115,6 @@ for key, val in double_tabs.items():
 
 single_tabs = {
     "CQM": "",
-    "Input": "",
     "Transport": transport_to_display(transport)}
 for key, val in single_tabs.items():
     tabs[key] = dbc.Card([
@@ -284,7 +283,6 @@ def cqm(changed_input, problem_print_code, max_leg_slope,
             penalties[name] = eval(penalty)
             weight = f"{key}_hardsoft"
             weights[name] = None if eval(f"{weight} == 'hard'") else eval(key)
-            print(weights, penalties)
 
         cqm = build_cqm(legs, modes, max_leg_slope, max_cost, max_time,
             weights, penalties)
@@ -445,8 +443,6 @@ def job_submit(job_submit_time, problem_print_code, max_leg_slope,
             penalties[name] = eval(penalty)
             weight = f"{key}_hardsoft"
             weights[name] = None if eval(f"{weight} == 'hard'") else eval(key)
-            print(weights, penalties)
-
 
         legs = tour_from_json(problem_print_code)
         cqm = build_cqm(legs, modes, max_leg_slope, max_cost, max_time,

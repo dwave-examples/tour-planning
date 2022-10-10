@@ -313,10 +313,6 @@ def user_inputs(num_legs, max_leg_length, min_leg_length, max_leg_slope,
     if trigger_id == "min_leg_length" and min_leg_length >= max_leg_length:
         max_leg_length = min_leg_length
 
-    weight_vals = {}
-    for weight in names_weight_inputs:
-        weight_vals[weight] = eval(f"{weight}")
-
     return trigger_id, min_leg_length, max_leg_length
 
 @app.callback(

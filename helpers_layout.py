@@ -51,24 +51,16 @@ def _dcc_slider(name, step=1):
         step=step,
         value=init_val,)
 
-labels = {"hardsoft": ["Hard", "Soft"], "penalty": ["Linear", "Quadratic"]}
+labels = {"hardsoft": ["Soft", "Hard"], "penalty": ["Linear", "Quadratic"]}
 
 def _dcc_radio(name, suffix):
     """Construct ``dash.RadioItem`` elements for layout."""
+
+    margin = {"hardsoft": {"margin-right": "20px"}, "penalty": {"margin-right": "30px"}}
 
     return RadioItems([
         {"label": html.Div([labels[suffix][0]], style={'color': 'white', 'font-size': 12}),
         "value": labels[suffix][0].lower(),},
         {"label": html.Div([labels[suffix][1]], style={'color': 'white', 'font-size': 12}),
-        "value": labels[suffix][1].lower(),},], value='soft', id=f"{name}_{suffix}",
-        inputStyle={"margin-right": "20px"})
-
-# def _dcc_radio_penalty(name, suffix):
-#     """Construct ``dash.RadioItem`` elements for layout."""
-#
-#     return RadioItems([
-#         {"label": html.Div(['Linear   '], style={'color': 'white', 'font-size': 12}),
-#         "value": "linear",},
-#         {"label": html.Div(['   Quadratic'], style={'color': 'white', 'font-size': 12}),
-#         "value": "quadratic",},], value='linear', id=f"{name}_penalty",
-#         inputStyle={"margin-right": "20px"})
+        "value": labels[suffix][1].lower(),},], value=labels[suffix][0].lower(),
+        id=f"{name}_{suffix}", inputStyle=margin[suffix])

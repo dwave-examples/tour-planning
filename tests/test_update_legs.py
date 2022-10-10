@@ -56,8 +56,6 @@ def test_legs_generation_trigger(changed_input_val, num_legs_val,
     problem_print_code_val, problem_print_human_val):
     """Test that new legs are correctly generated only when needed."""
 
-    print(f"tested for {changed_input_val}. {changed_input_val in names_leg_inputs}")
-
     def run_callback():
         context_value.set(AttributeDict(
             **{
@@ -74,8 +72,6 @@ def test_legs_generation_trigger(changed_input_val, num_legs_val,
     ctx = copy_context()
 
     output = ctx.run(run_callback)
-
-    print(f"output: {output}.")
 
     if not any(changed_input_val == key for key in names_leg_inputs):
         assert output == (no_update, no_update)

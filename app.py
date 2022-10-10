@@ -260,7 +260,7 @@ def update_legs(changed_input, num_legs, max_leg_length, min_leg_length, max_leg
     [State(id, "value") for id in names_budget_inputs + names_weight_inputs],
     [State(f"{id}_hardsoft", "value") for id in names_weight_inputs],
     [State(f"{id}_penalty", "value") for id in names_weight_inputs])
-def cqm(changed_input, problem_print_code, max_leg_slope,
+def generate_cqm(changed_input, problem_print_code, max_leg_slope,
     max_cost, max_time, weight_cost, weight_time, weight_slope,
     weight_cost_hardsoft, weight_time_hardsoft, weight_slope_hardsoft,
     weight_cost_penalty, weight_time_penalty, weight_slope_penalty):

@@ -62,7 +62,8 @@ parametrize_constants = ["num_legs", problem_print_placeholder, 8, 200, 20, 33, 
     "linear", "quadratic"]
 parametrize_vals = [("changed_input", *parametrize_constants, cqm_placeholder),
     ("problem_print_code", *parametrize_constants, cqm_placeholder),
-    (no_update, *parametrize_constants, cqm_placeholder)]
+    (no_update, *parametrize_constants, cqm_placeholder),
+    ("num_legs", *parametrize_constants, cqm_placeholder)]
 
 @pytest.mark.parametrize(parametrize_names, parametrize_vals)
 @patch("dimod.ConstrainedQuadraticModel.__str__", mock_print)
@@ -104,7 +105,9 @@ def test_cqm_generation(trigger, changed_input_val, problem_print_code_val, max_
     if trigger == "problem_print_code":
         assert type(output) == dimod.ConstrainedQuadraticModel
     if trigger == no_update:
-        assert output == None
+        assert output == no_update
+    if trigger == "num_legs":
+        assert output == no_update
 
 parametrize_names = parametrize_names.split("trigger,")[1]
 parametrize_constants = ["num_legs", problem_print_placeholder, 8, 200, 20, 33, 44, 55]

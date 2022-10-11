@@ -27,6 +27,7 @@ from helpers_jobs import *
 from helpers_layout import *
 from tour_planning import build_cqm, set_legs, transport
 from tour_planning import names_leg_inputs, names_weight_inputs, names_budget_inputs
+from tour_planning import MAX_SOLVER_RUNTIME
 from tool_tips import tool_tips
 
 import dimod
@@ -71,7 +72,7 @@ solver_card = dbc.Card([
         dbc.Row([
                 html.Div([
                     html.P("Runtime limit:"),
-                    dcc.Input(id="max_runtime", type="number", min=5, max=600,
+                    dcc.Input(id="max_runtime", type="number", min=5, max=MAX_SOLVER_RUNTIME,
                         step=5, value=5, style={'marginRight':'10px'}),]),]),]),],
     color="secondary")
 

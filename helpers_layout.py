@@ -38,18 +38,14 @@ def _dcc_input(name, step=None):
 def _dcc_slider(name, step=1):
     """Construct ``dash.Slider`` elements for layout."""
 
-    max_range = ranges[f"{name}"][1]
-    init_val = init_values[f"{name}"]
-    marks={i: {"label": f"{str(i)}", "style": {"color": "white"}} for i in
-    range(ranges[name][0], ranges[name][1] + 1, 2*step)}
-
     return Slider(
         id=f"{name}",
         min=ranges[f"{name}"][0],
-        max=max_range,
-        marks=marks,
+        max=ranges[f"{name}"][1],
+        marks={i: {"label": f"{str(i)}", "style": {"color": "white"}} for i in
+            range(ranges[name][0], ranges[name][1] + 1, 2*step)},
         step=step,
-        value=init_val,)
+        value=init_values[f"{name}"],)
 
 labels = {"hardsoft": ["Soft", "Hard"], "penalty": ["Linear", "Quadratic"]}
 

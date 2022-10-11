@@ -91,12 +91,12 @@ def plot_time(legs, transport, samples):
     fig.update_traces(texttemplate = [transport for leg,transport in samples["first"]],
         textposition = "inside")
 
-    x_max = df_legs["Time"].max()
+    x_width = df_legs["Time"].sum()
     x_pos = 0
     for leg, icon in samples["first"]:
         fig.add_layout_image(dict(source=f"assets/{icon}.png", xref="x",
-            yref="y", x=x_pos, y=-0.1, sizex=x_max/10, sizey=x_max/10, opacity=1,
-            layer="above"))
+            yref="y", x=x_pos, y=-0.1, sizex=0.025*x_width, sizey=0.025*x_width,
+                opacity=1, layer="above"))
         x_pos += df_legs["Time"][leg]
 
     return fig

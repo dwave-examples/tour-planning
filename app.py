@@ -260,7 +260,7 @@ def update_legs(changed_input, num_legs, max_leg_length, min_leg_length, max_leg
     [State(id, "value") for id in names_budget_inputs + names_weight_inputs],
     [State(f"{id}_hardsoft", "value") for id in names_weight_inputs],
     [State(f"{id}_penalty", "value") for id in names_weight_inputs])
-def cqm(changed_input, problem_print_code, max_leg_slope,
+def generate_cqm(changed_input, problem_print_code, max_leg_slope,
     max_cost, max_time, weight_cost, weight_time, weight_slope,
     weight_cost_hardsoft, weight_time_hardsoft, weight_slope_hardsoft,
     weight_cost_penalty, weight_time_penalty, weight_slope_penalty):
@@ -289,10 +289,12 @@ def cqm(changed_input, problem_print_code, max_leg_slope,
 
         return cqm.__str__()
 
+    return dash.no_update
+
 @app.callback(
     [Output("changed_input", "children")],
-    [Output("min_leg_length", "value")],
     [Output("max_leg_length", "value")],
+    [Output("min_leg_length", "value")],
     [Input(id, "value") for id in
         names_leg_inputs + names_budget_inputs + names_weight_inputs],
     [Input(f"{id}_penalty", "value") for id in names_weight_inputs],
@@ -311,11 +313,7 @@ def user_inputs(num_legs, max_leg_length, min_leg_length, max_leg_slope,
     if trigger_id == "min_leg_length" and min_leg_length >= max_leg_length:
         max_leg_length = min_leg_length
 
-    weight_vals = {}
-    for weight in names_weight_inputs:
-        weight_vals[weight] = eval(f"{weight}")
-
-    return trigger_id, min_leg_length, max_leg_length
+    return trigger_id, max_leg_length, min_leg_length
 
 @app.callback(
     [Output(f"{key.lower()}_graph", "figure") for key in graphs.keys()],

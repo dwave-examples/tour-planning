@@ -279,10 +279,8 @@ def generate_cqm(changed_input, problem_print_code, max_leg_slope,
         penalties = {}
         for key in names_weight_inputs:
             name = key.split("_")[1]
-            penalty = f"{key}_penalty"
-            penalties[name] = eval(penalty)
-            weight = f"{key}_hardsoft"
-            weights[name] = None if eval(f"{weight} == 'hard'") else eval(key)
+            penalties[name] = vars()[f"{key}_penalty"]
+            weights[name] = None if vars()[f"{key}_hardsoft"] == "hard" else vars()[key]
 
         cqm = build_cqm(legs, modes, max_leg_slope, max_cost, max_time,
             weights, penalties)
@@ -437,10 +435,8 @@ def job_submit(job_submit_time, problem_print_code, max_leg_slope,
         penalties = {}
         for key in names_weight_inputs:
             name = key.split("_")[1]
-            penalty = f"{key}_penalty"
-            penalties[name] = eval(penalty)
-            weight = f"{key}_hardsoft"
-            weights[name] = None if eval(f"{weight} == 'hard'") else eval(key)
+            penalties[name] = vars()[f"{key}_penalty"]
+            weights[name] = None if vars()[f"{key}_hardsoft"] == "hard" else vars()[key]
 
         legs = tour_from_json(problem_print_code)
         cqm = build_cqm(legs, modes, max_leg_slope, max_cost, max_time,

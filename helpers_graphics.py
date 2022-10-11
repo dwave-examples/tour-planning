@@ -34,14 +34,16 @@ def plot_space(legs, samples=None):
             opacity=0.25, layer="below"))
 
     x_pos = 0
+    x_width = df_legs["Length"].sum()
     for indx, leg in enumerate(legs):
         if leg["toll"]:
             fig.add_layout_image(dict(source=f"assets/toll.png", xref="x",
-                yref="y", x=x_pos, y=0.2, sizex=2, sizey=2, opacity=1, layer="above"))
+                yref="y", x=x_pos, y=0.2, sizex=0.025*x_width, sizey=0.025*x_width,
+                    opacity=1, layer="above"))
         x_pos += df_legs["Length"][indx]
 
     fig.update_xaxes(showticklabels=True, title="Distance")
-    fig.update_yaxes(showticklabels=False, title=None, range=(-0.5, 0.5))
+    fig.update_yaxes(showticklabels=True, title=None, range=(-0.5, 0.5))
     fig.update_traces(width=.1)
     fig.update_layout(font_color="rgb(6, 236, 220)", margin=dict(l=20, r=20, t=20, b=20),
         paper_bgcolor="rgba(0,0,0,0)")
@@ -54,7 +56,8 @@ def plot_space(legs, samples=None):
         x_pos = 0
         for leg, icon in samples["first"]:
             fig.add_layout_image(dict(source=f"assets/{icon}.png", xref="x",
-            yref="y", x=x_pos, y=-0.1, sizex=2, sizey=2, opacity=1, layer="above"))
+            yref="y", x=x_pos, y=-0.1, sizex=0.025*x_width, sizey=0.025*x_width,
+                opacity=1, layer="above"))
             x_pos += df_legs["Length"][leg]
 
     return fig

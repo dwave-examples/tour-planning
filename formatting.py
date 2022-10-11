@@ -24,20 +24,15 @@ __all__ = ["job_status_to_str", "tour_from_json",
     "transport_to_display", "solutions_to_display",
     "sampleset_to_json", "sampleset_from_json"]
 
-def job_status_to_str(human_readable):
-    """Strip status from 'Status: <status>'"""
-
-    return human_readable.split()[1]
-
-def tour_from_json(code):
-    """Input problem from code."""
-
-    return json.loads(code)
-
 def job_status_to_display(code):
     """Output status as 'Status: <status>'."""
 
     return f"Status: {code}"
+
+def job_status_to_str(human_readable):
+    """Strip status from 'Status: <status>'"""
+
+    return human_readable.split()[1]
 
 def tour_to_display(problem):
     """Output problem for humans."""
@@ -45,12 +40,17 @@ def tour_to_display(problem):
     df = pd.DataFrame(problem)
     return df.to_string()
 
-transport_to_display = tour_to_display
-
 def tour_to_json(problem):
     """Output problem for code."""
 
     return json.dumps(problem)
+
+def tour_from_json(code):
+    """Input problem from code."""
+
+    return json.loads(code)
+
+transport_to_display = tour_to_display
 
 def solutions_to_display(sampleset):
     """Output solutions for humans."""

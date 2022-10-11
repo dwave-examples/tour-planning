@@ -70,6 +70,7 @@ budget_init_values["max_cost"], budget_init_values["max_time"] = \
 names_leg_inputs = list(leg_ranges.keys())
 names_weight_inputs = list(weight_ranges.keys())
 names_budget_inputs = list(budget_ranges.keys())
+MAX_SOLVER_RUNTIME = 600
 
 def _calculate_total(t, measure, legs):
     """Helper function for building the CQM."""

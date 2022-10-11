@@ -293,8 +293,8 @@ def generate_cqm(changed_input, problem_print_code, max_leg_slope,
 
 @app.callback(
     [Output("changed_input", "children")],
-    [Output("min_leg_length", "value")],
     [Output("max_leg_length", "value")],
+    [Output("min_leg_length", "value")],
     [Input(id, "value") for id in
         names_leg_inputs + names_budget_inputs + names_weight_inputs],
     [Input(f"{id}_penalty", "value") for id in names_weight_inputs],
@@ -313,7 +313,7 @@ def user_inputs(num_legs, max_leg_length, min_leg_length, max_leg_slope,
     if trigger_id == "min_leg_length" and min_leg_length >= max_leg_length:
         max_leg_length = min_leg_length
 
-    return trigger_id, min_leg_length, max_leg_length
+    return trigger_id, max_leg_length, min_leg_length
 
 @app.callback(
     [Output(f"{key.lower()}_graph", "figure") for key in graphs.keys()],

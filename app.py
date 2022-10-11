@@ -213,7 +213,7 @@ app.layout = dbc.Container(
 @app.callback(
     Output("solver_modal", "is_open"),
     Input("btn_solve_cqm", "n_clicks"),)
-def no_solver(btn_solve_cqm):
+def alert_no_solver(btn_solve_cqm):
     """Notify if no Leap hybrid CQM solver is accessible."""
 
     trigger = dash.callback_context.triggered
@@ -293,7 +293,7 @@ def generate_cqm(changed_input, problem_print_code, max_leg_slope,
         names_leg_inputs + names_budget_inputs + names_weight_inputs],
     [Input(f"{id}_penalty", "value") for id in names_weight_inputs],
     [Input(f"{id}_hardsoft", "value") for id in names_weight_inputs],)
-def user_inputs(num_legs, max_leg_length, min_leg_length, max_leg_slope,
+def check_user_inputs(num_legs, max_leg_length, min_leg_length, max_leg_slope,
     max_cost, max_time, weight_cost, weight_time, weight_slope,
     weight_cost_penalty,  weight_time_penalty, weight_slope_penalty,
     weight_cost_hardsoft, weight_time_hardsoft, weight_slope_hardsoft):
@@ -313,7 +313,7 @@ def user_inputs(num_legs, max_leg_length, min_leg_length, max_leg_slope,
     [Output(f"{key.lower()}_graph", "figure") for key in graphs.keys()],
     Input("solutions_print_code", "value"),
     Input("problem_print_code", "value"))
-def graphics(solutions_print_code, problem_print_code):
+def display_graphics(solutions_print_code, problem_print_code):
     """Generate graphics for legs and samples."""
 
     trigger = dash.callback_context.triggered
@@ -365,7 +365,7 @@ def cancel_submission(btn_cancel, job_id):
     Output("btn_cancel", "disabled"),
     [Output(id, "disabled") for id in names_leg_inputs],
     Input("job_submit_state", "children"),)
-def button_control(job_submit_state):
+def disable_buttons(job_submit_state):
     """Disable tour-effecting user input during job submissions."""
 
     trigger_id = dash.callback_context.triggered[0]["prop_id"].split(".")[0]
@@ -395,7 +395,7 @@ def button_control(job_submit_state):
     Output("bar_job_status", "value"),
     Output("bar_job_status", "color"),
     Input("job_submit_state", "children"),)
-def progress_bar(job_submit_state):
+def set_progress_bar(job_submit_state):
     """Update progress bar for job submissions."""
 
     trigger_id = dash.callback_context.triggered[0]["prop_id"].split(".")[0]
@@ -416,7 +416,7 @@ def progress_bar(job_submit_state):
     [State(f"{id}_hardsoft", "value") for id in names_weight_inputs],
     [State(f"{id}_penalty", "value") for id in names_weight_inputs],
     [State("max_runtime", "value")],)
-def job_submit(job_submit_time, problem_print_code, max_leg_slope,
+def submit_job(job_submit_time, problem_print_code, max_leg_slope,
     max_cost, max_time, weight_cost, weight_time, weight_slope,
     weight_cost_hardsoft, weight_time_hardsoft, weight_slope_hardsoft,
     weight_cost_penalty, weight_time_penalty, weight_slope_penalty, max_runtime):
@@ -453,7 +453,7 @@ def job_submit(job_submit_time, problem_print_code, max_leg_slope,
     Output("solutions_print_human", "value"),
     Input("job_submit_state", "children"),
     State("job_id", "children"),)
-def solutions(job_submit_state, job_id):
+def display_solutions(job_submit_state, job_id):
     """Update solutions and write to json & readable text."""
 
     trigger_id = dash.callback_context.triggered[0]["prop_id"].split(".")[0]
@@ -483,7 +483,7 @@ def solutions(job_submit_state, job_id):
     State("job_id", "children"),
     State("job_submit_state", "children"),
     State("job_submit_time", "children"),)
-def submission_manager(n_clicks, n_intervals, job_id, job_submit_state, job_submit_time):
+def manage_submission(n_clicks, n_intervals, job_id, job_submit_state, job_submit_time):
     """Manage job submission."""
 
     trigger_id = dash.callback_context.triggered[0]["prop_id"].split(".")[0]

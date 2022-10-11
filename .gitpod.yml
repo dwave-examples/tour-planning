@@ -1,0 +1,4 @@
+tasks:
+  - name: Run dash application
+    command: |
+      python app.py

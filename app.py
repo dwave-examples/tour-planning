@@ -357,6 +357,7 @@ def cancel_submission(btn_cancel, job_id):
                 alert = f"Could not cancel job: {status}"
         except Exception as err:
             alert = f"Could not cancel job: {err}"
+
         return alert, True
 
 @app.callback(

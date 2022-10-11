@@ -349,8 +349,8 @@ def cancel_submission(btn_cancel, job_id):
     if trigger_id !="btn_cancel":
         return dash.no_update, dash.no_update
     else:
-        status = cancel(client, job_id)
         try:
+            status = cancel(client, job_id)
             if status.status.name == "CANCELLED":
                 alert = f"Cancelled job {job_id}"
             else:

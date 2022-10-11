@@ -23,7 +23,7 @@ from dash._utils import AttributeDict
 from dash import no_update
 
 from app import names_leg_inputs, names_budget_inputs, names_weight_inputs
-from app import user_inputs
+from app import check_user_inputs
 
 from formatting import tour_from_json
 from tour_planning import leg_ranges, budget_ranges, weight_ranges
@@ -92,7 +92,7 @@ def test_user_inputs_expected_outputs(trigger, num_legs_in, max_leg_length_in,
             "triggered_inputs": [{"prop_id": f"{trigger}.value"}],
             "input_values": input_vals}))
 
-        return user_inputs(num_legs.get(), max_leg_length.get(), \
+        return check_user_inputs(num_legs.get(), max_leg_length.get(), \
             min_leg_length.get(), max_leg_slope.get(), max_cost.get(), \
             max_time.get(), weight_cost.get(), weight_time.get(), \
             weight_slope.get(), weight_cost_penalty.get(), weight_time_penalty.get(), \

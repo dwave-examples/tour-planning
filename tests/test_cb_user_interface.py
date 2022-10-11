@@ -47,7 +47,17 @@ parametrize_names = "trigger, " + ", ".join([f'{key}_in ' for key in
         names_leg_inputs +  names_budget_inputs + names_weight_inputs]) + \
     ", " + ", ".join([f'{key}_penalty_in ' for key in names_weight_inputs]) + \
     ", " + ", ".join([f'{key}_hardsoft_in ' for key in names_weight_inputs]) + \
-    ", changed_input_out, min_leg_length_out, max_leg_length_out"
+    ", changed_input_out, max_leg_length_out, min_leg_length_out"
+
+def leg_length(trigger, max_leg_length, min_leg_length):
+
+    if trigger == "max_leg_length" and max_leg_length <= min_leg_length:
+        return max_leg_length, max_leg_length
+    if trigger == "min_leg_length" and min_leg_length >= max_leg_length:
+        return min_leg_length, min_leg_length
+    else:
+        return max_leg_length, min_leg_length
+
 
 parametrize_vals = []
 for i in range(10):
@@ -64,26 +74,23 @@ for i in range(10):
     hardsoft_vals = random.choices(["soft", "hard"], k=3)
     an_input = [trigger, *leg_vals, *budget_vals, *weight_vals, *penalty_vals,
         *hardsoft_vals, trigger,
-        min(leg_vals[1], leg_vals[2]), max(leg_vals[1], leg_vals[2])]
+        *leg_length(trigger, leg_vals[1], leg_vals[2])]
     parametrize_vals.append(tuple(an_input))
 
 @pytest.mark.parametrize(parametrize_names, parametrize_vals)
-def test_user_inputs_expected_outputs(trigger, num_legs_in, max_leg_length_in, min_leg_length_in,
-    max_leg_slope_in, max_cost_in, max_time_in, weight_cost_in, weight_time_in,
-    weight_slope_in, weight_cost_penalty_in, weight_time_penalty_in,
+def test_user_inputs_expected_outputs(trigger, num_legs_in, max_leg_length_in,
+    min_leg_length_in, max_leg_slope_in, max_cost_in, max_time_in, weight_cost_in,
+    weight_time_in, weight_slope_in, weight_cost_penalty_in, weight_time_penalty_in,
     weight_slope_penalty_in, weight_cost_hardsoft_in, weight_time_hardsoft_in,
-    weight_slope_hardsoft_in, changed_input_out, min_leg_length_out,
-    max_leg_length_out):
+    weight_slope_hardsoft_in, changed_input_out, max_leg_length_out,
+    min_leg_length_out):
     """Test triggering input sets ``changed_input`` and correct min/max leg length."""
-
-    untriggered = copy.deepcopy(input_vals)
-    untriggered.remove({'prop_id': f"{trigger}.value"})
 
     def run_callback():
         context_value.set(AttributeDict(
             **{
             "triggered_inputs": [{"prop_id": f"{trigger}.value"}],
-            "input_values": untriggered}))
+            "input_values": input_vals}))
 
         return user_inputs(num_legs.get(), max_leg_length.get(), \
             min_leg_length.get(), max_leg_slope.get(), max_cost.get(), \
@@ -103,4 +110,4 @@ def test_user_inputs_expected_outputs(trigger, num_legs_in, max_leg_length_in, m
 
     output = ctx.run(run_callback)
 
-    assert output == (trigger, min_leg_length_in, max_leg_length_in)
+    assert output == (trigger, max_leg_length_out, min_leg_length_out)

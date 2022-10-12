@@ -546,7 +546,7 @@ def manage_submission(n_clicks, n_intervals, job_id, job_submit_state, job_submi
     else:   # Exception state: should only ever happen in testing
 
         return False, True, 0, 0, job_status_to_display("ERROR"), dash.no_update, \
-            "PLease restart"
+            "Please restart"
 
 if __name__ == "__main__":
     app.run_server(debug=True)

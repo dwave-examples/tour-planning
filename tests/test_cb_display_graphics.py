@@ -72,13 +72,13 @@ def test_display_graphics(mock, trigger, solutions_print_code_val, problem_print
 
     output = ctx.run(run_callback)
 
+    assert output[0].to_dict()["data"][0]["type"] == fig_space
+
     if trigger == "problem_print_code":
 
-        assert output[0].to_dict()["data"][0]["type"] == fig_space
-        assert output[1:] == (no_update, no_update)
+        assert output[1:] == (fig_time, fig_diversity)
 
     else:
 
-        assert output[0].to_dict()["data"][0]["type"] == fig_space
         assert output[1].to_dict()["data"][0]["type"] == fig_time
         assert output[2].to_dict()["data"][0]["type"] == fig_diversity

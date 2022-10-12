@@ -21,11 +21,11 @@ from dash._utils import AttributeDict
 
 btn_solve_cqm = ContextVar('btn_solve_cqm')
 
-from app import no_solver
+from app import alert_no_solver
 
 @pytest.mark.parametrize("input_val, output_val",
     [(0, True), (1, True), (0, False), (1, False)])
-def test_no_solver(mocker, input_val, output_val):
+def test_alert_no_solver(mocker, input_val, output_val):
     """Test that a failed cloud-client client is identified."""
 
     if output_val == True:
@@ -37,7 +37,7 @@ def test_no_solver(mocker, input_val, output_val):
         context_value.set(AttributeDict(**{"triggered_inputs":
             [{"prop_id": "btn_solve_cqm.n_clicks"}]}))
 
-        return no_solver(btn_solve_cqm.get())
+        return alert_no_solver(btn_solve_cqm.get())
 
     btn_solve_cqm.set(input_val)
 

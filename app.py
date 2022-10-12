@@ -526,5 +526,10 @@ def manage_submission(n_clicks, n_intervals, job_id, job_submit_state, job_submi
         return disable_btn, disable_watchdog, 0.1*1000, 0, \
             dash.no_update, dash.no_update, f"Elapsed: {elapsed_time} sec."
 
+    else:   # Exception state: should only ever happen in testing
+
+        return False, True, 0, 0, job_status_to_display("ERROR"), dash.no_update, \
+            "PLease restart"
+
 if __name__ == "__main__":
     app.run_server(debug=True)

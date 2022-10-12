@@ -210,6 +210,21 @@ app.layout = dbc.Container(
 
 # Callbacks Section
 
+def _weight_or_none(
+    weight_cost, weight_time, weight_slope,
+    weight_cost_hardsoft, weight_time_hardsoft, weight_slope_hardsoft):
+    """Helper function for `build_cqm()`, which is used twice."""
+
+    weights = {
+        "cost": None if weight_cost_hardsoft == "hard" \
+            else weight_cost,
+        "time": None if weight_time_hardsoft == "hard" \
+            else weight_time,
+        "slope": None if weight_slope_hardsoft == "hard" \
+            else weight_slope}
+
+    return weights
+
 @app.callback(
     Output("solver_modal", "is_open"),
     Input("btn_solve_cqm", "n_clicks"),)
@@ -271,12 +286,13 @@ def generate_cqm(changed_input, problem_print_code, max_leg_slope,
     if trigger_id == "changed_input" or trigger_id == "problem_print_code":
         legs = tour_from_json(problem_print_code)
 
-        weights = {}
-        penalties = {}
-        for key in names_weight_inputs:
-            name = key.split("_")[1]
-            penalties[name] = vars()[f"{key}_penalty"]
-            weights[name] = None if vars()[f"{key}_hardsoft"] == "hard" else vars()[key]
+        penalties = {
+            "cost": weight_cost_penalty,
+            "time": weight_time_penalty,
+            "slope": weight_slope_penalty}
+
+        weights = _weight_or_none(weight_cost, weight_time, weight_slope,
+            weight_cost_hardsoft, weight_time_hardsoft, weight_slope_hardsoft)
 
         cqm = build_cqm(legs, modes, max_leg_slope, max_cost, max_time,
             weights, penalties)
@@ -428,12 +444,13 @@ def submit_job(job_submit_time, problem_print_code, max_leg_slope,
 
         solver = client.get_solver(supported_problem_types__issubset={"cqm"})
 
-        weights = {}
-        penalties = {}
-        for key in names_weight_inputs:
-            name = key.split("_")[1]
-            penalties[name] = vars()[f"{key}_penalty"]
-            weights[name] = None if vars()[f"{key}_hardsoft"] == "hard" else vars()[key]
+        penalties = {
+            "cost": weight_cost_penalty,
+            "time": weight_time_penalty,
+            "slope": weight_slope_penalty}
+
+        weights = _weight_or_none(weight_cost, weight_time, weight_slope,
+            weight_cost_hardsoft, weight_time_hardsoft, weight_slope_hardsoft)
 
         legs = tour_from_json(problem_print_code)
         cqm = build_cqm(legs, modes, max_leg_slope, max_cost, max_time,

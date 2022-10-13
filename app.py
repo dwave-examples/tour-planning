@@ -25,7 +25,7 @@ from formatting import *
 from helpers_graphics import *
 from helpers_jobs import *
 from helpers_layout import *
-from tour_planning import build_cqm, set_legs, transport
+from tour_planning import build_cqm, set_legs, transport, tour_budget_boundaries
 from tour_planning import names_leg_inputs, names_weight_inputs, names_budget_inputs
 from tour_planning import MAX_SOLVER_RUNTIME
 from tool_tips import tool_tips
@@ -114,7 +114,7 @@ for key, val in double_tabs.items():
 
 single_tabs = {
     "CQM": "",
-    "Transport": transport_to_display(transport)}
+    "Transport": ""}
 for key, val in single_tabs.items():
     tabs[key] = dbc.Card([
         dbc.Row([
@@ -262,6 +262,22 @@ def update_legs(changed_input, num_legs, max_leg_length, min_leg_length, max_leg
     else:       # Other user inputs regenerate the CQM but not the legs
 
         return dash.no_update, dash.no_update
+
+@app.callback(
+    Output("transport_print", "value"),
+    [Input("problem_print_code", "value")],)
+def display_transport(problem_print_code):
+    """Update the transport display print."""
+
+    trigger = dash.callback_context.triggered
+    trigger_id = trigger[0]["prop_id"].split(".")[0]
+
+    if trigger_id == "problem_print_code":
+
+        legs = tour_from_json(problem_print_code)
+        boundaries = tour_budget_boundaries(legs)
+
+        return transport_to_display(boundaries)
 
 @app.callback(
     Output("cqm_print", "value"),

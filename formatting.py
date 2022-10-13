@@ -17,7 +17,7 @@ import json
 
 import dimod
 
-from tour_planning import weight_ranges, leg_ranges, budget_ranges
+from tour_planning import weight_ranges, leg_ranges, budget_ranges, transport
 
 __all__ = ["job_status_to_str", "tour_from_json",
     "job_status_to_display",  "tour_to_display", "tour_to_json",
@@ -50,7 +50,21 @@ def tour_from_json(code):
 
     return json.loads(code)
 
-transport_to_display = tour_to_display
+def transport_to_display(boundaries):
+    """Output transport for humans."""
+
+    df = pd.DataFrame(transport)
+
+    first_lines = f"""Costs for this tour range from {boundaries['cost_min']} to {boundaries['cost_max']}.
+Times for this tour range from {boundaries['time_min']} to {boundaries['time_max']}.
+
+Average cost is {boundaries['cost_avg']}.
+Average time is {boundaries['time_avg']}. 
+
+Modes of locomotion are: \n
+"""
+
+    return first_lines + df.to_string()
 
 def solutions_to_display(sampleset):
     """Output solutions for humans."""

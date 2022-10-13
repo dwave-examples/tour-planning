@@ -46,6 +46,22 @@ def average_tour_budget(legs):
 
     return max_cost, max_time
 
+def tour_budget_boundaries(legs):
+    """Return boundary values of tour cost & time for the given legs."""
+
+    legs_total = sum(l["length"] for l in legs)
+    costs = [c["Cost"] for c in transport.values()]
+    speeds = [s["Speed"] for s in transport.values()]
+    cost_min = round(legs_total * min(costs))
+    cost_max = round(legs_total * max(costs))
+    cost_avg = round(legs_total * np.mean([min(costs), max(costs)]))
+    time_avg = round(legs_total / np.mean([min(speeds), max(speeds)]))
+    time_min = round(legs_total / max(speeds))
+    time_max = round(legs_total / min(speeds))
+
+    return {"cost_min": cost_min, "cost_max": cost_max, "cost_avg": cost_avg,
+        "time_min": time_min, "time_max": time_max, "time_avg": time_avg}
+
 leg_ranges = {"num_legs": [5, 100],
     "max_leg_length": [1, 20],
     "min_leg_length": [1, 20],

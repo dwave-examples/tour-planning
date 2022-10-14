@@ -82,7 +82,7 @@ graphs = {  # also used for graph() display callback
     "Space": "Displays your configured tour, with leg distance as " + \
         "relative length and elevation as color. Displays best found mode of transport.",
     "Time": "Displays best found solution, with leg duration as relative length.",
-    "Diversity": "Displays feasible and infeasible solutions to submitted problems."}
+    "Feasiblity": "Displays feasible and infeasible solutions to submitted problems."}
 tabs["Graph"] = dbc.Tabs([
     dbc.Tab(dbc.Card([
         dbc.Row([
@@ -361,12 +361,12 @@ def display_graphics(solutions_print_code, problem_print_code):
 
     fig_space = plot_space(legs, samples)
     fig_time = plot_time(legs, transport, samples)
-    fig_diversity = plot_diversity(legs, transport, samples)
+    fig_feasiblity = plot_feasiblity(legs, transport, samples)
 
     if not fig_time:
-        fig_time = fig_diversity = dash.no_update
+        fig_time = fig_feasiblity = dash.no_update
 
-    return fig_space, fig_time, fig_diversity
+    return fig_space, fig_time, fig_feasiblity
 
 @app.callback(
     Output("alert_cancel", "children"),

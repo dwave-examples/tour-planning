@@ -48,7 +48,7 @@ first = sorted({int(key.split("_")[1]): key.split("_")[0] for key,val in \
 samples = {"sampleset": sampleset, "feasible": sampleset_feasible, "first": first}
 
 parametrize_names = "trigger, solutions_print_code_val, problem_print_code_val, fig_space, " + \
-    "fig_time, fig_diversity"
+    "fig_time, fig_feasiblity"
 parametrize_vals = [
     ("problem_print_code", "anything", problem_json, "bar", no_update, no_update),
     ("solutions_print_code", samples, problem_json, "bar", "bar", "scatter3d"),]
@@ -56,7 +56,7 @@ parametrize_vals = [
 @pytest.mark.parametrize(parametrize_names, parametrize_vals)
 @patch("app.sampleset_from_json", return_value=samples)
 def test_display_graphics(mock, trigger, solutions_print_code_val, problem_print_code_val,
-    fig_space, fig_time, fig_diversity):
+    fig_space, fig_time, fig_feasiblity):
     """Test display of graphics."""
 
     def run_callback():
@@ -76,9 +76,9 @@ def test_display_graphics(mock, trigger, solutions_print_code_val, problem_print
 
     if trigger == "problem_print_code":
 
-        assert output[1:] == (fig_time, fig_diversity)
+        assert output[1:] == (fig_time, fig_feasiblity)
 
     else:
 
         assert output[1].to_dict()["data"][0]["type"] == fig_time
-        assert output[2].to_dict()["data"][0]["type"] == fig_diversity
+        assert output[2].to_dict()["data"][0]["type"] == fig_feasiblity

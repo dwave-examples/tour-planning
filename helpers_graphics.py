@@ -16,7 +16,7 @@ import plotly.express as px
 
 from formatting import *
 
-__all__ = ["plot_space", "plot_time", "plot_diversity"]
+__all__ = ["plot_space", "plot_time", "plot_feasiblity"]
 
 def plot_space(legs, samples=None):
     """Plot legs versus distance and slope, optionally with solutions."""
@@ -101,7 +101,7 @@ def plot_time(legs, transport, samples):
 
     return fig
 
-def plot_diversity(legs, transport, samples):
+def plot_feasiblity(legs, transport, samples):
     """Plot solutions."""
 
     if not samples:

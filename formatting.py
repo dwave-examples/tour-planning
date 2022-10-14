@@ -59,7 +59,7 @@ def transport_to_display(boundaries):
 Times for this tour range from {boundaries['time_min']} to {boundaries['time_max']}.
 
 Average cost is {boundaries['cost_avg']}.
-Average time is {boundaries['time_avg']}. 
+Average time is {boundaries['time_avg']}.
 
 Modes of locomotion are: \n
 """

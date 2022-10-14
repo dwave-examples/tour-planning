@@ -208,6 +208,9 @@ app.layout = dbc.Container(
     layout, fluid=True,
     style={"backgroundColor": "black", "color": "rgb(6, 236, 220)"})
 
+server = app.server
+app.config["suppress_callback_exceptions"] = True
+
 # Callbacks Section
 
 def _weight_or_none(

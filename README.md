@@ -1,7 +1,7 @@
 # Tour Planning
 
-A demonstration of using hard and soft constraints on the Leap quantum-classical
-hybrid constrained quadratic (CQM) solver.
+A demonstration of using hard and soft constraints on the Leap &trade;
+quantum-classical hybrid constrained quadratic (CQM) solver.
 
 This example solves a problem of selecting, for a tour divided into several legs
 of varying lengths and steepness, a combination of locomotion modes (walking,
@@ -51,7 +51,7 @@ supported values.
 
 ### Configuring the Tour
 
-The upper left section of the user interface lets you configure the tour: how 
+The upper-left section of the user interface lets you configure the tour: how
 many legs it should comprise, lengths of these legs, and maximum elevation gain.
 
 The lengths of each leg are set to a uniform random value between your selected
@@ -66,7 +66,7 @@ vary in price) and time (walking is slower than driving) for the entire tour.
 
 ### Configuring the CQM
 
-The upper middle section of the user interface lets you configure the constrained
+The upper-middle section of the user interface lets you configure the constrained
 quadratic model used to select the modes of locomotion for each leg of the tour.
 
 For the constraints on cost, time, and steepness you can select whether to
@@ -75,4 +75,33 @@ a type of penalty: linear or quadratic.
 
 ### Submitting the Problem for Solution
 
-The upper right section of the user interface lets you submit your problem
+The upper-right section of the user interface lets you submit your problem
+to a Leap hybrid CQM solver. By default, the solver runtime is 5 seconds but
+you can increase it if desired.
+
+### Viewing Solutions and Problem Information
+
+The lower section presents information about the problem and any found solutions.
+These are presented in the following tabs:
+
+* **Graph:** displays the configured problem and any found solutions in three ways:
+
+    - **Space:** displays leg lengths as relative lengths of the tour, slope as a
+      color heatmap, and toll booths as icons above the tour. Modes of locomotion
+      for found solutions are written onto the tour and displayed as icons below 
+      it.
+    - **Time:** displays leg duration as relative lengths of the tour and leg pricing
+      as a color heatmap.   
+    - **Feasibility:** displays feasible and non-feasible solutions in a
+      three-dimensional plot for exercise, cost, and time.
+* **Problem:** displays the legs of the tour (length, slope, and toll booths) formatted
+    for reading and for copying and pasting into your code.
+* **Solutions:** displays the best solution found formatted for reading and the
+    [dimod sampleset](
+https://docs.ocean.dwavesys.com/en/stable/docs_dimod/reference/sampleset.html)
+    for copying and pasting into your code.
+* **CQM:** displays the constrained quadratic model generated for your configured
+    tour and CQM settings.
+* **Transport:** displays tour information for your configuration, such as the
+    minimum, maximum, and average values of cost and time, and information about
+    the available modes of locomotion.

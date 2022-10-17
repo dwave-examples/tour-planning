@@ -1,5 +1,5 @@
 icons: https://uxwing.com/
-map: google maps (temp)
-    https://www.freeworldmaps.net/about.html (Europe)
 
-time: https://www.dreamstime.com/royalty-free-stock-images-chessboard-game-dali-like-clock-melting-distorted-progress-image33321379
+backgrounds:
+    time: https://www.dreamstime.com/royalty-free-stock-images-chessboard-game-dali-like-clock-melting-distorted-progress-image33321379
+    space: https://pixabay.com/photos/europe-asia-georgia-caucasus-1785465/

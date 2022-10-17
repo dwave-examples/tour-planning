@@ -124,7 +124,7 @@ for key, val in single_tabs.items():
 
 # CQM configuration sections
 
-weights_card = [dbc.Row([html.H4("CQM Settings", className="card-title")])]
+weights_card = [dbc.Row([html.H4("Constraint Settings", className="card-title")])]
 weights_card.extend([
     dbc.Row([
        dbc.Col([

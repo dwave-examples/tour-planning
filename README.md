@@ -22,6 +22,11 @@ By setting appropriate weights to soft constraints in comparison to the objectiv
 and to other soft constraints, you can express the relative importance of such
 constraints.
 
+This example enables you to set hard or soft constraints on the tour's cost, its
+duration, and the steepest leg one can cycle. The CQM has hard constraints that
+ensure a single mode of locomotion is selected for each leg and prevent driving
+on legs with toll booths.  
+
 ## Installation
 
 This example can be run in the Leap IDE by accessing the following URL:
@@ -53,6 +58,8 @@ supported values.
 
 The upper-left section of the user interface lets you configure the tour: how
 many legs it should comprise, lengths of these legs, and maximum elevation gain.
+Additionally, you can configure your budgets of cost (modes of locomotion
+vary in price) and time (walking is slower than driving) for the entire tour.
 
 The lengths of each leg are set to a uniform random value between your selected
 minimum and maximum lengths. Steepness is set uniformly at random between zero
@@ -61,21 +68,17 @@ and the maximum you set.
 A leg's steepness affects cycling: a constraint is set to discourage (soft) or
 disallow (hard) cycling on legs that exceed half the maximum slope you set.
 
-Additionally, you can configure your budgets of cost (modes of locomotion
-vary in price) and time (walking is slower than driving) for the entire tour.
-
 When you update a tour's legs, toll booths are placed at random on some of the
 legs. These affect driving in a private car (as opposed to taking a bus):
 the generated CQM sets a hard constraint to not drive on legs with toll booths.
 
-### Configuring the CQM
+### Configuring the Constraints
 
-The upper-middle section of the user interface lets you configure the constrained
-quadratic model used to select the modes of locomotion for each leg of the tour.
+The upper-middle section of the user interface lets you configure the constraints
+on cost, time, and steepness.
 
-For the constraints on cost, time, and steepness you can select whether to
-use hard or soft constraints. For soft constraints, you can set a weight and
-a type of penalty: linear or quadratic.
+You can select whether to use hard or soft constraints. For soft constraints,
+you can set a weight and a type of penalty: linear or quadratic.
 
 ### Submitting the Problem for Solution
 
@@ -124,10 +127,10 @@ number 5 might have the following binary variables and values in one solution:
 
 | Binary Variable        | Represents    | Value in a Particular Solution |
 |------------------------|---------------|--------------------------------|
-| walk_5                 | Walk leg 5    | False                          |
-| cycle_5                | Cycle leg 5   | True                           |
-| bus_5                  | Bus leg 5     | False                          |
-| drive_5                | Drive leg 5   | False                          |
+| ``walk_5``             | Walk leg 5    | False                          |
+| ``cycle_5``            | Cycle leg 5   | True                           |
+| ``bus_5``              | Bus leg 5     | False                          |
+| ``drive_5``            | Drive leg 5   | False                          |
 
 In the above case, the mode of locomotion selected for leg 5 is to cycle.
 
@@ -135,13 +138,15 @@ The CQM is built as follows with a single objective and several constraints:
 
 * **Objective: Maximize Exercise**
 
-    to maximize exercise on the tour, the CQM sets an objective to
+    To maximize exercise on the tour, the CQM sets an objective to
     maximize the total values of exercise of all the tour legs. It does this in
     a summation over the following multiplicands for each leg:
-        - length
-        - slope
-        - exercise value of each mode of locomotion
-        - binary variable representing each mode of locomotion
+
+    * length
+    * slope
+    * exercise value of each mode of locomotion
+    * binary variable representing each mode of locomotion
+
     Because a single mode of locomotion is selected for each leg (as explained
     below), all the products but one are zeroed by the binary variables of that
     leg. For example, in leg 5 above, the length set for leg 5 is multiplied by
@@ -149,12 +154,12 @@ The CQM is built as follows with a single objective and several constraints:
     for cycling is not zero.
 * **Constraint 1: Single Mode of Locomotion Per Leg**
 
-    to ensure a single mode of locomotion is selected for each
+    To ensure a single mode of locomotion is selected for each
     leg, the sum of the binary variables representing each leg must equal one
     (a ["one-hot" constraint](https://docs.dwavesys.com/docs/latest/handbook_reformulating.html)). This is a hard constraint.
 * **Constraint 2: Cost**
 
-    to discourage or prevent the tour's cost from exceeding
+    To discourage or prevent the tour's cost from exceeding
     your configured value, the CQM sets a constraint that the total cost over
     all legs is less or equal to the desired cost. It does this in a summation
     over leg length multiplied by the cost value of each mode of locomotion and
@@ -163,7 +168,7 @@ The CQM is built as follows with a single objective and several constraints:
     the leg length. This can be a hard or soft constraint.
 * **Constraint 3: Time**
 
-    to discourage or prevent the tour's duration from exceeding your configured
+    To discourage or prevent the tour's duration from exceeding your configured
     value, the CQM sets a constraint similar to that on cost but with the leg
     length divided by the value of speed for each mode of locomotion. This can be
     a hard or soft constraint.
@@ -186,3 +191,28 @@ The CQM is built as follows with a single objective and several constraints:
 Most the code related to configuring the CQM is in the
 [tour_planning.py](tour_planning.py) file. The remaining files mostly support
 the user interface.
+
+TODO: add math formulas for the model and names of the functions that implement
+them.
+
+---
+**Note:** Standard practice for submitting problems to Leap solvers is to use
+a [dwave-system](https://docs.ocean.dwavesys.com/en/stable/docs_system/sdk_index.html)
+sampler; for example, you typically use
+[LeapHybridCQMSampler](https://docs.ocean.dwavesys.com/en/stable/docs_system/reference/samplers.html)
+for CQM problems. The code in this example uses the
+[dwave-cloud-client](https://docs.ocean.dwavesys.com/en/stable/docs_cloud/sdk_index.html),
+which enables finer control over communications with the Solver API (SAPI).
+
+If you are learning to submit problems to Leap solvers, use a ``dwave-system``
+solver, with its higher level of abstraction and thus greater simplicity,
+as demonstrated in most the code examples of the
+[example collection](https://github.com/dwave-examples) and in the
+[Ocean documentation](https://docs.ocean.dwavesys.com/en/stable/index.html).
+
+
+---
+
+## License
+
+Released under the Apache License 2.0. See [LICENSE](LICENSE) file.

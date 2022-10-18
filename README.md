@@ -20,7 +20,17 @@ as feasible. Soft constraints may be violated to achieve an overall good solutio
 
 By setting appropriate weights to soft constraints in comparison to the objective
 and to other soft constraints, you can express the relative importance of such
-constraints.
+constraints. Soft constraints on binary variables can be one of two types:
+
+* linear: the penalty for violating such a constraint is proportional to its bias.
+* quadratic: the penalty for violating such a constraint is proportional to the
+  square of its bias.
+
+For example, for a soft constraint on the tour's maximum cost with a price of 3
+for driving, preferring to drive over cheaper locomotion on a leg of length 2 adds
+a penalty of 6 or 36, for a linear or quadratic constraint, respectively, that
+goes up, for a leg length of 3, to 9 and 81, respectively. Such a quadratic
+constraint severely discourages driving on longer legs.
 
 This example enables you to set hard or soft constraints on the tour's cost, its
 duration, and the steepest leg one can cycle. The CQM has hard constraints that
@@ -115,7 +125,7 @@ https://docs.ocean.dwavesys.com/en/stable/docs_dimod/reference/sampleset.html)
 * **CQM:** displays the constrained quadratic model generated for your configured
   tour and constraints.
 
-* **Transport:** displays information about your configured tour, such as the
+* **Locomotion:** displays information about your configured tour, such as the
   minimum, maximum, and average values of cost and time, and information about
   the available modes of locomotion.
 

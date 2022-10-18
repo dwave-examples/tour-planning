@@ -78,21 +78,16 @@ solver_card = dbc.Card([
 
 tabs = {}
 
-graphs = {  # also used for graph() display callback
-    "Space": "Displays your configured tour, with leg distance as " + \
-        "relative length and elevation as color. Displays best found mode of transport.",
-    "Time": "Displays best found solution, with leg duration as relative length.",
-    "Feasiblity": "Displays feasible and infeasible solutions to submitted problems."}
+graphs = ["Space", "Time", "Feasibility"] # also used for graph() display callback
 tabs["Graph"] = dbc.Tabs([
     dbc.Tab(dbc.Card([
         dbc.Row([
             dbc.Col([
-                html.P(id=f"{key}_intro", children=val, style={"color": "black"}),
-                dcc.Graph(id=f"{key.lower()}_graph")], width=12) ])]),
-        label=f"{key}",
-        tab_id=f"graph_{key.lower()}",
+                dcc.Graph(id=f"{graph.lower()}_graph")], width=12) ])]),
+        label=f"{graph}",
+        id=f"graph_{graph.lower()}",
         label_style={"color": "white", "backgroundColor": "black"},)
-    for key, val in graphs.items()])
+    for graph in graphs])
 
 double_tabs = {
     "Problem": "Displays the configured tour: length of each leg, elevation, and "\
@@ -114,7 +109,7 @@ for key, val in double_tabs.items():
 
 single_tabs = {
     "CQM": "",
-    "Transport": ""}
+    "Locomotion": ""}
 for key, val in single_tabs.items():
     tabs[key] = dbc.Card([
         dbc.Row([
@@ -198,7 +193,8 @@ layout = [
     dbc.Tabs([
         dbc.Tab(
             tabs[tab], label=tab, tab_id=f"tab_{tab.lower()}",
-            label_style={"color": "rgb(3, 184, 255)", "backgroundColor": "black"},)
+            label_style={"color": "rgb(3, 184, 255)", "backgroundColor": "black"},
+            id=f"tab_for_{tab}")
         for tab in tabs.keys()],
         id="tabs", active_tab="tab_graph")]
 
@@ -277,7 +273,7 @@ def update_legs(changed_input, num_legs, max_leg_length, min_leg_length, max_leg
         return dash.no_update, dash.no_update
 
 @app.callback(
-    Output("transport_print", "value"),
+    Output("locomotion_print", "value"),
     [Input("problem_print_code", "value")],)
 def display_transport(problem_print_code):
     """Update the transport display print."""
@@ -355,7 +351,7 @@ def check_user_inputs(num_legs, max_leg_length, min_leg_length, max_leg_slope,
     return trigger_id, max_leg_length, min_leg_length
 
 @app.callback(
-    [Output(f"{key.lower()}_graph", "figure") for key in graphs.keys()],
+    [Output(f"{graph.lower()}_graph", "figure") for graph in graphs],
     Input("solutions_print_code", "value"),
     Input("problem_print_code", "value"))
 def display_graphics(solutions_print_code, problem_print_code):

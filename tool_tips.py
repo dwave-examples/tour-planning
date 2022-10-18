@@ -103,4 +103,32 @@ or prevent cycling on steep legs.""", html.Br(),
 immediately reflected in the bar graph below. How your values for the tour budget
 (highest cost and longest time) and greatest leg slope affect the solution
 depends also on your constraint settings.""", html.Br(),
-"See the README file for more information."])],}
+"See the README file for more information."])],
+    "tab_for_Graph":
+"""Displays the configured tour, as a colored bar divided into segments representing
+the legs, and any found solutions as icons above the colored bar or written onto
+the bar.""",
+    "tab_for_Problem":
+"""Displays the legs of the tour (length, slope, and toll booths), formatted for
+reading and for copying into your code.""",
+    "tab_for_Solutions":
+"""Displays the best solution found, formatted for reading and as
+  a dimod sampleset for copying into your code.""",
+    "tab_for_CQM":
+"""Displays the constrained quadratic model generated for your configured
+  tour and constraints.""",
+    "tab_for_Locomotion":
+"""Displays information about your configured tour, such as the minimum, maximum,
+and average values of cost and time, and information about the available modes
+of locomotion.""",
+    "graph_space":
+"""Displays your configured tour, with leg distance as relative length and
+elevation as color. Any toll booths are represented by icons above the tour.
+Displays best found modes of locomotion as icons below the tour.""",
+    "graph_time":
+"""Displays relative leg duration as the widths of the bar's colored segments and,
+for the best found solution, the cost per leg as a color heatmap.""",
+    "graph_feasibility":
+"""Displays feasible and non-feasible solutions in a three-dimensional plot of
+exercise, cost, and time. Non-feasible solutions violate one or more hard
+constraints; feasible solutions may violate some soft constraints.""",}

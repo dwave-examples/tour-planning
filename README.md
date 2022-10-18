@@ -51,8 +51,8 @@ Access the user interface with your browser at http://127.0.0.1:8050/.
 The demo program opens an interface where you can configure tour
 problems, submit these problems to a CQM solver, and examine the results.
 
-Hover over an input field to see a description of the input and its range of
-supported values.
+*Hover over an input field to see a description of the input and its range of*
+*supported values.*
 
 ### Configuring the Tour
 
@@ -76,10 +76,10 @@ has a hard constraint to not drive on legs with toll booths.
 
 ### Configuring the Constraints
 
-The upper-middle section of the user interface lets you configure the constraints
+The upper-middle section of the user interface lets you tune the constraints
 on cost, time, and steepness.
 
-You can select whether to use hard or soft constraints. For soft constraints,
+You can select whether to use hard or soft constraints, and for soft constraints,
 you can set weights and chose between linear or quadratic penalties.
 
 ### Submitting the Problem for Solution
@@ -88,7 +88,7 @@ The upper-right section of the user interface lets you submit your problem
 to a Leap hybrid CQM solver. The default solver runtime of 5 seconds is used
 unless you choose to increase it.
 
-### Viewing Solutions and Problem Information
+### Viewing Solutions and Problem Details
 
 The lower section presents information about the problem and any found solutions.
 These are presented in the following tabs:
@@ -96,8 +96,9 @@ These are presented in the following tabs:
 * **Graph:** displays the configured problem and any found solutions in three ways:
 
   - **Space:** displays relative leg lengths, steepness as a
-    color heatmap, and toll booths as icons above the tour. Modes of locomotion
-    for the best solution found are displayed as icons below it.
+    color heatmap, and toll booths as icons above the colored bar representing
+    the tour. Modes of locomotion for the best solution found are displayed as
+    icons below it.
   - **Time:** displays relative leg duration and, for the best found solution,
     the cost per leg as a color heatmap.   
   - **Feasibility:** displays feasible and non-feasible solutions in a
@@ -123,7 +124,7 @@ https://docs.ocean.dwavesys.com/en/stable/docs_dimod/reference/sampleset.html)
 The problem of selecting a mode of locomotion for every leg of the tour to achieve
 some objective (maximize exercise) given a number of constraints (e.g., do not
 overpay) can be modeled as an optimization problem with decisions that could
-either be true (or yes) or false (no): for any leg, should one drive? Should one
+either be true or false: for any leg, should one drive? Should one
 walk?
 
 This model uses four binary variables for each leg of the tour, each one representing
@@ -137,20 +138,15 @@ number 5 might have the following binary variables and values in one solution:
 | ``bus_5``              | Bus leg 5     | False                          |
 | ``drive_5``            | Drive leg 5   | False                          |
 
-In the above case, the mode of locomotion selected for leg 5 is to cycle.
+In the solution above, cycling is the mode of locomotion selected for leg 5.
 
 The CQM is built as follows with a single objective and several constraints:
 
 * **Objective: Maximize Exercise**
 
-    To maximize exercise on the tour, the CQM sets an objective to
-    maximize the total values of exercise of all the tour legs. It does this in
-    a summation over the following multiplicands for each leg:
-
-    * length
-    * slope
-    * exercise value of each mode of locomotion
-    * binary variable representing each mode of locomotion
+    To maximize exercise on the tour, the CQM objective is to minimize the negative
+    summation of values of exercise set for each locomotion mode across all the
+    tour's legs.
 
     ![eq_exercise](assets/formula_exercise.png)
 
@@ -160,23 +156,24 @@ The CQM is built as follows with a single objective and several constraints:
 
     Because a single mode of locomotion is selected for each leg (as explained
     below), all the products but one are zeroed by the binary variables of that
-    leg. For example, in leg 5 above, the length set for leg 5 is multiplied by
-    its slope and the exercise value of cycling because only the binary variable
-    for cycling is not zero.
+    leg. For example, in leg 5 in the solution above, the leg length is
+    multiplied by its slope and the exercise value of cycling because, for this
+    leg, the binary variable representing cycling is the only non-zero variable.
 
 * **Constraint 1: Cost**
 
     To discourage or prevent the tour's cost from exceeding
-    your configured value, the CQM sets a constraint that the total cost over
-    all legs is less or equal to the desired cost. It does this in a summation
-    over leg length multiplied by the cost value of each mode of locomotion and
-    by the binary variable representing each mode of locomotion. Again, for each
-    leg the only non-zero product is for the cost of the selected locomotion and
-    the leg length. This can be a hard or soft constraint.
+    your preferred budget, the CQM sets a constraint that the total cost over
+    all legs is less or equal to your configured cost. It does this by minimizing
+    the summation of leg lengths multiplied by the cost value of locomotion mode
+    for the leg. This can be a hard or soft constraint.
 
     ![eq_cost](assets/formula_cost.png)
 
     ![eq_cost_terms](assets/formula_cost_terms.png)
+
+    Again, for each leg the only non-zero product has the binary variable
+    representing the selected locomotion mode.
 
 * **Constraint 2: Time**
 
@@ -198,18 +195,18 @@ The CQM is built as follows with a single objective and several constraints:
 
     ![eq_slope](assets/formula_slope.png)
 
-
 * **Constraint 4: Single Mode of Locomotion Per Leg**
 
     To ensure a single mode of locomotion is selected for each
     leg, the sum of the binary variables representing each leg must equal one
-    (a ["one-hot" constraint](https://docs.dwavesys.com/docs/latest/handbook_reformulating.html)). This is a hard constraint.
+    (a ["one-hot" constraint](https://docs.dwavesys.com/docs/latest/handbook_reformulating.html)).
+    This is a hard constraint.
 
     ![eq_one_hot](assets/formula_one_hot.png)
 
 * **Constraint 5: Toll Booths**
 
-    To prevent the selection of driving on legs with toll booths, the CQM sets a
+    To prevent driving on legs with toll booths, the CQM sets a
     constraint that the binary variable representing driving be zero for any leg
     with a toll booth. This is a hard constraint.
 

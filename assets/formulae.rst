@@ -11,12 +11,12 @@ Exercise
 
 where
 
-* :math:`L`: Number of legs.
-* :math:`M`: Number of modes of locomotion.
-* :math:`l_i`: length of leg :math:`i`
-* :math:`s_i`: Steepness of leg :math:`i`
-* :math:`x_{i,j}`: Binary variable for leg :math:`i` and locomotion mode `j`.
-* :math:`v_j`: Value of exercise for locomotion mode `j`.
+* :math:`L`: Number of legs in the tour.
+* :math:`M`: Number of available modes of locomotion.
+* :math:`l_i`: Length of leg :math:`i`.
+* :math:`s_i`: Steepness of leg :math:`i`.
+* :math:`x_{i,j}`: Binary variable representing that locomotion mode `j` is selected for leg :math:`i`.
+* :math:`v_j`: Value of exercise set for locomotion mode `j`.
 
 One-Hot Constraint
 ------------------

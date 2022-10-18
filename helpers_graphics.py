@@ -43,7 +43,7 @@ def plot_space(legs, samples=None):
         x_pos += df_legs["Length"][indx]
 
     fig.update_xaxes(showticklabels=True, title="Distance")
-    fig.update_yaxes(showticklabels=True, title=None, range=(-0.5, 0.5))
+    fig.update_yaxes(showticklabels=False, title=None, range=(-0.5, 0.5))
     fig.update_traces(width=.1)
     fig.update_layout(font_color="rgb(6, 236, 220)", margin=dict(l=20, r=20, t=20, b=20),
         paper_bgcolor="rgba(0,0,0,0)")

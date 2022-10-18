@@ -6,7 +6,7 @@ quantum-classical hybrid constrained quadratic (CQM) solver.
 This example solves a problem of selecting, for a tour divided into several legs
 of varying lengths and steepness, a combination of locomotion modes (walking,
 cycling, bussing, and driving) such that one can gain the greatest benefit of
-outdoor exercise while not exceeding one's budget of transportation costs and time.  
+outdoor exercise while not exceeding one's budgeted cost and time.  
 
 ![Example Solution](assets/example_space_graph.png)
 
@@ -56,21 +56,23 @@ supported values.
 
 ### Configuring the Tour
 
-The upper-left section of the user interface lets you configure the tour: how
-many legs it should comprise, lengths of these legs, and maximum elevation gain.
-Additionally, you can configure your budgets of cost (modes of locomotion
-vary in price) and time (walking is slower than driving) for the entire tour.
+The upper-left section of the user interface lets you configure the tour's legs:
+how many, how long, and the maximum elevation gain.
+Additionally, you can configure your budgets of cost and time for the entire
+tour: modes of locomotion vary in price and speed. For example, walking is free
+but slower than driving.
 
-The lengths of each leg are set to a uniform random value between your selected
-minimum and maximum lengths. Steepness is set uniformly at random between zero
-and the maximum you set.
+Leg lengths are set to a uniform random value between your configured minimum and
+maximum values. Steepness is set uniformly at random between zero and your
+configured maximum value.
 
-A leg's steepness affects cycling: a constraint is set to discourage (soft) or
-disallow (hard) cycling on legs that exceed half the maximum slope you set.
+A leg's steepness affects cycling: a constraint is set to discourage (soft
+constraint) or disallow (hard constraint) cycling on those legs that exceed half
+the maximum slope you configured.
 
 When you update a tour's legs, toll booths are placed at random on some of the
-legs. These affect driving in a private car (as opposed to taking a bus):
-the generated CQM sets a hard constraint to not drive on legs with toll booths.
+legs. These affect driving in a private car (but not bussing): the generated CQM
+has a hard constraint to not drive on legs with toll booths.
 
 ### Configuring the Constraints
 
@@ -78,7 +80,7 @@ The upper-middle section of the user interface lets you configure the constraint
 on cost, time, and steepness.
 
 You can select whether to use hard or soft constraints. For soft constraints,
-you can set a weight and a type of penalty: linear or quadratic.
+you can set weights and chose between linear or quadratic penalties.
 
 ### Submitting the Problem for Solution
 
@@ -93,25 +95,28 @@ These are presented in the following tabs:
 
 * **Graph:** displays the configured problem and any found solutions in three ways:
 
-    - **Space:** displays leg lengths as relative lengths of the tour, slope as a
-      color heatmap, and toll booths as icons above the tour. Modes of locomotion
-      for found solutions are written onto the tour and displayed as icons below
-      it.
-    - **Time:** displays leg duration as relative lengths of the tour and leg pricing
-      as a color heatmap.   
-    - **Feasibility:** displays feasible and non-feasible solutions in a
-      three-dimensional plot for exercise, cost, and time.
-* **Problem:** displays the legs of the tour (length, slope, and toll booths), formatted
-    for reading and for copying into your code.
-* **Solutions:** displays the best solution found formatted for reading and the
-    [dimod sampleset](
+  - **Space:** displays relative leg lengths, steepness as a
+    color heatmap, and toll booths as icons above the tour. Modes of locomotion
+    for the best solution found are displayed as icons below it.
+  - **Time:** displays relative leg duration and, for the best found solution,
+    the cost per leg as a color heatmap.   
+  - **Feasibility:** displays feasible and non-feasible solutions in a
+    three-dimensional plot of exercise, cost, and time.
+
+* **Problem:** displays the legs of the tour (length, slope, and toll booths),
+  formatted for reading and for copying into your code.
+
+* **Solutions:** displays the best solution found, formatted for reading and as
+  a [dimod sampleset](
 https://docs.ocean.dwavesys.com/en/stable/docs_dimod/reference/sampleset.html)
-    for copying into your code.
+  for copying into your code.
+
 * **CQM:** displays the constrained quadratic model generated for your configured
-    tour and CQM settings.
-* **Transport:** displays tour information for your configuration, such as the
-    minimum, maximum, and average values of cost and time, and information about
-    the available modes of locomotion.
+  tour and constraints.
+
+* **Transport:** displays information about your configured tour, such as the
+  minimum, maximum, and average values of cost and time, and information about
+  the available modes of locomotion.
 
 ## Model Overview
 
@@ -158,15 +163,8 @@ The CQM is built as follows with a single objective and several constraints:
     leg. For example, in leg 5 above, the length set for leg 5 is multiplied by
     its slope and the exercise value of cycling because only the binary variable
     for cycling is not zero.
-* **Constraint 1: Single Mode of Locomotion Per Leg**
 
-    To ensure a single mode of locomotion is selected for each
-    leg, the sum of the binary variables representing each leg must equal one
-    (a ["one-hot" constraint](https://docs.dwavesys.com/docs/latest/handbook_reformulating.html)). This is a hard constraint.
-
-    ![eq_one_hot](assets/formula_one_hot.png)
-
-* **Constraint 2: Cost**
+* **Constraint 1: Cost**
 
     To discourage or prevent the tour's cost from exceeding
     your configured value, the CQM sets a constraint that the total cost over
@@ -180,7 +178,7 @@ The CQM is built as follows with a single objective and several constraints:
 
     ![eq_cost_terms](assets/formula_cost_terms.png)
 
-* **Constraint 3: Time**
+* **Constraint 2: Time**
 
     To discourage or prevent the tour's duration from exceeding your configured
     value, the CQM sets a constraint similar to that on cost but with the leg
@@ -191,15 +189,7 @@ The CQM is built as follows with a single objective and several constraints:
 
     ![eq_time_terms](assets/formula_time_terms.png)
 
-* **Constraint 4: Toll Booths**
-
-    To prevent the selection of driving on legs with toll booths, the CQM sets a
-    constraint that the binary variable representing driving be zero for any leg
-    with a toll booth. This is a hard constraint.
-
-    ![eq_toll](assets/formula_toll.png)
-
-* **Constraint 4: Steep Legs**
+* **Constraint 3: Steep Legs**
 
     To discourage or prevent the selection of cycling on legs where the slope
     is steeper than half your configured maximum, the CQM sets a constraint that
@@ -207,6 +197,23 @@ The CQM is built as follows with a single objective and several constraints:
     This can be a hard or soft constraint.
 
     ![eq_slope](assets/formula_slope.png)
+
+
+* **Constraint 4: Single Mode of Locomotion Per Leg**
+
+    To ensure a single mode of locomotion is selected for each
+    leg, the sum of the binary variables representing each leg must equal one
+    (a ["one-hot" constraint](https://docs.dwavesys.com/docs/latest/handbook_reformulating.html)). This is a hard constraint.
+
+    ![eq_one_hot](assets/formula_one_hot.png)
+
+* **Constraint 5: Toll Booths**
+
+    To prevent the selection of driving on legs with toll booths, the CQM sets a
+    constraint that the binary variable representing driving be zero for any leg
+    with a toll booth. This is a hard constraint.
+
+    ![eq_toll](assets/formula_toll.png)
 
 ## Code
 

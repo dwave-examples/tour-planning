@@ -1,7 +1,7 @@
 version: 2.1
 
 orbs:
-  dwave: dwave/orb-examples@2
+  dwave: dwave/orb-examples@dev:60511e8
 
 workflows:
   version: 2.1
@@ -14,7 +14,7 @@ workflows:
   weekly:
     triggers:
       - schedule:
-          cron: "0 23 * * 4"
+          cron: "0 6 * * 0"
           filters:
             branches:
               only:
@@ -22,8 +22,11 @@ workflows:
                 - main
     jobs:
       - dwave/test-linux:
-          integration-tests: "canary"
+          testing-framework: pytest
+          integration-tests: canary
       - dwave/test-osx:
-          integration-tests: "skip"
+          testing-framework: pytest
+          integration-tests: skip
       - dwave/test-win:
-          integration-tests: "skip"
+          testing-framework: pytest
+          integration-tests: skip

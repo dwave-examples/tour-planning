@@ -124,7 +124,8 @@ for key, val in single_tabs.items():
 
 # CQM configuration sections
 
-weights_card = [dbc.Row([html.H4("Constraint Settings", className="card-title")])]
+weights_card = [dbc.Row([html.H4("Constraint Settings", className="card-title")],
+    id="constraint_settings_row")]
 weights_card.extend([
     dbc.Row([
        dbc.Col([
@@ -153,7 +154,8 @@ leg_fields = [dbc.Row([
     for key, val in zip(names_leg_inputs + names_budget_inputs, field_titles)]
 tour_config = dbc.Card(
     [dbc.Row([
-        html.H4("Tour Settings", className="card-title", style={"textAlign": "left"})]),
+        html.H4("Tour Settings", className="card-title", style={"textAlign": "left"})],
+        id="tour_settings_row"),
      dbc.Row([
         dbc.Col([
             html.B(f"{tour_title}", style={"text-decoration": "underline"},) ])
@@ -183,7 +185,15 @@ layout = [
             dbc.Row([
                 dbc.Col([
                     solver_card])]),],
-            width=2)],
+            width=2),
+        dbc.Col([], width=1),
+        dbc.Col([
+            dbc.Row([
+                html.P(" ")]),
+            dbc.Row([
+                html.P("Hover your mouse over any field for a description.",
+                    style={"color": "white"})]),],
+            width=1)],
         justify="left"),
     dbc.Tabs([
         dbc.Tab(

@@ -147,6 +147,12 @@ The CQM is built as follows with a single objective and several constraints:
     * exercise value of each mode of locomotion
     * binary variable representing each mode of locomotion
 
+    ![eq_exercise](assets/formula_exercise.png)
+
+    The terms above are as follows:
+
+    ![eq_exercise_terms](assets/formula_exercise_terms.png)
+
     Because a single mode of locomotion is selected for each leg (as explained
     below), all the products but one are zeroed by the binary variables of that
     leg. For example, in leg 5 above, the length set for leg 5 is multiplied by
@@ -157,6 +163,9 @@ The CQM is built as follows with a single objective and several constraints:
     To ensure a single mode of locomotion is selected for each
     leg, the sum of the binary variables representing each leg must equal one
     (a ["one-hot" constraint](https://docs.dwavesys.com/docs/latest/handbook_reformulating.html)). This is a hard constraint.
+
+    ![eq_one_hot](assets/formula_one_hot.png)
+
 * **Constraint 2: Cost**
 
     To discourage or prevent the tour's cost from exceeding
@@ -166,6 +175,11 @@ The CQM is built as follows with a single objective and several constraints:
     by the binary variable representing each mode of locomotion. Again, for each
     leg the only non-zero product is for the cost of the selected locomotion and
     the leg length. This can be a hard or soft constraint.
+
+    ![eq_cost](assets/formula_cost.png)
+
+    ![eq_cost_terms](assets/formula_cost_terms.png)
+
 * **Constraint 3: Time**
 
     To discourage or prevent the tour's duration from exceeding your configured
@@ -173,11 +187,17 @@ The CQM is built as follows with a single objective and several constraints:
     length divided by the value of speed for each mode of locomotion. This can be
     a hard or soft constraint.
 
+    ![eq_time](assets/formula_time.png)
+
+    ![eq_time_terms](assets/formula_time_terms.png)
+
 * **Constraint 4: Toll Booths**
 
     To prevent the selection of driving on legs with toll booths, the CQM sets a
     constraint that the binary variable representing driving be zero for any leg
     with a toll booth. This is a hard constraint.
+
+    ![eq_toll](assets/formula_toll.png)
 
 * **Constraint 4: Steep Legs**
 
@@ -186,14 +206,13 @@ The CQM is built as follows with a single objective and several constraints:
     the binary variable representing cycling be zero for any such legs.
     This can be a hard or soft constraint.
 
-## Code Overview
+    ![eq_slope](assets/formula_slope.png)
+
+## Code
 
 Most the code related to configuring the CQM is in the
 [tour_planning.py](tour_planning.py) file. The remaining files mostly support
 the user interface.
-
-TODO: add math formulas for the model and names of the functions that implement
-them.
 
 ---
 **Note:** Standard practice for submitting problems to Leap solvers is to use
@@ -209,7 +228,6 @@ solver, with its higher level of abstraction and thus greater simplicity,
 as demonstrated in most the code examples of the
 [example collection](https://github.com/dwave-examples) and in the
 [Ocean documentation](https://docs.ocean.dwavesys.com/en/stable/index.html).
-
 
 ---
 

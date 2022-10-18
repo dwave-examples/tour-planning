@@ -1,4 +1,5 @@
 tasks:
-  - name: Run dash application
-    command: |
-      python app.py
+    - init: pip install -r requirements.txt
+    - name: Run dash application
+        command: |
+            python app.py

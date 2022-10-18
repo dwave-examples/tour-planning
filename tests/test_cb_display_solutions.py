@@ -48,14 +48,16 @@ class fake_future():
         else:
             self.sampleset = sampleset_infeasible
 
-def mock_client(self, job_id):
+class mock_client():
 
-    if job_id == "123":
-        a_fake_future = fake_future(True)
-        return a_fake_future
-    else:
-        a_fake_future = fake_future(False)
-        return a_fake_future
+    @classmethod
+    def retrieve_answer(cls, job_id):
+        if job_id == "123":
+            a_fake_future = fake_future(True)
+            return a_fake_future
+        else:
+            a_fake_future = fake_future(False)
+            return a_fake_future
 
 parametrize_vals = [
 ("Status: COMPLETED", "123", sampleset_feasible, "Feasible solutions: 50.0%"),
@@ -66,7 +68,7 @@ parametrize_vals = [
 
 @pytest.mark.parametrize("job_submit_state_val, job_id_val, solutions_code, solutions_human",
     parametrize_vals)
-@patch("app.Client.retrieve_answer", mock_client)
+@patch("app.client", mock_client)
 def test_display_solutions(job_submit_state_val, job_id_val, solutions_code,
     solutions_human):
     """Test display of returned samplesets."""

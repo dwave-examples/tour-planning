@@ -39,8 +39,8 @@ num_modes = len(modes)
 
 app = dash.Dash(__name__, external_stylesheets=[dbc.themes.BOOTSTRAP])
 
-client = Client.from_config()
 try:
+    client = Client.from_config()
     client.get_solver(supported_problem_types__issubset={"cqm"})
     init_job_status = "READY"
     job_status_color = dict()
@@ -188,7 +188,7 @@ layout = [
     dbc.Tabs([
         dbc.Tab(
             tabs[tab], label=tab, tab_id=f"tab_{tab.lower()}",
-            label_style={"color": "rgb(6, 236, 220)", "backgroundColor": "black"},)
+            label_style={"color": "rgb(3, 184, 255)", "backgroundColor": "black"},)
         for tab in tabs.keys()],
         id="tabs", active_tab="tab_graph")]
 
@@ -206,7 +206,7 @@ layout.extend(modal)
 
 app.layout = dbc.Container(
     layout, fluid=True,
-    style={"backgroundColor": "black", "color": "rgb(6, 236, 220)"})
+    style={"backgroundColor": "black", "color": "rgb(3, 184, 255)"})
 
 server = app.server
 app.config["suppress_callback_exceptions"] = True

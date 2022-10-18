@@ -76,9 +76,12 @@ class fake_solver():
             self.a_fake_computation.return_cqm = True
         return self.a_fake_computation
 
-def mock_get_solver(**kwargs):
-    a_fake_solver = fake_solver()
-    return a_fake_solver
+class mock_client():
+
+    @classmethod
+    def get_solver(cls, **kwargs):
+        a_fake_solver = fake_solver()
+        return a_fake_solver
 
 parametrize_names = "job_submit_time_val, problem_print_code_val, max_leg_slope_val, " + \
     ", ".join([f'{key}_val ' for key in names_budget_inputs + names_weight_inputs]) + \
@@ -93,7 +96,7 @@ parametrize_vals = [
         "soft", "soft", "linear", "linear", "linear", 20, "67890"),]
 
 @pytest.mark.parametrize(parametrize_names, parametrize_vals)
-@patch("app.client.get_solver", mock_get_solver)
+@patch("app.client", mock_client)
 def test_submit_job(job_submit_time_val, problem_print_code_val, max_leg_slope_val,
     max_cost_val, max_time_val, weight_cost_val, weight_time_val, weight_slope_val,
     weight_cost_hardsoft_val, weight_time_hardsoft_val, weight_slope_hardsoft_val,
@@ -141,7 +144,7 @@ for h, p in zip(hardsoft, penalty):
         "not used"]))
 
 @pytest.mark.parametrize(parametrize_names, parametrize_vals)
-@patch("app.client.get_solver", mock_get_solver)
+@patch("app.client", mock_client)
 def test_submit_job_weights(job_submit_time_val, problem_print_code_val, max_leg_slope_val,
     max_cost_val, max_time_val, weight_cost_val, weight_time_val, weight_slope_val,
     weight_cost_hardsoft_val, weight_time_hardsoft_val, weight_slope_hardsoft_val,

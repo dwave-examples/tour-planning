@@ -17,7 +17,7 @@ import json
 
 import dimod
 
-from tour_planning import weight_ranges, leg_ranges, budget_ranges, transport
+from tour_planning import weight_ranges, budget_ranges, transport
 
 __all__ = ["job_status_to_str", "tour_from_json",
     "job_status_to_display",  "tour_to_display", "tour_to_json",

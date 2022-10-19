@@ -26,7 +26,7 @@ transport = {
 modes = transport.keys()  # global
 num_modes = len(modes)
 
-def set_legs(num_legs, min_leg_length, max_leg_length, max_leg_slope):
+def set_legs(num_legs, min_leg_length, max_leg_length):
     """Create legs of random length within the configured ranges."""
 
     return [{"length": round((max_leg_length - min_leg_length)*random.random() \
@@ -65,7 +65,10 @@ def tour_budget_boundaries(legs):
 leg_ranges = {"num_legs": [5, 100],
     "max_leg_length": [1, 20],
     "min_leg_length": [1, 20],
-    "max_leg_slope": [0, 10],}
+#    "max_leg_slope": [0, 10],
+}
+
+slope_ranges = {"max_leg_slope": [0, 10]}
 
 weight_ranges = {"weight_cost": [0, 100000],
     "weight_time": [0, 100000],
@@ -75,7 +78,10 @@ budget_ranges =  {"max_cost": [0, 100000],
     "max_time": [0, 100000]}
 
 leg_init_values = {"num_legs": 10, "max_leg_length": 10, "min_leg_length": 2,
-    "max_leg_slope": 8}
+#    "max_leg_slope": 8
+}
+
+slope_init_values ={"max_leg_slope": 6}
 
 weight_init_values = {"weight_cost": 100, "weight_time": 30, "weight_slope": 150}
 
@@ -84,6 +90,7 @@ budget_init_values["max_cost"], budget_init_values["max_time"] = \
     average_tour_budget(set_legs(**leg_init_values))
 
 names_leg_inputs = list(leg_ranges.keys())
+names_slope_inputs = list(slope_ranges.keys())
 names_weight_inputs = list(weight_ranges.keys())
 names_budget_inputs = list(budget_ranges.keys())
 MAX_SOLVER_RUNTIME = 600

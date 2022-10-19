@@ -26,7 +26,7 @@ from helpers_graphics import *
 from helpers_jobs import *
 from helpers_layout import *
 from tour_planning import build_cqm, set_legs, transport, tour_budget_boundaries
-from tour_planning import names_leg_inputs, names_weight_inputs, names_budget_inputs
+from tour_planning import names_leg_inputs, names_slope_inputs, names_weight_inputs, names_budget_inputs
 from tour_planning import MAX_SOLVER_RUNTIME
 from tool_tips import tool_tips
 
@@ -137,16 +137,16 @@ weights_card.extend([
                     _dcc_radio(key, "hardsoft")], style={"margin-left": "30px"})])])])])
     for key, val in zip(names_weight_inputs, ["Cost", "Time", "Slope"])])
 
-tour_titles = ["Set Legs", "Set Budget"]
-field_titles = ["How Many:", "Longest Leg:", "Shortest Leg:", "Steepest Leg:",
-    "Highest Cost:", "Longest Time:"]
+tour_titles = ["Set Legs", "Set Budget", "Set Exercise Limits"]
+field_titles = ["How Many:", "Longest Leg:", "Shortest Leg:",
+    "Highest Cost:", "Longest Time:", "Steepest Leg:"]
 
 leg_fields = [dbc.Row([
     f"{val}",
     dash.html.Br(),
     _dcc_input(key, step=1) if key != "max_leg_slope" else
     _dcc_slider(key, step=1)])
-    for key, val in zip(names_leg_inputs + names_budget_inputs, field_titles)]
+    for key, val in zip(names_leg_inputs + names_budget_inputs + names_slope_inputs, field_titles)]
 tour_config = dbc.Card(
     [dbc.Row([
         html.H4("Tour Settings", className="card-title", style={"textAlign": "left"})],
@@ -154,10 +154,19 @@ tour_config = dbc.Card(
      dbc.Row([
         dbc.Col([
             html.B(f"{tour_title}", style={"text-decoration": "underline"},) ])
-                for tour_title in tour_titles]),
+                for tour_title in tour_titles[:2]]),
      dbc.Row([
-        dbc.Col(leg_fields[:4], style={"margin-right": "20px"}),
-        dbc.Col(leg_fields[4:], style={"margin-left": "20px"}),],),
+        dbc.Col(leg_fields[:3], style={"margin-right": "20px"}),
+        dbc.Col(leg_fields[3:5], style={"margin-left": "20px"}),]),
+
+     dbc.Row([
+        dbc.Col([
+            html.Br(),
+            html.B(f"{tour_title}", style={"text-decoration": "underline"},) ])
+                for tour_title in tour_titles[2:]]),
+     dbc.Row([
+        dbc.Col(leg_fields[5], style={"margin-right": "60px"}),
+        dbc.Col()],),
      html.P(id="changed_input", children="", style = dict(display="none")),],
     body=True, color="secondary")
 
@@ -265,7 +274,7 @@ def update_legs(changed_input, num_legs, max_leg_length, min_leg_length, max_leg
     if trigger_id and not changed_input or any(changed_input == key for key in
         names_leg_inputs):
 
-        legs = set_legs(num_legs, min_leg_length, max_leg_length, max_leg_slope)
+        legs = set_legs(num_legs, min_leg_length, max_leg_length)
         return tour_to_json(legs), tour_to_display(legs)
 
     else:       # Other user inputs regenerate the CQM but not the legs

@@ -134,6 +134,7 @@ def build_cqm(legs, modes, max_leg_slope, max_cost, max_time,
 
     drive_index = list(modes).index("drive")
     cycle_index = list(modes).index("cycle")
+    walk_index = list(modes).index("walk")
     for leg in range(num_legs):
          if legs[leg]["toll"]:
              cqm.add_constraint(t[num_modes*leg:num_modes*leg+num_modes][drive_index] == 0,
@@ -141,6 +142,10 @@ def build_cqm(legs, modes, max_leg_slope, max_cost, max_time,
          cqm.add_constraint(t[num_modes*leg:num_modes*leg+num_modes][cycle_index] * \
             legs[leg]["uphill"] <= max_leg_slope,
             label=f"Too steep to cycle on leg {leg}", weight=weights["slope"],
+            penalty=penalties["slope"])
+         cqm.add_constraint(t[num_modes*leg:num_modes*leg+num_modes][walk_index] * \
+            legs[leg]["uphill"] <= max_leg_slope,
+            label=f"Too steep to walk on leg {leg}", weight=weights["slope"],
             penalty=penalties["slope"])
 
     return cqm

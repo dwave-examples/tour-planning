@@ -165,7 +165,7 @@ tour_config = dbc.Card(
             html.B(f"{tour_title}", style={"text-decoration": "underline"},) ])
                 for tour_title in tour_titles[2:]]),
      dbc.Row([
-        dbc.Col(leg_fields[5], style={"margin-right": "60px"}),
+        dbc.Col(leg_fields[5], style={"margin-right": "20px"}),
         dbc.Col()],),
      html.P(id="changed_input", children="", style = dict(display="none")),],
     body=True, color="secondary")
@@ -195,7 +195,7 @@ layout = [
             dbc.Row([
                 html.P(" ")]),
             dbc.Row([
-                html.P("Hover your mouse over any field for a description.",
+                html.P("Hover your mouse over any field for descriptions.",
                     style={"color": "white"})]),],
             width=1)],
         justify="left"),
@@ -263,7 +263,7 @@ def alert_no_solver(btn_solve_cqm):
     [Output("problem_print_human", "value")],
     [Input("changed_input", "children")],
     [State(id, "value") for id in names_leg_inputs])
-def update_legs(changed_input, num_legs, max_leg_length, min_leg_length, max_leg_slope):
+def update_legs(changed_input, num_legs, max_leg_length, min_leg_length):
     """Generate the tour legs and write to json & readable text."""
 
     trigger = dash.callback_context.triggered
@@ -340,7 +340,7 @@ def generate_cqm(changed_input, problem_print_code, max_leg_slope,
     [Output("max_leg_length", "value")],
     [Output("min_leg_length", "value")],
     [Input(id, "value") for id in
-        names_leg_inputs + names_budget_inputs + names_weight_inputs],
+        names_leg_inputs + names_slope_inputs + names_budget_inputs + names_weight_inputs],
     [Input(f"{id}_penalty", "value") for id in names_weight_inputs],
     [Input(f"{id}_hardsoft", "value") for id in names_weight_inputs],)
 def check_user_inputs(num_legs, max_leg_length, min_leg_length, max_leg_slope,
@@ -422,24 +422,24 @@ def disable_buttons(job_submit_state):
 
     if trigger_id !="job_submit_state":
         return dash.no_update, dash.no_update, dash.no_update, dash.no_update, \
-            dash.no_update, dash.no_update
+            dash.no_update
 
     if job_status_to_str(job_submit_state) == "SUBMITTED":
-        return  dict(), True, True, True, True, True
+        return  dict(), True, True, True, True
 
     if job_status_to_str(job_submit_state) == "PENDING":
-        return  dict(), False, True, True, True, True
+        return  dict(), False, True, True, True
 
     elif job_status_to_str(job_submit_state) == "IN_PROGRESS":
         return dict(display="none"), True, dash.no_update, dash.no_update, \
-            dash.no_update, dash.no_update
+            dash.no_update
 
     elif any(job_status_to_str(job_submit_state) == status for status in TERMINATED):
-        return dict(display="none"), False, False, False, False, False
+        return dict(display="none"), False, False, False, False
 
     else:
         return dash.no_update, dash.no_update, dash.no_update, dash.no_update, \
-            dash.no_update, dash.no_update
+            dash.no_update
 
 @app.callback(
     Output("bar_job_status", "value"),

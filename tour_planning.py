@@ -18,12 +18,12 @@ import pandas as pd
 
 import dimod
 
-transport = {
+locomotion = {
     "walk": {"Speed": 1, "Cost": 0, "Exercise": 1},
     "cycle": {"Speed": 3, "Cost": 2, "Exercise": 2},
      "bus": {"Speed": 4, "Cost": 3, "Exercise": 0},
      "drive": {"Speed": 7, "Cost": 5, "Exercise": 0}}
-modes = transport.keys()  # global
+modes = locomotion.keys()  # global
 num_modes = len(modes)
 
 def set_legs(num_legs, min_leg_length, max_leg_length):
@@ -39,8 +39,8 @@ def average_tour_budget(legs):
     """Return average values of tour cost & time for the given legs."""
 
     legs_total = sum(l["length"] for l in legs)
-    costs = [c["Cost"] for c in transport.values()]
-    speeds = [s["Speed"] for s in transport.values()]
+    costs = [c["Cost"] for c in locomotion.values()]
+    speeds = [s["Speed"] for s in locomotion.values()]
     max_cost = round(legs_total * np.mean([min(costs), max(costs)]))
     max_time = round(legs_total / np.mean([min(speeds), max(speeds)]))
 
@@ -50,8 +50,8 @@ def tour_budget_boundaries(legs):
     """Return boundary values of tour cost & time for the given legs."""
 
     legs_total = sum(l["length"] for l in legs)
-    costs = [c["Cost"] for c in transport.values()]
-    speeds = [s["Speed"] for s in transport.values()]
+    costs = [c["Cost"] for c in locomotion.values()]
+    speeds = [s["Speed"] for s in locomotion.values()]
     cost_min = round(legs_total * min(costs))
     cost_max = round(legs_total * max(costs))
     cost_avg = round(legs_total * np.mean([min(costs), max(costs)]))
@@ -102,15 +102,15 @@ def _calculate_total(t, measure, legs):
 
     if measure == "Exercise":
         return dimod.quicksum(
-            t[i]*transport[t[i].variables[0].split("_")[0]]["Exercise"] *
+            t[i]*locomotion[t[i].variables[0].split("_")[0]]["Exercise"] *
             legs[i//num_modes]["length"]*legs[i//num_modes]["uphill"] for
             i in range(num_modes*num_legs))
     elif measure == "Time":
         return dimod.quicksum(
-            t[i]*legs[i//num_modes]["length"]/transport[t[i].variables[0].split("_")[0]]["Speed"] for
+            t[i]*legs[i//num_modes]["length"]/locomotion[t[i].variables[0].split("_")[0]]["Speed"] for
             i in range(num_modes*num_legs))
     else:
-        return dimod.quicksum(t[i]*transport[t[i].variables[0].split("_")[0]][measure] *
+        return dimod.quicksum(t[i]*locomotion[t[i].variables[0].split("_")[0]][measure] *
         legs[i//num_modes]["length"] for
         i in range(num_modes*num_legs))
 
@@ -119,7 +119,7 @@ def build_cqm(legs, modes, max_leg_slope, max_cost, max_time,
     """Build CQM for maximizing exercise. """
 
     num_legs = len(legs)
-    t= [dimod.Binary(f"{mode}_{i}") for i in range(num_legs) for mode in transport.keys()]
+    t= [dimod.Binary(f"{mode}_{i}") for i in range(num_legs) for mode in locomotion.keys()]
 
     cqm = dimod.ConstrainedQuadraticModel()
     cqm.set_objective(-_calculate_total(t, "Exercise", legs))

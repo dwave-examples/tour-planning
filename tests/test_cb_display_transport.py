@@ -23,7 +23,7 @@ import plotly
 
 import dimod
 
-from app import display_transport
+from app import display_locomotion
 
 problem_print_code = ContextVar("problem_print_code")
 
@@ -37,14 +37,14 @@ parametrize_vals = [
     (problem_json, boundaries),]
 
 @pytest.mark.parametrize("problem_print_code_val, boundaries", parametrize_vals)
-def test_display_transport(problem_print_code_val, boundaries):
-    """Test display of transport modes."""
+def test_display_locomotion(problem_print_code_val, boundaries):
+    """Test display of locomotion modes."""
 
     def run_callback():
         context_value.set(AttributeDict(**
             {"triggered_inputs": [{"prop_id": "problem_print_code.value"}],}))
 
-        return display_transport(problem_print_code.get())
+        return display_locomotion(problem_print_code.get())
 
     problem_print_code.set(problem_print_code_val)
 

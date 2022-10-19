@@ -33,8 +33,8 @@ goes up, for a leg length of 3, to 9 and 81, respectively. Such a quadratic
 constraint severely discourages driving on longer legs.
 
 This example enables you to set hard or soft constraints on the tour's cost, its
-duration, and the steepest leg one can cycle. The CQM has hard constraints that
-ensure a single mode of locomotion is selected for each leg and prevent driving
+duration, and the steepest leg one can walk or cycle. The CQM has hard constraints
+that ensure a single mode of locomotion is selected for each leg and prevent driving
 on legs with toll booths.  
 
 ## Installation

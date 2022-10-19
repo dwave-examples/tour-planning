@@ -25,7 +25,7 @@ from formatting import *
 from helpers_graphics import *
 from helpers_jobs import *
 from helpers_layout import *
-from tour_planning import build_cqm, set_legs, transport, tour_budget_boundaries
+from tour_planning import build_cqm, set_legs, locomotion, tour_budget_boundaries
 from tour_planning import names_leg_inputs, names_slope_inputs, names_weight_inputs, names_budget_inputs
 from tour_planning import MAX_SOLVER_RUNTIME
 from tool_tips import tool_tips
@@ -34,7 +34,7 @@ import dimod
 from dwave.cloud.hybrid import Client
 from dwave.cloud.api import Problems, exceptions
 
-modes = transport.keys()  # global, but not user modified
+modes = locomotion.keys()  # global, but not user modified
 num_modes = len(modes)
 
 app = dash.Dash(__name__, external_stylesheets=[dbc.themes.BOOTSTRAP])
@@ -284,8 +284,8 @@ def update_legs(changed_input, num_legs, max_leg_length, min_leg_length):
 @app.callback(
     Output("locomotion_print", "value"),
     [Input("problem_print_code", "value")],)
-def display_transport(problem_print_code):
-    """Update the transport display print."""
+def display_locomotion(problem_print_code):
+    """Update the locomotion display print."""
 
     trigger = dash.callback_context.triggered
     trigger_id = trigger[0]["prop_id"].split(".")[0]
@@ -295,7 +295,7 @@ def display_transport(problem_print_code):
         legs = tour_from_json(problem_print_code)
         boundaries = tour_budget_boundaries(legs)
 
-        return transport_to_display(boundaries)
+        return locomotion_to_display(boundaries)
 
 @app.callback(
     Output("cqm_print", "value"),
@@ -378,8 +378,8 @@ def display_graphics(solutions_print_code, problem_print_code):
             samples = None
 
     fig_space = plot_space(legs, samples)
-    fig_time = plot_time(legs, transport, samples)
-    fig_feasiblity = plot_feasiblity(legs, transport, samples)
+    fig_time = plot_time(legs, locomotion, samples)
+    fig_feasiblity = plot_feasiblity(legs, locomotion, samples)
 
     if not fig_time:
         fig_time = fig_feasiblity = dash.no_update

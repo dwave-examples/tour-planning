@@ -90,19 +90,6 @@ tabs["Graph"] = dbc.Tabs([
         label_style={"color": "white", "backgroundColor": "black"},)
     for graph in graphs])
 
-locomotion_columns = ["Mode", "Speed", "Cost", "Exercise"]
-locomotion_card = [dbc.Row([html.P("Modes of Locomotion")],
-    id="locomotion_settings_row")]
-locomotion_card.extend([dbc.Row([
-    dbc.Col([html.P(f"{col}")], width=1) for col in locomotion_columns])])
-for row in locomotion.keys():
-    locomotion_card.extend([dbc.Row([
-        dbc.Col([html.P(f"{row}")], width=1),
-        *[dbc.Col([_dcc_input(f"{name}")], width=1) for name in
-            names_locomotion_inputs if row in name]])])
-locomotions = dbc.Card(locomotion_card)
-tabs["new loco"] = locomotions
-
 double_tabs = {
     "Problem": "Displays the configured tour: length of each leg, elevation, and "\
         "toll positions.", # Unused text kept in case of future changes
@@ -121,15 +108,27 @@ for key, val in double_tabs.items():
             label_style={"color": "white", "backgroundColor": "black"},)
     for reader in readers])
 
-single_tabs = {
-    "CQM": "",
-    "Locomotion": ""}
-for key, val in single_tabs.items():
-    tabs[key] = dbc.Card([
-        dbc.Row([
-            dbc.Col([
-                dcc.Textarea(id=f"{key.lower()}_print", value=val,
-                    style={"width": "100%"}, rows=20)],)]),])
+tabs["CQM"] = dbc.Card([
+    dbc.Row([
+        dbc.Col([
+            dcc.Textarea(id=f"cqm_print", value="",
+                style={"width": "100%"}, rows=20)],)]),])
+
+my_text = "rhrhr"
+locomotion_columns = ["Mode", "Speed", "Cost", "Exercise"]
+tabs["Locomotion"] = dbc.Card([
+    dbc.Row([
+        dbc.Col([
+            dcc.Textarea(id=f"locomotion_print", value="",
+                style={"width": "100%"}, rows=6)],)]),
+    dbc.Row([html.P("Modes of Locomotion")]),
+    dbc.Row([
+        dbc.Col([html.P(f"{col}")], width=1) for col in locomotion_columns]),
+    *[dbc.Row([
+        dbc.Col([html.P(f"{row}")], width=1),
+        *[dbc.Col([_dcc_input(f"{name}")], width=1) for name in
+            names_locomotion_inputs if row in name]]) for row in locomotion.keys()]],
+        style={"color": "rgb(3, 184, 255)", "backgroundColor": "black"})
 
 # CQM configuration sections
 

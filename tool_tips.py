@@ -27,8 +27,8 @@ f"""Minimum length for a single leg. Leg lengths are randomly set to be no short
 than this value. The bar graph below displays leg length as relative widths of
 the sections. [Range: {leg_ranges['min_leg_length']}]""",
     "max_leg_slope":
-"""Maximum slope for a single leg. Leg slopes are randomly set to be no greater
-than this value. Its effect on the selection of cycling for steep legs
+"""Maximum slope you wish to cycle. Leg slopes are randomly set between zero and
+10. This value's effect on the selection of cycling for steep legs
 depends also on your constraint setting for slope.""",
     "max_cost":
 f"""Maximum you wish to pay for the tour. Cost per leg depends on the selected
@@ -78,7 +78,7 @@ ignored. See the README file for information about hard and soft constraints."""
 f"""Weight you assign to the constraint on steepest leg to cycle. When you set
 the slope constraint as soft, a higher weight compared to other soft constraints
 (cost and time) increases the relative importance of not cycling on legs steeper
-than half the value you set for steepest leg. Ignored when you set the slope
+than the value you set for steepest leg. Ignored when you set the slope
 constraint as hard. [Range: {weight_ranges['weight_slope']}]""",
     "weight_slope_penalty":
 """Linear or quadratic soft constraint on steepest leg to cycle. Linear constraints

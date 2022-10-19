@@ -55,4 +55,4 @@ Slope Constraint
 
 .. math::
 
-    \forall i=0 ..L-1, \text{slope} > \frac{1}{2} \text{maximum slope}: x_{i,cycle} = 0
+    \forall i=0 ..L-1: \text{slope}_i * x_{i,cycle} <= \text{maximum slope}

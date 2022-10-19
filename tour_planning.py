@@ -31,7 +31,7 @@ def set_legs(num_legs, min_leg_length, max_leg_length, max_leg_slope):
 
     return [{"length": round((max_leg_length - min_leg_length)*random.random() \
         + min_leg_length, 1),
-             "uphill": round(max_leg_slope*random.random(), 1),
+             "uphill": round(10*random.random(), 1),
              "toll": bool(np.random.choice([True, False], 1, p=[0.2, 0.8])[0])}
         for i in range(num_legs)]
 
@@ -131,9 +131,9 @@ def build_cqm(legs, modes, max_leg_slope, max_cost, max_time,
          if legs[leg]["toll"]:
              cqm.add_constraint(t[num_modes*leg:num_modes*leg+num_modes][drive_index] == 0,
                 label=f"Toll to drive on leg {leg}")
-         if legs[leg]["uphill"] > max_leg_slope/2:
-             cqm.add_constraint(t[num_modes*leg:num_modes*leg+num_modes][cycle_index] == 0,
-                label=f"Too steep to cycle on leg {leg}", weight=weights["slope"],
-                penalty=penalties["slope"])
+         cqm.add_constraint(t[num_modes*leg:num_modes*leg+num_modes][cycle_index] * \
+            legs[leg]["uphill"] <= max_leg_slope,
+            label=f"Too steep to cycle on leg {leg}", weight=weights["slope"],
+            penalty=penalties["slope"])
 
     return cqm

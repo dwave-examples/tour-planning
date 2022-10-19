@@ -76,9 +76,9 @@ Leg lengths are set to a uniform random value between your configured minimum an
 maximum values. Steepness is set uniformly at random between zero and your
 configured maximum value.
 
-A leg's steepness affects cycling: a constraint is set to discourage (soft
-constraint) or disallow (hard constraint) cycling on those legs that exceed
-the maximum slope you configured.
+A leg's steepness affects exercising: a constraint is set to discourage (soft
+constraint) or disallow (hard constraint) walking or cycling on those legs that
+exceed the maximum slope you configured.
 
 When you update a tour's legs, toll booths are placed at random on some of the
 legs. These affect driving in a private car (but not bussing): the generated CQM
@@ -198,10 +198,10 @@ The CQM is built as follows with a single objective and several constraints:
 
 * **Constraint 3: Steep Legs**
 
-    To discourage or prevent the selection of cycling on legs where the slope
+    To discourage or prevent the selection of exercising on legs where the slope
     is steeper than your configured maximum, the CQM sets a constraint that
-    for each leg the binary variable representing cycling multiplied by the slope
-    be less or equal to your configured highest slope.
+    for each leg the binary variables representing walking and cycling multiplied
+    by the slope be less or equal to your configured highest slope.
     This can be a hard or soft constraint.
 
     ![eq_slope](assets/formula_slope.png)

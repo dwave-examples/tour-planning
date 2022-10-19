@@ -62,11 +62,13 @@ def tour_budget_boundaries(legs):
     return {"cost_min": cost_min, "cost_max": cost_max, "cost_avg": cost_avg,
         "time_min": time_min, "time_max": time_max, "time_avg": time_avg}
 
+
+locomotion_ranges = {f"{mode}_{measure}": [0, 100] for mode in locomotion.keys()
+    for measure in [key.lower() for key in locomotion[mode].keys()]}
+
 leg_ranges = {"num_legs": [5, 100],
     "max_leg_length": [1, 20],
-    "min_leg_length": [1, 20],
-#    "max_leg_slope": [0, 10],
-}
+    "min_leg_length": [1, 20]}
 
 slope_ranges = {"max_leg_slope": [0, 10]}
 
@@ -77,9 +79,10 @@ weight_ranges = {"weight_cost": [0, 100000],
 budget_ranges =  {"max_cost": [0, 100000],
     "max_time": [0, 100000]}
 
-leg_init_values = {"num_legs": 10, "max_leg_length": 10, "min_leg_length": 2,
-#    "max_leg_slope": 8
-}
+locomotion_init_values = {f"{mode}_{measure}": val for mode in locomotion.keys()
+    for measure, val in {key.lower(): val for key, val in locomotion[mode].items()}.items()}
+
+leg_init_values = {"num_legs": 10, "max_leg_length": 10, "min_leg_length": 2}
 
 slope_init_values ={"max_leg_slope": 6}
 
@@ -89,6 +92,7 @@ budget_init_values = {}
 budget_init_values["max_cost"], budget_init_values["max_time"] = \
     average_tour_budget(set_legs(**leg_init_values))
 
+names_locomotion_inputs = list(locomotion_ranges.keys())
 names_leg_inputs = list(leg_ranges.keys())
 names_slope_inputs = list(slope_ranges.keys())
 names_weight_inputs = list(weight_ranges.keys())

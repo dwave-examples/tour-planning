@@ -26,7 +26,8 @@ from helpers_graphics import *
 from helpers_jobs import *
 from helpers_layout import *
 from tour_planning import build_cqm, set_legs, locomotion, tour_budget_boundaries
-from tour_planning import names_leg_inputs, names_slope_inputs, names_weight_inputs, names_budget_inputs
+from tour_planning import (names_locomotion_inputs, names_leg_inputs, names_slope_inputs,
+    names_weight_inputs, names_budget_inputs)
 from tour_planning import MAX_SOLVER_RUNTIME
 from tool_tips import tool_tips
 
@@ -88,6 +89,25 @@ tabs["Graph"] = dbc.Tabs([
         id=f"graph_{graph.lower()}",
         label_style={"color": "white", "backgroundColor": "black"},)
     for graph in graphs])
+
+
+
+locomotion_columns = ["Mode", "Speed", "Cost", "Exercise"]
+locomotion_card = [dbc.Row([html.P("Modes of Locomotion")],
+    id="locomotion_settings_row")]
+locomotion_card.extend([dbc.Row([
+    dbc.Col([html.P(f"{col}")], width=1) for col in locomotion_columns])])
+for row in locomotion.keys():
+    locomotion_card.extend([dbc.Row([
+        dbc.Col([html.P(f"{row}")], width=1),
+        *[dbc.Col([_dcc_input(f"{name}")], width=1) for name in
+            names_locomotion_inputs if row in name]])])
+locomotions = dbc.Card(locomotion_card)
+tabs["new loco"] = locomotions
+
+
+
+
 
 double_tabs = {
     "Problem": "Displays the configured tour: length of each leg, elevation, and "\

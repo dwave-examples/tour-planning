@@ -76,24 +76,22 @@ def test_build_cqm(legs, modes, max_leg_slope, max_cost,
     assert "walk_0 + cycle_0 + bus_0 + drive_0" in output.constraints["One-hot leg0"].to_polystring()
 
 
-parametrize_names = "num_legs_val, max_leg_length_val, min_leg_length_val, " + \
-    "max_leg_slope_val"
+parametrize_names = "num_legs_val, max_leg_length_val, min_leg_length_val, "
 
 parametrize_vals = []
 for i in range(5):
     leg_vals = [random.randint(leg_ranges[key][0], leg_ranges[key][1]) for key
         in names_leg_inputs]
     leg_vals = [leg_vals[0], max(leg_vals[0], leg_vals[1]),
-        min(leg_vals[0], leg_vals[1]), leg_vals[3]]
+        min(leg_vals[0], leg_vals[1])]
     parametrize_vals.append(tuple(leg_vals))
 
 @pytest.mark.parametrize(parametrize_names, parametrize_vals)
 def test_set_legs(num_legs_val, max_leg_length_val,
-    min_leg_length_val, max_leg_slope_val):
+    min_leg_length_val):
     """Test that legs are correctly generated."""
 
-    output = set_legs(num_legs_val, min_leg_length_val, max_leg_length_val,
-        max_leg_slope_val)
+    output = set_legs(num_legs_val, min_leg_length_val, max_leg_length_val)
 
     df = pd.DataFrame(output)
 
@@ -101,5 +99,4 @@ def test_set_legs(num_legs_val, max_leg_length_val,
     assert set(df.columns) - set(["length", "uphill", "toll"]) == set()
     assert df["length"].sum() >= num_legs_val * min_leg_length_val
     assert df["length"].sum() <= num_legs_val * max_leg_length_val
-    assert df["uphill"].max() <= max_leg_slope_val
     set(df["toll"].unique()) == {False, True}

@@ -30,18 +30,18 @@ parametrize_names = "job_submit_state_val, btn_cancel_style, btn_cancel_disabled
     ", ".join([key for key in names_leg_inputs])
 
 parametrize_vals = [
-("Status: SUBMITTED", dict(), True, True, True, True, True),
-("Status: PENDING", dict(), False, True, True, True, True),
+("Status: SUBMITTED", dict(), True, True, True, True),
+("Status: PENDING", dict(), False, True, True, True),
 ("Status: IN_PROGRESS", dict(display="none"), True, no_update, no_update, \
-    no_update, no_update),
-("Status: CANCELLED", dict(display="none"),  False, False, False, False, False),
-("Status: FAILED", dict(display="none"),  False, False, False, False, False),
-("Status: COMPLETED", dict(display="none"),  False, False, False, False, False),
-("Status: FAKE", no_update, no_update, no_update, no_update, no_update, no_update)]
+    no_update),
+("Status: CANCELLED", dict(display="none"),  False, False, False, False),
+("Status: FAILED", dict(display="none"),  False, False, False, False),
+("Status: COMPLETED", dict(display="none"),  False, False, False, False),
+("Status: FAKE", no_update, no_update, no_update, no_update, no_update)]
 
 @pytest.mark.parametrize(parametrize_names,parametrize_vals)
 def test_disable_buttons(job_submit_state_val, btn_cancel_style, btn_cancel_disabled,
-    num_legs, max_leg_length, min_leg_length, max_leg_slope):
+    num_legs, max_leg_length, min_leg_length):
     """Test disabling buttons used during job submission."""
 
     def run_callback():
@@ -57,4 +57,4 @@ def test_disable_buttons(job_submit_state_val, btn_cancel_style, btn_cancel_disa
     output = ctx.run(run_callback)
 
     assert output == (btn_cancel_style, btn_cancel_disabled,
-        num_legs, max_leg_length, min_leg_length, max_leg_slope)
+        num_legs, max_leg_length, min_leg_length)

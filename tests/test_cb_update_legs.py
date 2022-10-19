@@ -42,11 +42,11 @@ for i in range(10):
         *names_weight_inputs])
     output = " " if any(trigger == key for key in names_leg_inputs) else \
         no_update
-    parametrize_vals.append((trigger, 10, 10, 3, 8, output, output))
+    parametrize_vals.append((trigger, 10, 10, 3, output, output))
 
 @pytest.mark.parametrize(parametrize_names, parametrize_vals)
 def test_legs_generation_trigger(changed_input_val, num_legs_val,
-    max_leg_length_val, min_leg_length_val, max_leg_slope_val,
+    max_leg_length_val, min_leg_length_val,
     problem_print_code_val, problem_print_human_val):
     """Test that new legs are correctly generated only when needed."""
 
@@ -57,7 +57,7 @@ def test_legs_generation_trigger(changed_input_val, num_legs_val,
             "state_values": states}))
 
         return update_legs(changed_input.get(), num_legs.get(), max_leg_length.get(),\
-            min_leg_length.get(), max_leg_slope.get())
+            min_leg_length.get())
 
     changed_input.set(changed_input_val)
     for key in names_leg_inputs:
@@ -74,11 +74,11 @@ def test_legs_generation_trigger(changed_input_val, num_legs_val,
 
 parametrize_names = "changed_input_val, " + \
     ", ".join([f'{key}_val' for key in names_leg_inputs])
-parametrize_vals = [("num_legs", 1, 10, 10, 0)]
+parametrize_vals = [("num_legs", 1, 10, 10)]
 
 @pytest.mark.parametrize(parametrize_names, parametrize_vals)
 def test_legs_output(changed_input_val, num_legs_val,
-    max_leg_length_val, min_leg_length_val, max_leg_slope_val):
+    max_leg_length_val, min_leg_length_val):
     """Test that output is correctly generated."""
 
     def run_callback():
@@ -88,7 +88,7 @@ def test_legs_output(changed_input_val, num_legs_val,
             "state_values": states}))
 
         return update_legs(changed_input.get(), num_legs.get(), max_leg_length.get(),\
-            min_leg_length.get(), max_leg_slope.get())
+            min_leg_length.get())
 
     changed_input.set(changed_input_val)
     for key in names_leg_inputs:
@@ -101,6 +101,5 @@ def test_legs_output(changed_input_val, num_legs_val,
     problem_print_human_val = output[1]
 
     assert problem_print_code_val[0]["length"] == max_leg_length_val
-    assert problem_print_code_val[0]["uphill"] == max_leg_slope_val
 
     assert problem_print_human_val == tour_to_display(problem_print_code_val)

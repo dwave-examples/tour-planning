@@ -36,7 +36,9 @@ def set_legs(num_legs, min_leg_length, max_leg_length):
         for i in range(num_legs)]
 
 def average_tour_budget(legs):
-    """Return average values of tour cost & time for the given legs."""
+    """Return average values of tour cost & time for the given legs.
+    Initialization only.
+    """
 
     legs_total = sum(l["length"] for l in legs)
     costs = [c["Cost"] for c in locomotion.values()]
@@ -46,12 +48,12 @@ def average_tour_budget(legs):
 
     return max_cost, max_time
 
-def tour_budget_boundaries(legs):
+def tour_budget_boundaries(legs, locomotion_vals):
     """Return boundary values of tour cost & time for the given legs."""
 
     legs_total = sum(l["length"] for l in legs)
-    costs = [c["Cost"] for c in locomotion.values()]
-    speeds = [s["Speed"] for s in locomotion.values()]
+    costs = [locomotion_vals[mode][1] for mode in locomotion_vals.keys()]
+    speeds = [locomotion_vals[mode][0] for mode in locomotion_vals.keys()]
     cost_min = round(legs_total * min(costs))
     cost_max = round(legs_total * max(costs))
     cost_avg = round(legs_total * np.mean([min(costs), max(costs)]))
@@ -99,41 +101,41 @@ names_weight_inputs = list(weight_ranges.keys())
 names_budget_inputs = list(budget_ranges.keys())
 MAX_SOLVER_RUNTIME = 600
 
-def _calculate_total(t, measure, legs):
+def _calculate_total(t, measure, legs, locomotion_vals):
     """Helper function for building the CQM."""
 
     num_legs = len(legs)
 
     if measure == "Exercise":
         return dimod.quicksum(
-            t[i]*locomotion[t[i].variables[0].split("_")[0]]["Exercise"] *
+            t[i]*locomotion_vals[t[i].variables[0].split("_")[0]][2] *
             legs[i//num_modes]["length"]*legs[i//num_modes]["uphill"] for
             i in range(num_modes*num_legs))
     elif measure == "Time":
         return dimod.quicksum(
-            t[i]*legs[i//num_modes]["length"]/locomotion[t[i].variables[0].split("_")[0]]["Speed"] for
+            t[i]*legs[i//num_modes]["length"]/locomotion_vals[t[i].variables[0].split("_")[0]][0] for
             i in range(num_modes*num_legs))
-    else:
-        return dimod.quicksum(t[i]*locomotion[t[i].variables[0].split("_")[0]][measure] *
+    else: # measure == "Cost"
+        return dimod.quicksum(t[i]*locomotion_vals[t[i].variables[0].split("_")[0]][1] *
         legs[i//num_modes]["length"] for
         i in range(num_modes*num_legs))
 
 def build_cqm(legs, modes, max_leg_slope, max_cost, max_time,
-    weights, penalties):
+    weights, penalties, locomotion_vals):
     """Build CQM for maximizing exercise. """
 
     num_legs = len(legs)
     t= [dimod.Binary(f"{mode}_{i}") for i in range(num_legs) for mode in locomotion.keys()]
 
     cqm = dimod.ConstrainedQuadraticModel()
-    cqm.set_objective(-_calculate_total(t, "Exercise", legs))
+    cqm.set_objective(-_calculate_total(t, "Exercise", legs, locomotion_vals))
 
     for leg in range(num_legs):
         cqm.add_constraint(dimod.quicksum(t[num_modes*leg:num_modes*leg+num_modes]) == 1,
             label=f"One-hot leg{leg}")
-    cqm.add_constraint(_calculate_total(t, "Cost", legs) <= max_cost, label="Total cost",
+    cqm.add_constraint(_calculate_total(t, "Cost", legs, locomotion_vals) <= max_cost, label="Total cost",
         weight=weights["cost"], penalty=penalties["cost"])
-    cqm.add_constraint(_calculate_total(t, "Time", legs) <= max_time,
+    cqm.add_constraint(_calculate_total(t, "Time", legs, locomotion_vals) <= max_time,
         label="Total time", weight=weights["time"], penalty=penalties["time"])
 
     drive_index = list(modes).index("drive")

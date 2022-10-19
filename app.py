@@ -303,8 +303,13 @@ def update_legs(changed_input, num_legs, max_leg_length, min_leg_length):
 
 @app.callback(
     Output("locomotion_print", "value"),
-    [Input("problem_print_code", "value")],)
-def display_locomotion(problem_print_code):
+    [Input("problem_print_code", "value")],
+    [State(id, "value") for id in names_locomotion_inputs],)
+def display_locomotion(problem_print_code,
+    walk_speed, walk_cost, walk_exercise,
+    cycle_speed, cycle_cost, cycle_exercise,
+    bus_speed, bus_cost, bus_exercise,
+    drive_speed, drive_cost, drive_exercise):
     """Update the locomotion display print."""
 
     trigger = dash.callback_context.triggered
@@ -312,8 +317,13 @@ def display_locomotion(problem_print_code):
 
     if trigger_id == "problem_print_code":
 
+        locomotion_vals = {"walk": [walk_speed, walk_cost, walk_exercise],
+    "cycle": [cycle_speed, cycle_cost, cycle_exercise],
+    "bus": [bus_speed, bus_cost, bus_exercise],
+    "drive": [drive_speed, drive_cost, drive_exercise]}
+
         legs = tour_from_json(problem_print_code)
-        boundaries = tour_budget_boundaries(legs)
+        boundaries = tour_budget_boundaries(legs, locomotion_vals)
 
         return locomotion_to_display(boundaries)
 
@@ -324,11 +334,16 @@ def display_locomotion(problem_print_code):
     [State("max_leg_slope", "value")],
     [State(id, "value") for id in names_budget_inputs + names_weight_inputs],
     [State(f"{id}_hardsoft", "value") for id in names_weight_inputs],
-    [State(f"{id}_penalty", "value") for id in names_weight_inputs])
+    [State(f"{id}_penalty", "value") for id in names_weight_inputs],
+    [State(id, "value") for id in names_locomotion_inputs])
 def generate_cqm(changed_input, problem_print_code, max_leg_slope,
     max_cost, max_time, weight_cost, weight_time, weight_slope,
     weight_cost_hardsoft, weight_time_hardsoft, weight_slope_hardsoft,
-    weight_cost_penalty, weight_time_penalty, weight_slope_penalty):
+    weight_cost_penalty, weight_time_penalty, weight_slope_penalty,
+    walk_speed, walk_cost, walk_exercise,
+    cycle_speed, cycle_cost, cycle_exercise,
+    bus_speed, bus_cost, bus_exercise,
+    drive_speed, drive_cost, drive_exercise):
     """Create the CQM and write to json & readable text."""
 
     trigger = dash.callback_context.triggered
@@ -348,8 +363,13 @@ def generate_cqm(changed_input, problem_print_code, max_leg_slope,
         weights = _weight_or_none(weight_cost, weight_time, weight_slope,
             weight_cost_hardsoft, weight_time_hardsoft, weight_slope_hardsoft)
 
+        locomotion_vals = {"walk": [walk_speed, walk_cost, walk_exercise],
+            "cycle": [cycle_speed, cycle_cost, cycle_exercise],
+            "bus": [bus_speed, bus_cost, bus_exercise],
+            "drive": [drive_speed, drive_cost, drive_exercise]}
+
         cqm = build_cqm(legs, modes, max_leg_slope, max_cost, max_time,
-            weights, penalties)
+            weights, penalties, locomotion_vals)
 
         return cqm.__str__()
 
@@ -362,11 +382,16 @@ def generate_cqm(changed_input, problem_print_code, max_leg_slope,
     [Input(id, "value") for id in
         names_leg_inputs + names_slope_inputs + names_budget_inputs + names_weight_inputs],
     [Input(f"{id}_penalty", "value") for id in names_weight_inputs],
-    [Input(f"{id}_hardsoft", "value") for id in names_weight_inputs],)
+    [Input(f"{id}_hardsoft", "value") for id in names_weight_inputs],
+    [Input(id, "value") for id in names_locomotion_inputs],)
 def check_user_inputs(num_legs, max_leg_length, min_leg_length, max_leg_slope,
     max_cost, max_time, weight_cost, weight_time, weight_slope,
     weight_cost_penalty,  weight_time_penalty, weight_slope_penalty,
-    weight_cost_hardsoft, weight_time_hardsoft, weight_slope_hardsoft):
+    weight_cost_hardsoft, weight_time_hardsoft, weight_slope_hardsoft,
+    walk_speed, walk_cost, walk_exercise,
+    cycle_speed, cycle_cost, cycle_exercise,
+    bus_speed, bus_cost, bus_exercise,
+    drive_speed, drive_cost, drive_exercise):
     """Handle user inputs and write to readable text."""
 
     trigger = dash.callback_context.triggered
@@ -485,11 +510,16 @@ def set_progress_bar(job_submit_state):
     [State(id, "value") for id in names_weight_inputs],
     [State(f"{id}_hardsoft", "value") for id in names_weight_inputs],
     [State(f"{id}_penalty", "value") for id in names_weight_inputs],
-    [State("max_runtime", "value")],)
+    [State("max_runtime", "value")],
+    [State(id, "value") for id in names_locomotion_inputs],)
 def submit_job(job_submit_time, problem_print_code, max_leg_slope,
     max_cost, max_time, weight_cost, weight_time, weight_slope,
     weight_cost_hardsoft, weight_time_hardsoft, weight_slope_hardsoft,
-    weight_cost_penalty, weight_time_penalty, weight_slope_penalty, max_runtime):
+    weight_cost_penalty, weight_time_penalty, weight_slope_penalty, max_runtime,
+    walk_speed, walk_cost, walk_exercise,
+    cycle_speed, cycle_cost, cycle_exercise,
+    bus_speed, bus_cost, bus_exercise,
+    drive_speed, drive_cost, drive_exercise):
     """Submit job and provide job ID."""
 
     trigger_id = dash.callback_context.triggered[0]["prop_id"].split(".")[0]
@@ -507,8 +537,14 @@ def submit_job(job_submit_time, problem_print_code, max_leg_slope,
             weight_cost_hardsoft, weight_time_hardsoft, weight_slope_hardsoft)
 
         legs = tour_from_json(problem_print_code)
+
+        locomotion_vals = {"walk": [walk_speed, walk_cost, walk_exercise],
+            "cycle": [cycle_speed, cycle_cost, cycle_exercise],
+            "bus": [bus_speed, bus_cost, bus_exercise],
+            "drive": [drive_speed, drive_cost, drive_exercise]}
+
         cqm = build_cqm(legs, modes, max_leg_slope, max_cost, max_time,
-            weights, penalties)
+            weights, penalties, locomotion_vals)
 
         problem_data_id = solver.upload_cqm(cqm).result()
         computation = solver.sample_cqm(problem_data_id,

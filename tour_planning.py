@@ -64,8 +64,8 @@ def tour_budget_boundaries(legs, locomotion_vals):
     return {"cost_min": cost_min, "cost_max": cost_max, "cost_avg": cost_avg,
         "time_min": time_min, "time_max": time_max, "time_avg": time_avg}
 
-
-locomotion_ranges = {f"{mode}_{measure}": [0, 100] for mode in locomotion.keys()
+locomotion_ranges = {f"{mode}_{measure}": [0, 100] if measure != "speed" else 
+    [1, 100] for mode in locomotion.keys()
     for measure in [key.lower() for key in locomotion[mode].keys()]}
 
 leg_ranges = {"num_legs": [5, 100],
@@ -112,6 +112,7 @@ def _calculate_total(t, measure, legs, locomotion_vals):
             legs[i//num_modes]["length"]*legs[i//num_modes]["uphill"] for
             i in range(num_modes*num_legs))
     elif measure == "Time":
+
         return dimod.quicksum(
             t[i]*legs[i//num_modes]["length"]/locomotion_vals[t[i].variables[0].split("_")[0]][0] for
             i in range(num_modes*num_legs))

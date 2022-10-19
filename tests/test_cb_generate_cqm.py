@@ -26,7 +26,7 @@ import dimod
 
 from formatting import tour_from_json
 
-from app import names_budget_inputs, names_weight_inputs
+from app import names_budget_inputs, names_weight_inputs, names_locomotion_inputs
 from app import generate_cqm
 
 problem_print_placeholder = '[{"length": 9.4, "uphill": 0.1, "toll": false}, {"length": 6.9, "uphill": 2.5, "toll": false}]'
@@ -34,7 +34,7 @@ problem_print_placeholder = '[{"length": 9.4, "uphill": 0.1, "toll": false}, {"l
 changed_input = ContextVar("changed_input")
 problem_print_code = ContextVar("problem_print_code")
 max_leg_slope = ContextVar("max_leg_slope")
-for key in names_budget_inputs + names_weight_inputs:
+for key in names_budget_inputs + names_weight_inputs + names_locomotion_inputs:
     vars()[key] = ContextVar(f"{key}")
 for key in names_weight_inputs:
     vars()[f"{key}_hardsoft"] = ContextVar(f"{key}_hardsoft")
@@ -43,7 +43,7 @@ for key in names_weight_inputs:
 
 state_vals = [{"prop_id": "max_leg_slope"}]
 state_vals.extend([{"prop_id": f"{key}.value"} for key in
-    names_budget_inputs + names_weight_inputs])
+    names_budget_inputs + names_weight_inputs + names_locomotion_inputs])
 state_vals.extend([{"prop_id": f"{key}_hardsoft.value"} for key in names_weight_inputs])
 state_vals.extend([{"prop_id": f"{key}_penalty.value"} for key in names_weight_inputs])
 
@@ -52,14 +52,21 @@ cqm_placeholder = " "
 def mock_print(self):
     return self
 
+locomotion_vals = {"walk": [1, 0, 1],
+"cycle": [3, 2, 2],
+"bus": [4, 3, 0],
+"drive": [7, 5, 0]}
+locomotion_vals = [val for vals in locomotion_vals.values() for val in vals]
+
 parametrize_names = "trigger, changed_input_val, problem_print_code_val, max_leg_slope_val, " + \
     ", ".join([f'{key}_val ' for key in names_budget_inputs + names_weight_inputs]) + \
     ", " + ", ".join([f'{key}_hardsoft_val ' for key in names_weight_inputs]) + \
     ", " + ", ".join([f'{key}_penalty_val ' for key in names_weight_inputs]) + \
+    ", " + ", ".join([f'{key}_val ' for key in names_locomotion_inputs]) + \
     ", cqm_print_val"
 
 parametrize_constants = ["num_legs", problem_print_placeholder, 8, 200, 20, 33, 44, 55, "soft", "soft", "hard", "linear",
-    "linear", "quadratic"]
+    "linear", "quadratic", *locomotion_vals]
 parametrize_vals = [("changed_input", *parametrize_constants, cqm_placeholder),
     ("problem_print_code", *parametrize_constants, cqm_placeholder),
     (no_update, *parametrize_constants, cqm_placeholder),
@@ -71,6 +78,10 @@ def test_cqm_generation(trigger, changed_input_val, problem_print_code_val, max_
     max_cost_val, max_time_val, weight_cost_val, weight_time_val, weight_slope_val,
     weight_cost_hardsoft_val, weight_time_hardsoft_val, weight_slope_hardsoft_val,
     weight_cost_penalty_val, weight_time_penalty_val, weight_slope_penalty_val,
+    walk_speed_val, walk_cost_val, walk_exercise_val,
+    cycle_speed_val, cycle_cost_val, cycle_exercise_val,
+    bus_speed_val, bus_cost_val, bus_exercise_val,
+    drive_speed_val, drive_cost_val, drive_exercise_val,
     cqm_print_val):
     """Test that a CQM is generated based on input signals."""
 
@@ -84,12 +95,16 @@ def test_cqm_generation(trigger, changed_input_val, problem_print_code_val, max_
             max_cost.get(), max_time.get(), weight_cost.get(), weight_time.get(), \
             weight_slope.get(), weight_cost_hardsoft.get(), weight_time_hardsoft.get(), \
             weight_slope_hardsoft.get(), weight_cost_penalty.get(), \
-            weight_time_penalty.get(), weight_slope_penalty.get())
+            weight_time_penalty.get(), weight_slope_penalty.get(), \
+            walk_speed.get(), walk_cost.get(), walk_exercise.get(),  \
+            cycle_speed.get(), cycle_cost.get(), cycle_exercise.get(), \
+            bus_speed.get(), bus_cost.get(), bus_exercise.get(), \
+            drive_speed.get(), drive_cost.get(), drive_exercise.get())
 
     changed_input.set(vars()["changed_input_val"])
     problem_print_code.set(vars()["problem_print_code_val"])
     max_leg_slope.set(vars()["max_leg_slope_val"])
-    for key in names_budget_inputs + names_weight_inputs:
+    for key in names_budget_inputs + names_weight_inputs + names_locomotion_inputs:
         globals()[key].set(vars()[key + "_val"])
     for key in names_weight_inputs:
         globals()[f"{key}_hardsoft"].set(vars()[f"{key}_hardsoft_val"])
@@ -115,7 +130,8 @@ parametrize_vals = []
 hardsoft = [h for h in product(["soft", "hard"], repeat=3)]
 penalty = [p for p in product(["linear", "quadratic"], repeat=3)]
 for h, p in zip(hardsoft, penalty):
-    parametrize_vals.append(tuple([*parametrize_constants, *h, *p, cqm_placeholder]))
+    parametrize_vals.append(tuple([*parametrize_constants, *h, *p, *locomotion_vals,
+        cqm_placeholder]))
 
 @pytest.mark.parametrize(parametrize_names, parametrize_vals)
 @patch("dimod.ConstrainedQuadraticModel.__str__", mock_print)
@@ -123,6 +139,10 @@ def test_cqm_weights(changed_input_val, problem_print_code_val, max_leg_slope_va
     max_cost_val, max_time_val, weight_cost_val, weight_time_val, weight_slope_val,
     weight_cost_hardsoft_val, weight_time_hardsoft_val, weight_slope_hardsoft_val,
     weight_cost_penalty_val, weight_time_penalty_val, weight_slope_penalty_val,
+    walk_speed_val, walk_cost_val, walk_exercise_val,
+    cycle_speed_val, cycle_cost_val, cycle_exercise_val,
+    bus_speed_val, bus_cost_val, bus_exercise_val,
+    drive_speed_val, drive_cost_val, drive_exercise_val,
     cqm_print_val):
     """Test that CQM incorporates penalties correctly."""
 
@@ -137,12 +157,16 @@ def test_cqm_weights(changed_input_val, problem_print_code_val, max_leg_slope_va
             max_cost.get(), max_time.get(), weight_cost.get(), weight_time.get(), \
             weight_slope.get(), weight_cost_hardsoft.get(), weight_time_hardsoft.get(), \
             weight_slope_hardsoft.get(), weight_cost_penalty.get(), \
-            weight_time_penalty.get(), weight_slope_penalty.get())
+            weight_time_penalty.get(), weight_slope_penalty.get(), \
+            walk_speed.get(), walk_cost.get(), walk_exercise.get(),  \
+            cycle_speed.get(), cycle_cost.get(), cycle_exercise.get(), \
+            bus_speed.get(), bus_cost.get(), bus_exercise.get(), \
+            drive_speed.get(), drive_cost.get(), drive_exercise.get())
 
     changed_input.set(vars()["changed_input_val"])
     problem_print_code.set(vars()["problem_print_code_val"])
     max_leg_slope.set(vars()["max_leg_slope_val"])
-    for key in names_budget_inputs + names_weight_inputs:
+    for key in names_budget_inputs + names_weight_inputs + names_locomotion_inputs:
         globals()[key].set(vars()[key + "_val"])
     for key in names_weight_inputs:
         globals()[f"{key}_hardsoft"].set(vars()[f"{key}_hardsoft_val"])

@@ -22,14 +22,16 @@ from dash._callback_context import context_value
 from dash._utils import AttributeDict
 from dash import no_update
 
-from app import names_leg_inputs, names_slope_inputs, names_budget_inputs, names_weight_inputs
+from app import (names_locomotion_inputs, names_leg_inputs, names_slope_inputs,
+    names_budget_inputs, names_weight_inputs)
 from app import check_user_inputs
 
 from formatting import tour_from_json
 from tour_planning import leg_ranges, slope_ranges, budget_ranges, weight_ranges
 from tour_planning import weight_init_values
 
-for key in names_leg_inputs + names_slope_inputs + names_budget_inputs + names_weight_inputs:
+for key in names_locomotion_inputs + names_leg_inputs + names_slope_inputs + \
+    names_budget_inputs + names_weight_inputs:
         vars()[key] = ContextVar(f"{key}")
 for key in names_weight_inputs:
     vars()[f"{key}_penalty"] = ContextVar(f"{key}_penalty")
@@ -37,16 +39,19 @@ for key in names_weight_inputs:
     vars()[f"{key}_hardsoft"] = ContextVar(f"{key}_hardsoft")
 
 input_vals = [{"prop_id": f"{key}.value"} for key in
-    names_leg_inputs + names_slope_inputs + names_budget_inputs + names_weight_inputs]
+    names_locomotion_inputs + names_leg_inputs + names_slope_inputs +
+    names_budget_inputs + names_weight_inputs]
 input_vals.extend([{"prop_id": f"{key}_penalty.value"} for key in
     names_weight_inputs])
 input_vals.extend([{"prop_id": f"{key}_hardsoft.value"} for key in
     names_weight_inputs])
 
 parametrize_names = "trigger, " + ", ".join([f'{key}_in ' for key in
-        names_leg_inputs +  names_slope_inputs + names_budget_inputs + names_weight_inputs]) + \
+        names_leg_inputs +  names_slope_inputs + \
+        names_budget_inputs + names_weight_inputs]) + \
     ", " + ", ".join([f'{key}_penalty_in ' for key in names_weight_inputs]) + \
     ", " + ", ".join([f'{key}_hardsoft_in ' for key in names_weight_inputs]) + \
+    ", " + ", ".join([f'{key}_in ' for key in names_locomotion_inputs]) + \
     ", changed_input_out, max_leg_length_out, min_leg_length_out"
 
 def leg_length(trigger, max_leg_length, min_leg_length):
@@ -57,7 +62,6 @@ def leg_length(trigger, max_leg_length, min_leg_length):
         return min_leg_length, min_leg_length
     else:
         return max_leg_length, min_leg_length
-
 
 parametrize_vals = []
 for i in range(10):
@@ -74,8 +78,9 @@ for i in range(10):
         for key in names_weight_inputs]
     penalty_vals = random.choices(["linear", "quadratic"], k=3)
     hardsoft_vals = random.choices(["soft", "hard"], k=3)
+    locomotion_vals = [random.randint(1, 100) for key in names_locomotion_inputs]
     an_input = [trigger, *leg_vals, *slope_vals, *budget_vals, *weight_vals, *penalty_vals,
-        *hardsoft_vals, trigger,
+        *hardsoft_vals, *locomotion_vals, trigger,
         *leg_length(trigger, leg_vals[1], leg_vals[2])]
     parametrize_vals.append(tuple(an_input))
 
@@ -84,7 +89,12 @@ def test_user_inputs_expected_outputs(trigger, num_legs_in, max_leg_length_in,
     min_leg_length_in, max_leg_slope_in, max_cost_in, max_time_in, weight_cost_in,
     weight_time_in, weight_slope_in, weight_cost_penalty_in, weight_time_penalty_in,
     weight_slope_penalty_in, weight_cost_hardsoft_in, weight_time_hardsoft_in,
-    weight_slope_hardsoft_in, changed_input_out, max_leg_length_out,
+    weight_slope_hardsoft_in,
+    walk_speed_in, walk_cost_in, walk_exercise_in,
+    cycle_speed_in, cycle_cost_in, cycle_exercise_in,
+    bus_speed_in, bus_cost_in, bus_exercise_in,
+    drive_speed_in, drive_cost_in, drive_exercise_in,
+    changed_input_out, max_leg_length_out,
     min_leg_length_out):
     """Test triggering input sets ``changed_input`` and correct min/max leg length."""
 
@@ -99,9 +109,14 @@ def test_user_inputs_expected_outputs(trigger, num_legs_in, max_leg_length_in,
             max_time.get(), weight_cost.get(), weight_time.get(), \
             weight_slope.get(), weight_cost_penalty.get(), weight_time_penalty.get(), \
             weight_slope_penalty.get(), weight_cost_hardsoft.get(), \
-            weight_time_hardsoft.get(), weight_slope_hardsoft.get())
+            weight_time_hardsoft.get(), weight_slope_hardsoft.get(), \
+            walk_speed.get(), walk_cost.get(), walk_exercise.get(),  \
+            cycle_speed.get(), cycle_cost.get(), cycle_exercise.get(), \
+            bus_speed.get(), bus_cost.get(), bus_exercise.get(), \
+            drive_speed.get(), drive_cost.get(), drive_exercise.get())
 
-    for key in names_leg_inputs + names_slope_inputs + names_budget_inputs + names_weight_inputs:
+    for key in names_leg_inputs + names_slope_inputs + names_budget_inputs +  \
+        names_weight_inputs + names_locomotion_inputs:
             globals()[key].set(vars()[key + "_in"])
     for key in names_weight_inputs:
         globals()[f"{key}_penalty"].set(vars()[f"{key}_penalty_in"])

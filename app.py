@@ -90,8 +90,6 @@ tabs["Graph"] = dbc.Tabs([
         label_style={"color": "white", "backgroundColor": "black"},)
     for graph in graphs])
 
-
-
 locomotion_columns = ["Mode", "Speed", "Cost", "Exercise"]
 locomotion_card = [dbc.Row([html.P("Modes of Locomotion")],
     id="locomotion_settings_row")]
@@ -104,10 +102,6 @@ for row in locomotion.keys():
             names_locomotion_inputs if row in name]])])
 locomotions = dbc.Card(locomotion_card)
 tabs["new loco"] = locomotions
-
-
-
-
 
 double_tabs = {
     "Problem": "Displays the configured tour: length of each leg, elevation, and "\
@@ -510,16 +504,17 @@ def set_progress_bar(job_submit_state):
     [State(id, "value") for id in names_weight_inputs],
     [State(f"{id}_hardsoft", "value") for id in names_weight_inputs],
     [State(f"{id}_penalty", "value") for id in names_weight_inputs],
-    [State("max_runtime", "value")],
-    [State(id, "value") for id in names_locomotion_inputs],)
+    [State(id, "value") for id in names_locomotion_inputs],
+    [State("max_runtime", "value")],)
 def submit_job(job_submit_time, problem_print_code, max_leg_slope,
     max_cost, max_time, weight_cost, weight_time, weight_slope,
     weight_cost_hardsoft, weight_time_hardsoft, weight_slope_hardsoft,
-    weight_cost_penalty, weight_time_penalty, weight_slope_penalty, max_runtime,
+    weight_cost_penalty, weight_time_penalty, weight_slope_penalty,
     walk_speed, walk_cost, walk_exercise,
     cycle_speed, cycle_cost, cycle_exercise,
     bus_speed, bus_cost, bus_exercise,
-    drive_speed, drive_cost, drive_exercise):
+    drive_speed, drive_cost, drive_exercise,
+    max_runtime):
     """Submit job and provide job ID."""
 
     trigger_id = dash.callback_context.triggered[0]["prop_id"].split(".")[0]

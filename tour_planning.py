@@ -54,17 +54,17 @@ def tour_budget_boundaries(legs, locomotion_vals):
     legs_total = sum(l["length"] for l in legs)
     costs = [locomotion_vals[mode][1] for mode in locomotion_vals.keys()]
     speeds = [locomotion_vals[mode][0] for mode in locomotion_vals.keys()]
-    cost_min = round(legs_total * min(costs))
-    cost_max = round(legs_total * max(costs))
-    cost_avg = round(legs_total * np.mean([min(costs), max(costs)]))
-    time_avg = round(legs_total / np.mean([min(speeds), max(speeds)]))
-    time_min = round(legs_total / max(speeds))
-    time_max = round(legs_total / min(speeds))
+    cost_min = round(legs_total * min(costs), 1)
+    cost_max = round(legs_total * max(costs), 1)
+    cost_avg = round(legs_total * np.mean([min(costs), max(costs)]), 1)
+    time_avg = round(legs_total / np.mean([min(speeds), max(speeds)]), 1)
+    time_min = round(legs_total / max(speeds), 1)
+    time_max = round(legs_total / min(speeds), 1)
 
     return {"cost_min": cost_min, "cost_max": cost_max, "cost_avg": cost_avg,
         "time_min": time_min, "time_max": time_max, "time_avg": time_avg}
 
-locomotion_ranges = {f"{mode}_{measure}": [0, 100] if measure != "speed" else 
+locomotion_ranges = {f"{mode}_{measure}": [0, 100] if measure != "speed" else
     [1, 100] for mode in locomotion.keys()
     for measure in [key.lower() for key in locomotion[mode].keys()]}
 

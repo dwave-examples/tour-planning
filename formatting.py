@@ -58,10 +58,9 @@ Times for this tour range from {boundaries['time_min']} to {boundaries['time_max
 
 Average cost is {boundaries['cost_avg']}.
 Average time is {boundaries['time_avg']}.
-\n
 """
 
-    return first_lines 
+    return first_lines
 
 def solutions_to_display(sampleset):
     """Output solutions for humans."""

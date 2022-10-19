@@ -114,14 +114,13 @@ tabs["CQM"] = dbc.Card([
             dcc.Textarea(id=f"cqm_print", value="",
                 style={"width": "100%"}, rows=20)],)]),])
 
-my_text = "rhrhr"
 locomotion_columns = ["Mode", "Speed", "Cost", "Exercise"]
 tabs["Locomotion"] = dbc.Card([
     dbc.Row([
         dbc.Col([
             dcc.Textarea(id=f"locomotion_print", value="",
-                style={"width": "100%"}, rows=6)],)]),
-    dbc.Row([html.P("Modes of Locomotion")]),
+                style={"width": "100%"}, rows=5)],)]),
+    dbc.Row([html.P("Locomotion Settings")]),
     dbc.Row([
         dbc.Col([html.P(f"{col}")], width=1) for col in locomotion_columns]),
     *[dbc.Row([
@@ -296,9 +295,10 @@ def update_legs(changed_input, num_legs, max_leg_length, min_leg_length):
 
 @app.callback(
     Output("locomotion_print", "value"),
-    [Input("problem_print_code", "value")],
+    [Input("cqm_print", "value")],
+    [State("problem_print_code", "value")],
     [State(id, "value") for id in names_locomotion_inputs],)
-def display_locomotion(problem_print_code,
+def display_locomotion(cqm_print, problem_print_code,
     walk_speed, walk_cost, walk_exercise,
     cycle_speed, cycle_cost, cycle_exercise,
     bus_speed, bus_cost, bus_exercise,
@@ -308,7 +308,7 @@ def display_locomotion(problem_print_code,
     trigger = dash.callback_context.triggered
     trigger_id = trigger[0]["prop_id"].split(".")[0]
 
-    if trigger_id == "problem_print_code":
+    if trigger_id == "cqm_print":
 
         locomotion_vals = {"walk": [walk_speed, walk_cost, walk_exercise],
     "cycle": [cycle_speed, cycle_cost, cycle_exercise],

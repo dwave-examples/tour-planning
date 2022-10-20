@@ -34,8 +34,8 @@ constraint severely discourages driving on longer legs.
 
 This example enables you to set hard or soft constraints on the tour's cost, its
 duration, and the steepest leg one can walk or cycle. The CQM has hard constraints
-that ensure a single mode of locomotion is selected for each leg and prevent driving
-on legs with toll booths.  
+that ensure a single mode of locomotion is selected for each leg and, optionally,
+prevent driving on legs with toll booths.  
 
 ## Installation
 
@@ -70,19 +70,20 @@ The upper-left section of the user interface lets you configure the tour's legs:
 how many, how long, and the maximum elevation gain.
 Additionally, you can configure your budgets of cost and time for the entire
 tour: modes of locomotion vary in price and speed. For example, walking is free
-but slower than driving.
+but slower than driving. Finally, you can chose whether or not to add tollbooths
+randomly to 20% of the legs.
 
 Leg lengths are set to a uniform random value between your configured minimum and
-maximum values. Steepness is set uniformly at random between zero and your
-configured maximum value.
+maximum values. Steepness is set uniformly at random between zero and ten.
 
 A leg's steepness affects exercising: a constraint is set to discourage (soft
 constraint) or disallow (hard constraint) walking or cycling on those legs that
 exceed the maximum slope you configured.
 
-When you update a tour's legs, toll booths are placed at random on some of the
-legs. These affect driving in a private car (but not bussing): the generated CQM
-has a hard constraint to not drive on legs with toll booths.
+When you update a tour's legs, toll booths may be placed at random on some of the
+legs (each leg has a 20% probability that it is given a tollbooth). These affect
+driving in a private car (but not bussing): the generated CQM has a hard constraint
+to not drive on legs with toll booths. This constraint is optional.
 
 ### Configuring the Constraints
 
@@ -98,10 +99,10 @@ The upper-right section of the user interface lets you submit your problem
 to a Leap hybrid CQM solver. The default solver runtime of 5 seconds is used
 unless you choose to increase it.
 
-### Viewing Solutions and Problem Details
+### Problem Details and Solutions
 
-The lower section presents information about the problem and any found solutions.
-These are presented in the following tabs:
+The lower section's following tabs contain information about the problem and any
+found solutions.
 
 * **Graph:** displays the configured problem and any found solutions in three ways:
 
@@ -125,9 +126,9 @@ https://docs.ocean.dwavesys.com/en/stable/docs_dimod/reference/sampleset.html)
 * **CQM:** displays the constrained quadratic model generated for your configured
   tour and constraints.
 
-* **Locomotion:** displays information about your configured tour, such as the
-  minimum, maximum, and average values of cost and time, and the configurable
-  values (speed, cost, exercise) of the available modes of locomotion.
+* **Locomotion:** contains information about your configured tour, such as the
+  minimum, maximum, and average values of cost and time, and the values for
+  the available modes of locomotion (speed, cost, exercise) that **you can configure**.
 
 ## Model Overview
 
@@ -217,9 +218,11 @@ The CQM is built as follows with a single objective and several constraints:
 
 * **Constraint 5: Toll Booths**
 
-    To prevent driving on legs with toll booths, the CQM sets a
-    constraint that the binary variable representing driving be zero for any leg
-    with a toll booth. This is a hard constraint.
+    This optional constraint prevents driving on legs with toll booths. If you
+    choose to enable the placement of tollbooths on some legs (tollbooths may be
+    placed at random on a leg with 20% probability), the CQM sets a constraint
+    that the binary variable representing driving be zero for any leg with a
+    toll booth. This is a hard constraint.
 
     ![eq_toll](assets/formula_toll.png)
 

@@ -24,6 +24,7 @@ from dash import no_update
 
 from app import (names_locomotion_inputs, names_leg_inputs, names_slope_inputs,
     names_budget_inputs, names_weight_inputs)
+from app import all_modes
 from app import check_user_inputs
 
 from formatting import tour_from_json
@@ -37,6 +38,8 @@ for key in names_weight_inputs:
     vars()[f"{key}_penalty"] = ContextVar(f"{key}_penalty")
 for key in names_weight_inputs:
     vars()[f"{key}_hardsoft"] = ContextVar(f"{key}_hardsoft")
+for key in all_modes:
+    vars()[f"{key}_use"] = ContextVar(f"{key}_use")
 
 input_vals = [{"prop_id": f"{key}.value"} for key in
     names_locomotion_inputs + names_leg_inputs + names_slope_inputs +
@@ -45,6 +48,8 @@ input_vals.extend([{"prop_id": f"{key}_penalty.value"} for key in
     names_weight_inputs])
 input_vals.extend([{"prop_id": f"{key}_hardsoft.value"} for key in
     names_weight_inputs])
+input_vals.extend([{"prop_id": f"{key}_use.value"} for key in
+    all_modes])
 
 parametrize_names = "trigger, " + ", ".join([f'{key}_in ' for key in
         names_leg_inputs +  names_slope_inputs + \
@@ -52,7 +57,9 @@ parametrize_names = "trigger, " + ", ".join([f'{key}_in ' for key in
     ", " + ", ".join([f'{key}_penalty_in ' for key in names_weight_inputs]) + \
     ", " + ", ".join([f'{key}_hardsoft_in ' for key in names_weight_inputs]) + \
     ", " + ", ".join([f'{key}_in ' for key in names_locomotion_inputs]) + \
-    ", changed_input_out, max_leg_length_out, min_leg_length_out"
+    ", " + ", ".join([f'{key}_use_in ' for key in all_modes]) + \
+    ", changed_input_out, max_leg_length_out, min_leg_length_out" + \
+    ", " + ", ".join([f'{key}_use_out ' for key in all_modes])
 
 def leg_length(trigger, max_leg_length, min_leg_length):
 
@@ -79,9 +86,10 @@ for i in range(10):
     penalty_vals = random.choices(["linear", "quadratic"], k=3)
     hardsoft_vals = random.choices(["soft", "hard"], k=3)
     locomotion_vals = [random.randint(1, 100) for key in names_locomotion_inputs]
+    use_vals = random.choices([True, False], k=4)
     an_input = [trigger, *leg_vals, *slope_vals, *budget_vals, *weight_vals, *penalty_vals,
-        *hardsoft_vals, *locomotion_vals, trigger,
-        *leg_length(trigger, leg_vals[1], leg_vals[2])]
+        *hardsoft_vals, *locomotion_vals, *use_vals, trigger,
+        *leg_length(trigger, leg_vals[1], leg_vals[2]), *use_vals]
     parametrize_vals.append(tuple(an_input))
 
 @pytest.mark.parametrize(parametrize_names, parametrize_vals)
@@ -94,8 +102,10 @@ def test_user_inputs_expected_outputs(trigger, num_legs_in, max_leg_length_in,
     cycle_speed_in, cycle_cost_in, cycle_exercise_in,
     bus_speed_in, bus_cost_in, bus_exercise_in,
     drive_speed_in, drive_cost_in, drive_exercise_in,
+    walk_use_in, cycle_use_in, bus_use_in, drive_use_in,
     changed_input_out, max_leg_length_out,
-    min_leg_length_out):
+    min_leg_length_out,
+    walk_use_out, cycle_use_out, bus_use_out, drive_use_out):
     """Test triggering input sets ``changed_input`` and correct min/max leg length."""
 
     def run_callback():
@@ -113,7 +123,8 @@ def test_user_inputs_expected_outputs(trigger, num_legs_in, max_leg_length_in,
             walk_speed.get(), walk_cost.get(), walk_exercise.get(),  \
             cycle_speed.get(), cycle_cost.get(), cycle_exercise.get(), \
             bus_speed.get(), bus_cost.get(), bus_exercise.get(), \
-            drive_speed.get(), drive_cost.get(), drive_exercise.get())
+            drive_speed.get(), drive_cost.get(), drive_exercise.get(),
+            walk_use.get(), cycle_use.get(), bus_use.get(), drive_use.get())
 
     for key in names_leg_inputs + names_slope_inputs + names_budget_inputs +  \
         names_weight_inputs + names_locomotion_inputs:
@@ -122,9 +133,12 @@ def test_user_inputs_expected_outputs(trigger, num_legs_in, max_leg_length_in,
         globals()[f"{key}_penalty"].set(vars()[f"{key}_penalty_in"])
     for key in names_weight_inputs:
         globals()[f"{key}_hardsoft"].set(vars()[f"{key}_hardsoft_in"])
+    for key in all_modes:
+        globals()[f"{key}_use"].set(vars()[f"{key}_use_in"])
 
     ctx = copy_context()
 
     output = ctx.run(run_callback)
 
-    assert output == (trigger, max_leg_length_out, min_leg_length_out)
+    assert output == (trigger, max_leg_length_out, min_leg_length_out,
+        walk_use_out, cycle_use_out, bus_use_out, drive_use_out)

@@ -73,7 +73,7 @@ parametrize_vals = [("changed_input", *parametrize_constants, cqm_placeholder),
     ("num_legs", *parametrize_constants, cqm_placeholder)]
 
 @pytest.mark.parametrize(parametrize_names, parametrize_vals)
-@patch("dimod.ConstrainedQuadraticModel.__str__", mock_print)
+@patch("app.cqm_to_display", mock_print)
 def test_cqm_generation(trigger, changed_input_val, problem_print_code_val, max_leg_slope_val,
     max_cost_val, max_time_val, weight_cost_val, weight_time_val, weight_slope_val,
     weight_cost_hardsoft_val, weight_time_hardsoft_val, weight_slope_hardsoft_val,
@@ -134,7 +134,7 @@ for h, p in zip(hardsoft, penalty):
         cqm_placeholder]))
 
 @pytest.mark.parametrize(parametrize_names, parametrize_vals)
-@patch("dimod.ConstrainedQuadraticModel.__str__", mock_print)
+@patch("app.cqm_to_display", mock_print)
 def test_cqm_weights(changed_input_val, problem_print_code_val, max_leg_slope_val,
     max_cost_val, max_time_val, weight_cost_val, weight_time_val, weight_slope_val,
     weight_cost_hardsoft_val, weight_time_hardsoft_val, weight_slope_hardsoft_val,

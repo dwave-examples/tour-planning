@@ -22,7 +22,7 @@ from tour_planning import weight_ranges, budget_ranges
 __all__ = ["job_status_to_str", "tour_from_json",
     "job_status_to_display",  "tour_to_display", "tour_to_json",
     "locomotion_to_display", "solutions_to_display",
-    "sampleset_to_json", "sampleset_from_json"]
+    "sampleset_to_json", "sampleset_from_json", "cqm_to_display"]
 
 def job_status_to_display(code):
     """Output status as 'Status: <status>'."""
@@ -94,3 +94,30 @@ def sampleset_from_json(saved_sampleset):
         sampleset_feasible.first.sample.items() if val==1.0}.items())
 
     return {"sampleset": sampleset, "feasible": sampleset_feasible, "first": first}
+
+def cqm_to_display(cqm):
+    """Output CQM for humans."""
+
+    one_hots_str = ""
+    for key, val in cqm.constraints.items():
+        if "One-hot" in key:
+            one_hots_str += "\n\t" + key + ": " + val.to_polystring()
+
+    slope_str = ""
+    for key, val in cqm.constraints.items():
+        if "Too steep" in key:
+            slope_str += "\n\t" + key + ": " + val.to_polystring()
+
+    toll_str = ""
+    for key, val in cqm.constraints.items():
+        if "Toll to drive" in key:
+            toll_str += "\n\t" + key + ": " + val.to_polystring()
+
+    print_str = "Objective (Maximize Exercise):\n\n\t" + cqm.objective.to_polystring()
+    print_str += "\n\nCost Constraint: \n\n\t" + cqm.constraints["Total cost"].to_polystring()
+    print_str += "\n\nTime Constraint: \n\n\t" + cqm.constraints["Total time"].to_polystring()
+    print_str += "\n\nSlope Constraints: \n" + slope_str
+    print_str += "\n\nSingle-Locomotion-Mode-Per-Leg Constraints: \n" + one_hots_str
+    print_str += "\n\nToll Booth Constraints: \n" + toll_str
+
+    return print_str

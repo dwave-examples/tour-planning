@@ -83,10 +83,12 @@ tabs = {}
 
 graphs = ["Space", "Time", "Feasibility"] # also used for graph() display callback
 tabs["Graph"] = dbc.Tabs([
-    dbc.Tab(dbc.Card([
-        dbc.Row([
-            dbc.Col([
-                dcc.Graph(id=f"{graph.lower()}_graph")], width=12) ])]),
+    dbc.Tab(
+        dbc.Card([
+            dbc.Row([
+                dbc.Col([
+                    dcc.Graph(id=f"{graph.lower()}_graph")], width=12) ])],
+            color="secondary"),
         label=f"{graph}",
         id=f"graph_{graph.lower()}",
         label_style={"color": "white", "backgroundColor": "black"},)
@@ -104,7 +106,7 @@ for key, val in double_tabs.items():
             dbc.Row([
                 dbc.Col([
                     dcc.Textarea(id=f"{key.lower()}_print_{reader.lower()}", value=val,
-                        style={"width": "100%"}, rows=20)])]),]),
+                        style={"width": "100%"}, rows=20)], width=12)]),], color="secondary"),
             label=f"{reader} Readable",
             tab_id=f"tab_{key}_print_{reader.lower()}",
             label_style={"color": "white", "backgroundColor": "black"},)
@@ -119,25 +121,31 @@ tabs["CQM"] = dbc.Card([
 locomotion_columns = ["Mode", "Speed", "Cost", "Exercise", "Use"]
 tabs["Locomotion"] = dbc.Card([
     dbc.Row([
+
+        dbc.Col([
+            dbc.Row([
+                dbc.Col([html.P(f"{col}")], width=2) for col in locomotion_columns]),
+            *[dbc.Row([
+                dbc.Col([html.P(f"{row}")], width=2),
+                *[dbc.Col(
+                    [_dcc_input(f"{name}")], width=2) for name in names_locomotion_inputs if row in name],
+                dbc.Col(
+                    [dcc.RadioItems([
+                        {"label": html.Div(["Use"], style={'color': 'white', 'font-size': 12}),
+                            "value": True,},
+                        {"label": html.Div(["Ignore"], style={'color': 'white', 'font-size': 12}),
+                            "value": False}],
+                        value=True, id=f"{row}_use", inputStyle={"margin-right": "20px"})],
+                        width=2),])
+                for row in locomotion.keys()]],
+        width=5),
         dbc.Col([
             dcc.Textarea(id=f"locomotion_print", value="",
-                style={"width": "100%"}, rows=5)],)]),
-    dbc.Row([html.P("Locomotion Settings")]),
-    dbc.Row([
-        dbc.Col([html.P(f"{col}")], width=1) for col in locomotion_columns]),
-    *[dbc.Row([
-        dbc.Col([html.P(f"{row}")], width=1),
-        *[dbc.Col(
-            [_dcc_input(f"{name}")], width=1) for name in names_locomotion_inputs if row in name],
-        dbc.Col(
-            [dcc.RadioItems([
-                {"label": html.Div(["Use"], style={'color': 'white', 'font-size': 12}),
-                    "value": True,},
-                {"label": html.Div(["Ignore"], style={'color': 'white', 'font-size': 12}),
-                    "value": False}],
-                value=True, id=f"{row}_use", inputStyle={"margin-right": "20px"})]),])
-        for row in locomotion.keys()]],
-        style={"color": "rgb(3, 184, 255)", "backgroundColor": "black"})
+                style={"width": "100%"}, rows=5)],
+                width={"size": 10, "offset": 0}),
+]),
+],
+        color="secondary")
 
 # CQM configuration sections
 
@@ -164,7 +172,7 @@ field_titles = ["How Many:", "Longest Leg:", "Shortest Leg:",
     "Highest Cost:", "Longest Time:", "Steepest Leg:"]
 
 leg_fields = [dbc.Row([
-    html.P(f"{val}", style={"marginLeft": "5px"}),
+    dbc.Label(f"{val}"),
     _dcc_input(key, step=1) if key != "max_leg_slope" else
     _dcc_slider(key, step=1)], style={"marginLeft": "5px", "marginRight": "5px"})
     for key, val in zip(names_leg_inputs + names_budget_inputs + names_slope_inputs, field_titles)]

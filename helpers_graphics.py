@@ -45,7 +45,7 @@ def plot_space(legs, samples=None):
     fig.update_xaxes(showticklabels=True, title="Distance")
     fig.update_yaxes(showticklabels=False, title=None, range=(-0.5, 0.5))
     fig.update_traces(width=.1)
-    fig.update_layout(font_color="rgb(6, 236, 220)", margin=dict(l=20, r=20, t=20, b=20),
+    fig.update_layout(font_color="rgb(3, 184, 255)", margin=dict(l=20, r=20, t=20, b=20),
         paper_bgcolor="rgba(0,0,0,0)")
 
     if samples:
@@ -84,7 +84,7 @@ def plot_time(legs, locomotion, samples):
     fig.update_xaxes(showticklabels=True, title="Time")
     fig.update_yaxes(showticklabels=False, title=None, range=(-0.5, 0.5))
     fig.update_traces(width=.1)
-    fig.update_layout(font_color="rgb(6, 236, 220)",
+    fig.update_layout(font_color="rgb(3, 184, 255)",
         margin=dict(l=20, r=20, t=20, b=20),
         paper_bgcolor="rgba(0,0,0,0)")
 
@@ -130,7 +130,7 @@ def plot_feasiblity(legs, locomotion, samples):
     fig.update_scenes(xaxis_title_text="Time",
                       yaxis_title_text="Cost",
                       zaxis_title_text="Exercise")
-    fig.update_layout(font_color="rgb(6, 236, 220)",
+    fig.update_layout(font_color="rgb(3, 184, 255)",
         margin=dict(l=20, r=20, t=20, b=20), paper_bgcolor="rgba(0,0,0,0)")
 
     return fig

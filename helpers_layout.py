@@ -16,13 +16,17 @@ from dash.dcc import Input, Slider, RadioItems
 from dash import html
 import numpy as np
 
-from tour_planning import leg_ranges, slope_ranges, weight_ranges, budget_ranges
-from tour_planning import leg_init_values, slope_init_values, weight_init_values, budget_init_values
+from tour_planning import (locomotion_ranges, leg_ranges, slope_ranges,
+    weight_ranges, budget_ranges)
+from tour_planning import (locomotion_init_values, leg_init_values, slope_init_values,
+    weight_init_values, budget_init_values)
 
 __all__ = ["_dcc_input", "_dcc_slider", "_dcc_radio"]
 
-ranges = {**leg_ranges, **slope_ranges, **weight_ranges, **budget_ranges}
-init_values = {**leg_init_values, **slope_init_values, **weight_init_values, **budget_init_values}
+ranges = {**locomotion_ranges, **leg_ranges, **slope_ranges, **weight_ranges,
+    **budget_ranges}
+init_values = {**locomotion_init_values, **leg_init_values, **slope_init_values,
+    **weight_init_values, **budget_init_values}
 
 def _dcc_input(name, step=None):
     """Construct ``dash.Input`` element for layout."""

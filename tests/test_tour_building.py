@@ -40,33 +40,38 @@ def test_average_tour_budget(legs, maximums):
 
     assert output == maximums
 
-parametrize_vals = [
-(legs1, {'cost_min': 0, 'cost_max': 150, 'cost_avg': 75, 'time_min': 4, 'time_max': 30, 'time_avg': 8}),
-(legs2, {'cost_min': 0, 'cost_max': 900, 'cost_avg': 450, 'time_min': 26, 'time_max': 180, 'time_avg': 45})]
+locomotion_vals = {"walk": [1, 0, 1],
+"cycle": [3, 2, 2],
+"bus": [4, 3, 0],
+"drive": [7, 5, 0]}
 
-@pytest.mark.parametrize("legs, boundaries", parametrize_vals)
-def test_tour_budget_boundaries(legs, boundaries):
+parametrize_vals = [
+(legs1, locomotion_vals, {'cost_min': 0, 'cost_max': 150.0, 'cost_avg': 75.0, 'time_min': 4.3, 'time_max': 30.0, 'time_avg': 7.5}),
+(legs2, locomotion_vals, {'cost_min': 0, 'cost_max': 900, 'cost_avg': 450.0, 'time_min': 25.7, 'time_max': 180.0, 'time_avg': 45.0})]
+
+@pytest.mark.parametrize("legs, locomotion_vals, boundaries", parametrize_vals)
+def test_tour_budget_boundaries(legs, locomotion_vals, boundaries):
     """Test that tour boundaries are calculated correctly."""
 
-    output = tour_budget_boundaries(legs)
+    output = tour_budget_boundaries(legs, locomotion_vals)
 
     assert output == boundaries
 
 parametrize_names = "legs, modes, max_leg_slope, max_cost, max_time," + \
-    " weights, penalties"
+    " weights, penalties, locomotion_vals"
 
 parametrize_vals = [(legs1, modes, 10, 10, 10, {"cost": None, "time": 55, "slope": None},
-    {"cost": "linear", "time": "linear", "slope": "quadratic"}),
+    {"cost": "linear", "time": "linear", "slope": "quadratic"}, locomotion_vals),
     (legs2, modes, 10, 10, 10, {"cost": None, "time": 55, "slope": None},
-        {"cost": "linear", "time": "linear", "slope": "quadratic"})]
+        {"cost": "linear", "time": "linear", "slope": "quadratic"}, locomotion_vals)]
 
 @pytest.mark.parametrize(parametrize_names, parametrize_vals)
 def test_build_cqm(legs, modes, max_leg_slope, max_cost,
-    max_time, weights, penalties):
+    max_time, weights, penalties, locomotion_vals):
     """Minimal, simple testing that CQM builds correctly."""
 
     output = build_cqm(legs, modes, max_leg_slope, max_cost,
-        max_time, weights, penalties)
+        max_time, weights, penalties, locomotion_vals)
 
     assert type(output) == dimod.ConstrainedQuadraticModel
     assert len(output.constraints) >= 2 + len(legs)

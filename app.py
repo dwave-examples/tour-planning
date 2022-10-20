@@ -402,7 +402,7 @@ def generate_cqm(changed_input, problem_print_code, max_leg_slope,
         cqm = build_cqm(legs, modes, max_leg_slope, max_cost, max_time,
             weights, penalties, locomotion_vals)
 
-        return cqm.__str__()
+        return cqm_to_display(cqm)
 
     return dash.no_update
 

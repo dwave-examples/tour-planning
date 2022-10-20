@@ -8,28 +8,28 @@ workflows:
   tests:
     jobs:
       - dwave/test-linux:
-        testing-framework: pytest
+          testing-framework: pytest
       - dwave/test-osx:
-        testing-framework: pytest
+          testing-framework: pytest
       - dwave/test-win:
-        testing-framework: pytest
+          testing-framework: pytest
 
   weekly:
     triggers:
       - schedule:
-        cron: "0 6 * * 0"
-        filters:
-          branches:
-            only:
-              - master
-              - main
+          cron: "0 6 * * 0"
+          filters:
+            branches:
+              only:
+                - master
+                - main
     jobs:
       - dwave/test-linux:
-        testing-framework: pytest
-        integration-tests: "canary"
+          testing-framework: pytest
+          integration-tests: canary
       - dwave/test-osx:
-        testing-framework: pytest
-        integration-tests: "skip"
+          testing-framework: pytest
+          integration-tests: skip
       - dwave/test-win:
-        testing-framework: pytest
-        integration-tests: "skip"
+          testing-framework: pytest
+          integration-tests: skip

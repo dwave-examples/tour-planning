@@ -26,10 +26,10 @@ workflows:
     jobs:
       - dwave/test-linux:
         testing-framework: pytest
-        integration-tests: canary
+        integration-tests: "canary"
       - dwave/test-osx:
         testing-framework: pytest
-        integration-tests: skip
+        integration-tests: "skip"
       - dwave/test-win:
         testing-framework: pytest
-        integration-tests: skip
+        integration-tests: "skip"

@@ -53,26 +53,29 @@ except Exception as client_err:
 # Problem-submission section
 
 solver_card = dbc.Card([
-    html.H4("Job Submission", className="card-title"),
+    html.H4("Job Submission", className="card-title",
+        style={'marginLeft':'5px', 'marginRight':'5px'}),
     dbc.Col([
-        dbc.Button("Solve CQM", id="btn_solve_cqm", color="primary", className="me-1"),
+        dbc.Button("Solve CQM", id="btn_solve_cqm", color="primary", className="me-1",
+            style={'marginLeft':'5px'}),
         dcc.Interval(id="wd_job", interval=None, n_intervals=0, disabled=True, max_intervals=1),
         dbc.Progress(id="bar_job_status", value=job_bar[init_job_status][0],
-            color=job_bar[init_job_status][1], className="mb-3"),
+            color=job_bar[init_job_status][1], className="mb-3",
+            style={'marginRight':'10px', 'marginLeft':'5px'}),
         html.P(id="job_submit_state", children=job_status_to_display(init_job_status),
-            style=job_status_color),
+            style={"color": job_status_color, 'marginLeft':'5px'}),
         html.P(id="job_submit_time", children="", style = dict(display="none")),
         html.P(id="job_id", children="", style = dict(display="none")),
-        html.P(id="job_elapsed_time", children=""),
+        html.P(id="job_elapsed_time", children="", style={'marginLeft':'5px'}),
         dbc.Alert(id="alert_cancel", children="", dismissable=True,
             is_open=False,),
         dbc.Button("Cancel Job", id="btn_cancel", color="warning", className="me-1",
             style = dict(display="none")),
         dbc.Row([
                 html.Div([
-                    html.P("Runtime limit:"),
+                    html.P("Runtime limit:", style={'marginLeft':'5px'}),
                     dcc.Input(id="max_runtime", type="number", min=5, max=MAX_SOLVER_RUNTIME,
-                        step=5, value=5, style={'marginRight':'10px'}),]),]),]),],
+                        step=5, value=5, style={'marginRight':'10px', 'marginLeft':'5px'}),]),]),]),],
     color="secondary")
 
 # Tab-construction section
@@ -154,10 +157,9 @@ field_titles = ["How Many:", "Longest Leg:", "Shortest Leg:",
     "Highest Cost:", "Longest Time:", "Steepest Leg:"]
 
 leg_fields = [dbc.Row([
-    f"{val}",
-    dash.html.Br(),
+    html.P(f"{val}", style={"marginLeft": "5px"}),
     _dcc_input(key, step=1) if key != "max_leg_slope" else
-    _dcc_slider(key, step=1)])
+    _dcc_slider(key, step=1)], style={"marginLeft": "5px", "marginRight": "5px"})
     for key, val in zip(names_leg_inputs + names_budget_inputs + names_slope_inputs, field_titles)]
 tour_config = dbc.Card(
     [dbc.Row([

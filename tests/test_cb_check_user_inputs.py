@@ -141,4 +141,4 @@ def test_user_inputs_expected_outputs(trigger, num_legs_in, max_leg_length_in,
     output = ctx.run(run_callback)
 
     assert output == (trigger, max_leg_length_out, min_leg_length_out,
-        walk_use_out, cycle_use_out, bus_use_out, drive_use_out)
+        walk_use_out, cycle_use_out, bus_use_out, drive_use_out, no_update)

@@ -152,7 +152,7 @@ weights_card.extend([
                     _dcc_radio(key, "hardsoft")], style={"margin-left": "30px"})])])])])
     for key, val in zip(names_weight_inputs, ["Cost", "Time", "Slope"])])
 
-tour_titles = ["Set Legs", "Set Budget", "Set Exercise Limits"]
+tour_titles = ["Set Legs", "Set Budget", "Set Exercise Limits", "Add Tollbooths"]
 field_titles = ["How Many:", "Longest Leg:", "Shortest Leg:",
     "Highest Cost:", "Longest Time:", "Steepest Leg:"]
 
@@ -180,7 +180,13 @@ tour_config = dbc.Card(
                 for tour_title in tour_titles[2:]]),
      dbc.Row([
         dbc.Col(leg_fields[5], style={"margin-right": "20px"}),
-        dbc.Col()],),
+        dbc.Col(
+            dcc.RadioItems([
+                {"label": html.Div(["On"], style={'color': 'white', 'font-size': 12}),
+                "value": "On",},
+                {"label": html.Div(["Off"], style={'color': 'white', 'font-size': 12}),
+                "value": "Off"}], value="On",
+                id="tollbooths_active", inputStyle={"margin-right": "20px"}))],),
      html.P(id="changed_input", children="", style = dict(display="none")),],
     body=True, color="secondary")
 

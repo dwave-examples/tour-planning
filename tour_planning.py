@@ -23,8 +23,8 @@ locomotion = {
     "cycle": {"Speed": 3, "Cost": 2, "Exercise": 2, "Use": True},
      "bus": {"Speed": 4, "Cost": 3, "Exercise": 0, "Use": True},
      "drive": {"Speed": 7, "Cost": 5, "Exercise": 0, "Use": True}}
-modes = locomotion.keys()  # global
-num_modes = len(modes)
+all_modes = locomotion.keys()  # global
+num_modes = len(all_modes)
 
 def set_legs(num_legs, min_leg_length, max_leg_length, tollbooths=True):
     """Create legs of random length within the configured ranges."""
@@ -56,9 +56,11 @@ def average_tour_budget(legs):
 def tour_budget_boundaries(legs, locomotion_vals):
     """Return boundary values of tour cost & time for the given legs."""
 
+    modes = [key for key in locomotion_vals.keys() if locomotion_vals[key]["use"]]
+
     legs_total = sum(l["length"] for l in legs)
-    costs = [locomotion_vals[mode]["cost"] for mode in locomotion_vals.keys()]
-    speeds = [locomotion_vals[mode]["speed"] for mode in locomotion_vals.keys()]
+    costs = [locomotion_vals[mode]["cost"] for mode in modes]
+    speeds = [locomotion_vals[mode]["speed"] for mode in modes]
     cost_min = round(legs_total * min(costs), 1)
     cost_max = round(legs_total * max(costs), 1)
     cost_avg = round(legs_total * np.mean([min(costs), max(costs)]), 1)
@@ -130,7 +132,7 @@ def _calculate_total(t, measure, legs, locomotion_vals):
         legs[i//num_modes]["length"] for
         i in range(num_modes*num_legs))
 
-def build_cqm(legs, modes, max_leg_slope, max_cost, max_time,
+def build_cqm(legs, max_leg_slope, max_cost, max_time,
     weights, penalties, locomotion_vals):
     """Build CQM for maximizing exercise. """
 

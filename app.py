@@ -35,8 +35,7 @@ import dimod
 from dwave.cloud.hybrid import Client
 from dwave.cloud.api import Problems, exceptions
 
-modes = locomotion.keys()  # global, but not user modified
-num_modes = len(modes)
+all_modes = locomotion.keys()  # global, but not user modified
 
 app = dash.Dash(__name__, external_stylesheets=[dbc.themes.BOOTSTRAP])
 
@@ -117,7 +116,7 @@ tabs["CQM"] = dbc.Card([
             dcc.Textarea(id=f"cqm_print", value="",
                 style={"width": "100%"}, rows=20)],)]),])
 
-locomotion_columns = ["Mode", "Speed", "Cost", "Exercise"]
+locomotion_columns = ["Mode", "Speed", "Cost", "Exercise", "Use"]
 tabs["Locomotion"] = dbc.Card([
     dbc.Row([
         dbc.Col([
@@ -128,8 +127,16 @@ tabs["Locomotion"] = dbc.Card([
         dbc.Col([html.P(f"{col}")], width=1) for col in locomotion_columns]),
     *[dbc.Row([
         dbc.Col([html.P(f"{row}")], width=1),
-        *[dbc.Col([_dcc_input(f"{name}")], width=1) for name in
-            names_locomotion_inputs if row in name]]) for row in locomotion.keys()]],
+        *[dbc.Col(
+            [_dcc_input(f"{name}")], width=1) for name in names_locomotion_inputs if row in name],
+        dbc.Col(
+            [dcc.RadioItems([
+                {"label": html.Div(["Use"], style={'color': 'white', 'font-size': 12}),
+                    "value": True,},
+                {"label": html.Div(["Ignore"], style={'color': 'white', 'font-size': 12}),
+                    "value": False}],
+                value=True, id=f"{row}_use", inputStyle={"margin-right": "20px"})]),])
+        for row in locomotion.keys()]],
         style={"color": "rgb(3, 184, 255)", "backgroundColor": "black"})
 
 # CQM configuration sections
@@ -239,12 +246,20 @@ tips = [dbc.Tooltip(
             for target, message in tool_tips.items()]
 layout.extend(tips)
 
-modal = [html.Div([
+modal_solver = [html.Div([
     dbc.Modal([
         dbc.ModalHeader(
             dbc.ModalTitle("Leap Hybrid CQM Solver Inaccessible")),
         dbc.ModalBody(no_solver_msg),], id="solver_modal", size="sm")])]
-layout.extend(modal)
+layout.extend(modal_solver)
+
+modal_use_modes = [html.Div([
+    dbc.Modal([
+        dbc.ModalHeader(
+            dbc.ModalTitle("One Locomotion Mode is Required")),
+        dbc.ModalBody([html.Div("You must set at least one mode of locomotion to 'Use'.")]),],
+            id="use_modes_modal", size="sm")])]
+layout.extend(modal_use_modes)
 
 app.layout = dbc.Container(
     layout, fluid=True,
@@ -270,9 +285,20 @@ def _weight_or_none(
 
     return weights
 
-# tool_tips_targets = list(tool_tips.keys())
-# tool_tips_targets.remove("btn_cancel")
-# tool_tips_targets.remove("max_leg_slope")
+@app.callback(
+    Output("solver_modal", "is_open"),
+    Input("btn_solve_cqm", "n_clicks"),)
+def alert_no_solver(btn_solve_cqm):
+    """Notify if no Leap hybrid CQM solver is accessible."""
+
+    trigger = dash.callback_context.triggered
+    trigger_id = trigger[0]["prop_id"].split(".")[0]
+
+    if trigger_id == "btn_solve_cqm":
+        if not client:
+            return True
+
+    return False
 
 @app.callback(
     [Output(f"tooltip_{target}", component_property="style") for target in tool_tips.keys()],
@@ -299,21 +325,6 @@ dict(display="none")
 dict(), dict(), dict(), dict(), dict(), dict(), dict(), dict(), \
 dict(), dict(), dict(), dict(), dict(), dict(), dict(), dict(), \
 dict(), dict(), dict(), dict(), dict()
-
-@app.callback(
-    Output("solver_modal", "is_open"),
-    Input("btn_solve_cqm", "n_clicks"),)
-def alert_no_solver(btn_solve_cqm):
-    """Notify if no Leap hybrid CQM solver is accessible."""
-
-    trigger = dash.callback_context.triggered
-    trigger_id = trigger[0]["prop_id"].split(".")[0]
-
-    if trigger_id == "btn_solve_cqm":
-        if not client:
-            return True
-
-    return False
 
 @app.callback(
     [Output("problem_print_code", "value")],
@@ -344,12 +355,14 @@ def update_legs(changed_input, num_legs, max_leg_length, min_leg_length,
     Output("locomotion_print", "value"),
     [Input("cqm_print", "value")],
     [State("problem_print_code", "value")],
-    [State(id, "value") for id in names_locomotion_inputs],)
+    [State(id, "value") for id in names_locomotion_inputs],
+    [State(f"{id}_use", "value") for id in all_modes])
 def display_locomotion(cqm_print, problem_print_code,
     walk_speed, walk_cost, walk_exercise,
     cycle_speed, cycle_cost, cycle_exercise,
     bus_speed, bus_cost, bus_exercise,
-    drive_speed, drive_cost, drive_exercise):
+    drive_speed, drive_cost, drive_exercise,
+    walk_use, cycle_use, bus_use, drive_use):
     """Update the locomotion display print."""
 
     trigger = dash.callback_context.triggered
@@ -357,10 +370,15 @@ def display_locomotion(cqm_print, problem_print_code,
 
     if trigger_id == "cqm_print":
 
-        locomotion_vals = {"walk": [walk_speed, walk_cost, walk_exercise],
-    "cycle": [cycle_speed, cycle_cost, cycle_exercise],
-    "bus": [bus_speed, bus_cost, bus_exercise],
-    "drive": [drive_speed, drive_cost, drive_exercise]}
+        locomotion_vals = \
+            {"walk":  {"speed": walk_speed, "cost": walk_cost, "exercise": walk_exercise,
+                "use": walk_use},
+            "cycle": {"speed": cycle_speed, "cost": cycle_cost, "exercise": cycle_exercise,
+                "use": cycle_use},
+            "bus": {"speed": bus_speed, "cost": bus_cost, "exercise": bus_exercise,
+                "use": bus_use},
+            "drive": {"speed": drive_speed, "cost": drive_cost, "exercise": drive_exercise,
+                "use": drive_use}}
 
         legs = tour_from_json(problem_print_code)
         boundaries = tour_budget_boundaries(legs, locomotion_vals)
@@ -375,7 +393,8 @@ def display_locomotion(cqm_print, problem_print_code,
     [State(id, "value") for id in names_budget_inputs + names_weight_inputs],
     [State(f"{id}_hardsoft", "value") for id in names_weight_inputs],
     [State(f"{id}_penalty", "value") for id in names_weight_inputs],
-    [State(id, "value") for id in names_locomotion_inputs])
+    [State(id, "value") for id in names_locomotion_inputs],
+    [State(f"{id}_use", "value") for id in all_modes])
 def generate_cqm(changed_input, problem_print_code, max_leg_slope,
     max_cost, max_time, weight_cost, weight_time, weight_slope,
     weight_cost_hardsoft, weight_time_hardsoft, weight_slope_hardsoft,
@@ -383,7 +402,8 @@ def generate_cqm(changed_input, problem_print_code, max_leg_slope,
     walk_speed, walk_cost, walk_exercise,
     cycle_speed, cycle_cost, cycle_exercise,
     bus_speed, bus_cost, bus_exercise,
-    drive_speed, drive_cost, drive_exercise):
+    drive_speed, drive_cost, drive_exercise,
+    walk_use, cycle_use, bus_use, drive_use):
     """Create the CQM and write to json & readable text."""
 
     trigger = dash.callback_context.triggered
@@ -403,12 +423,17 @@ def generate_cqm(changed_input, problem_print_code, max_leg_slope,
         weights = _weight_or_none(weight_cost, weight_time, weight_slope,
             weight_cost_hardsoft, weight_time_hardsoft, weight_slope_hardsoft)
 
-        locomotion_vals = {"walk": [walk_speed, walk_cost, walk_exercise],
-            "cycle": [cycle_speed, cycle_cost, cycle_exercise],
-            "bus": [bus_speed, bus_cost, bus_exercise],
-            "drive": [drive_speed, drive_cost, drive_exercise]}
+        locomotion_vals = \
+            {"walk":  {"speed": walk_speed, "cost": walk_cost, "exercise": walk_exercise,
+                "use": walk_use},
+            "cycle": {"speed": cycle_speed, "cost": cycle_cost, "exercise": cycle_exercise,
+                "use": cycle_use},
+            "bus": {"speed": bus_speed, "cost": bus_cost, "exercise": bus_exercise,
+                "use": bus_use},
+            "drive": {"speed": drive_speed, "cost": drive_cost, "exercise": drive_exercise,
+                "use": drive_use}}
 
-        cqm = build_cqm(legs, modes, max_leg_slope, max_cost, max_time,
+        cqm = build_cqm(legs, max_leg_slope, max_cost, max_time,
             weights, penalties, locomotion_vals)
 
         return cqm_to_display(cqm)
@@ -419,11 +444,14 @@ def generate_cqm(changed_input, problem_print_code, max_leg_slope,
     [Output("changed_input", "children")],
     [Output("max_leg_length", "value")],
     [Output("min_leg_length", "value")],
+    [Output(f"{id}_use", "value") for id in all_modes],
+    [Output("use_modes_modal", "is_open")],
     [Input(id, "value") for id in
         names_leg_inputs + names_slope_inputs + names_budget_inputs + names_weight_inputs],
     [Input(f"{id}_penalty", "value") for id in names_weight_inputs],
     [Input(f"{id}_hardsoft", "value") for id in names_weight_inputs],
-    [Input(id, "value") for id in names_locomotion_inputs],)
+    [Input(id, "value") for id in names_locomotion_inputs],
+    [Input(f"{id}_use", "value") for id in all_modes],)
 def check_user_inputs(num_legs, max_leg_length, min_leg_length, max_leg_slope,
     max_cost, max_time, weight_cost, weight_time, weight_slope,
     weight_cost_penalty,  weight_time_penalty, weight_slope_penalty,
@@ -431,7 +459,8 @@ def check_user_inputs(num_legs, max_leg_length, min_leg_length, max_leg_slope,
     walk_speed, walk_cost, walk_exercise,
     cycle_speed, cycle_cost, cycle_exercise,
     bus_speed, bus_cost, bus_exercise,
-    drive_speed, drive_cost, drive_exercise):
+    drive_speed, drive_cost, drive_exercise,
+    walk_use, cycle_use, bus_use, drive_use):
     """Handle user inputs and write to readable text."""
 
     trigger = dash.callback_context.triggered
@@ -442,7 +471,14 @@ def check_user_inputs(num_legs, max_leg_length, min_leg_length, max_leg_slope,
     if trigger_id == "min_leg_length" and min_leg_length >= max_leg_length:
         max_leg_length = min_leg_length
 
-    return trigger_id, max_leg_length, min_leg_length
+    use_modes_modal = dash.no_update
+
+    if any(trigger_id == f"{key}_use" for key in all_modes):
+        if not any([walk_use, cycle_use, bus_use, drive_use]):
+            walk_use = cycle_use = bus_use = drive_use = use_modes_modal = True
+
+    return trigger_id, max_leg_length, min_leg_length, \
+        walk_use, cycle_use, bus_use, drive_use, use_modes_modal
 
 @app.callback(
     [Output(f"{graph.lower()}_graph", "figure") for graph in graphs],
@@ -551,6 +587,7 @@ def set_progress_bar(job_submit_state):
     [State(f"{id}_hardsoft", "value") for id in names_weight_inputs],
     [State(f"{id}_penalty", "value") for id in names_weight_inputs],
     [State(id, "value") for id in names_locomotion_inputs],
+    [State(f"{id}_use", "value") for id in all_modes],
     [State("max_runtime", "value")],)
 def submit_job(job_submit_time, problem_print_code, max_leg_slope,
     max_cost, max_time, weight_cost, weight_time, weight_slope,
@@ -560,6 +597,7 @@ def submit_job(job_submit_time, problem_print_code, max_leg_slope,
     cycle_speed, cycle_cost, cycle_exercise,
     bus_speed, bus_cost, bus_exercise,
     drive_speed, drive_cost, drive_exercise,
+    walk_use, cycle_use, bus_use, drive_use,
     max_runtime):
     """Submit job and provide job ID."""
 
@@ -579,12 +617,17 @@ def submit_job(job_submit_time, problem_print_code, max_leg_slope,
 
         legs = tour_from_json(problem_print_code)
 
-        locomotion_vals = {"walk": [walk_speed, walk_cost, walk_exercise],
-            "cycle": [cycle_speed, cycle_cost, cycle_exercise],
-            "bus": [bus_speed, bus_cost, bus_exercise],
-            "drive": [drive_speed, drive_cost, drive_exercise]}
+        locomotion_vals = \
+            {"walk":  {"speed": walk_speed, "cost": walk_cost, "exercise": walk_exercise,
+                "use": walk_use},
+            "cycle": {"speed": cycle_speed, "cost": cycle_cost, "exercise": cycle_exercise,
+                "use": cycle_use},
+            "bus": {"speed": bus_speed, "cost": bus_cost, "exercise": bus_exercise,
+                "use": bus_use},
+            "drive": {"speed": drive_speed, "cost": drive_cost, "exercise": drive_exercise,
+                "use": drive_use}}
 
-        cqm = build_cqm(legs, modes, max_leg_slope, max_cost, max_time,
+        cqm = build_cqm(legs, max_leg_slope, max_cost, max_time,
             weights, penalties, locomotion_vals)
 
         problem_data_id = solver.upload_cqm(cqm).result()

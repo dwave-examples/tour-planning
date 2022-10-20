@@ -24,6 +24,7 @@ from dash import no_update
 
 import dimod
 
+from app import all_modes
 from app import names_budget_inputs, names_weight_inputs, names_locomotion_inputs
 from app import submit_job
 
@@ -38,6 +39,8 @@ for key in names_weight_inputs:
     vars()[f"{key}_hardsoft"] = ContextVar(f"{key}_hardsoft")
 for key in names_weight_inputs:
     vars()[f"{key}_penalty"] = ContextVar(f"{key}_penalty")
+for key in all_modes:
+    vars()[f"{key}_use"] = ContextVar(f"{key}_use")
 max_runtime = ContextVar("max_runtime")
 
 state_vals = [{"prop_id": "problem_print_code"}]
@@ -46,6 +49,7 @@ state_vals.extend([{"prop_id": f"{key}.value"} for key in
     names_budget_inputs + names_weight_inputs + names_locomotion_inputs])
 state_vals.extend([{"prop_id": f"{key}_hardsoft.value"} for key in names_weight_inputs])
 state_vals.extend([{"prop_id": f"{key}_penalty.value"} for key in names_weight_inputs])
+state_vals.extend([{"prop_id": f"{key}_use.value"} for key in all_modes])
 
 class fake_computation():
 
@@ -83,24 +87,32 @@ class mock_client():
         a_fake_solver = fake_solver()
         return a_fake_solver
 
-locomotion_vals = {"walk": [1, 0, 1],
-"cycle": [3, 2, 2],
-"bus": [4, 3, 0],
-"drive": [7, 5, 0]}
-locomotion_vals = [val for vals in locomotion_vals.values() for val in vals]
+locomotion = {
+    "walk": {"speed": 1, "cost": 0, "exercise": 1, "use": True},
+    "cycle": {"speed": 3, "cost": 2, "exercise": 2, "use": True},
+     "bus": {"speed": 4, "cost": 3, "exercise": 0, "use": True},
+     "drive": {"speed": 7, "cost": 5, "exercise": 0, "use": True}}
+
+locomotion_vals = [val for vals in locomotion.values() for
+    val in vals.values() if not isinstance(val, bool)]
+locomotion_use_vals = [val for vals in locomotion.values() for
+    val in vals.values() if isinstance(val, bool)]
 
 parametrize_names = "job_submit_time_val, problem_print_code_val, max_leg_slope_val, " + \
     ", ".join([f'{key}_val ' for key in names_budget_inputs + names_weight_inputs]) + \
     ", " + ", ".join([f'{key}_hardsoft_val ' for key in names_weight_inputs]) + \
     ", " + ", ".join([f'{key}_penalty_val ' for key in names_weight_inputs]) + \
     ", " + ", ".join([f'{key}_val ' for key in names_locomotion_inputs]) + \
+    ", " + ", ".join([f'{key}_use_val ' for key in all_modes]) + \
     ", max_runtime_val, job_id"
 
 parametrize_vals = [
     ("high tea time", problem_print_placeholder, 8, 100, 20, 33, 44, 55, "soft",
-        "soft", "soft", "linear", "linear", "linear", *locomotion_vals, 5, "67890"),
+        "soft", "soft", "linear", "linear", "linear", *locomotion_vals, *locomotion_use_vals,
+        5, "67890"),
     ("later", problem_print_placeholder, 8, 100, 20, 33, 44, 55, "soft",
-        "soft", "soft", "linear", "linear", "linear", *locomotion_vals, 20, "67890"),]
+        "soft", "soft", "linear", "linear", "linear", *locomotion_vals, *locomotion_use_vals,
+        20, "67890"),]
 
 @pytest.mark.parametrize(parametrize_names, parametrize_vals)
 @patch("app.client", mock_client)
@@ -112,6 +124,7 @@ def test_submit_job(job_submit_time_val, problem_print_code_val, max_leg_slope_v
     cycle_speed_val, cycle_cost_val, cycle_exercise_val,
     bus_speed_val, bus_cost_val, bus_exercise_val,
     drive_speed_val, drive_cost_val, drive_exercise_val,
+    walk_use_val, cycle_use_val, bus_use_val, drive_use_val,
     max_runtime_val, job_id):
     """Test job submission."""
 
@@ -130,7 +143,8 @@ def test_submit_job(job_submit_time_val, problem_print_code_val, max_leg_slope_v
             cycle_speed.get(), cycle_cost.get(), cycle_exercise.get(), \
             bus_speed.get(), bus_cost.get(), bus_exercise.get(), \
             drive_speed.get(), drive_cost.get(), drive_exercise.get(), \
-            max_runtime.get())
+            max_runtime.get(), \
+            walk_use.get(), cycle_use.get(), bus_use.get(), drive_use.get())
 
     job_submit_time.set(vars()["job_submit_time_val"])
     problem_print_code.set(vars()["problem_print_code_val"])
@@ -141,6 +155,8 @@ def test_submit_job(job_submit_time_val, problem_print_code_val, max_leg_slope_v
         globals()[f"{key}_hardsoft"].set(vars()[f"{key}_hardsoft_val"])
     for key in names_weight_inputs:
         globals()[f"{key}_penalty"].set(vars()[f"{key}_penalty_val"])
+    for key in all_modes:
+        globals()[f"{key}_use"].set(vars()[f"{key}_use_val"])
     max_runtime.set(vars()["max_runtime_val"])
 
     ctx = copy_context()
@@ -157,7 +173,7 @@ hardsoft = [h for h in product(["soft", "hard"], repeat=3)]
 penalty = [p for p in product(["linear", "quadratic"], repeat=3)]
 for h, p in zip(hardsoft, penalty):
     parametrize_vals.append(tuple([*parametrize_constants, *h, *p, *locomotion_vals,
-        "return cqm", "not used"]))
+        *locomotion_use_vals, "return cqm", "not used"]))
 
 @pytest.mark.parametrize(parametrize_names, parametrize_vals)
 @patch("app.client", mock_client)
@@ -169,6 +185,7 @@ def test_submit_job_weights(job_submit_time_val, problem_print_code_val, max_leg
     cycle_speed_val, cycle_cost_val, cycle_exercise_val,
     bus_speed_val, bus_cost_val, bus_exercise_val,
     drive_speed_val, drive_cost_val, drive_exercise_val,
+    walk_use_val, cycle_use_val, bus_use_val, drive_use_val,
     max_runtime_val, job_id):
     """Test job submission incorporates penalties correctly.."""
 
@@ -187,6 +204,7 @@ def test_submit_job_weights(job_submit_time_val, problem_print_code_val, max_leg
             cycle_speed.get(), cycle_cost.get(), cycle_exercise.get(), \
             bus_speed.get(), bus_cost.get(), bus_exercise.get(), \
             drive_speed.get(), drive_cost.get(), drive_exercise.get(), \
+            walk_use.get(), cycle_use.get(), bus_use.get(), drive_use.get(), \
             max_runtime.get())
 
     job_submit_time.set(vars()["job_submit_time_val"])
@@ -198,6 +216,8 @@ def test_submit_job_weights(job_submit_time_val, problem_print_code_val, max_leg
         globals()[f"{key}_hardsoft"].set(vars()[f"{key}_hardsoft_val"])
     for key in names_weight_inputs:
         globals()[f"{key}_penalty"].set(vars()[f"{key}_penalty_val"])
+    for key in all_modes:
+        globals()[f"{key}_use"].set(vars()[f"{key}_use_val"])
     max_runtime.set(vars()["max_runtime_val"])
 
     ctx = copy_context()

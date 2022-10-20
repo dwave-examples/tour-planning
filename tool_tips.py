@@ -132,4 +132,7 @@ for the best found solution, the cost per leg as a color heatmap.""",
     "graph_feasibility":
 """Displays feasible and non-feasible solutions in a three-dimensional plot of
 exercise, cost, and time. Non-feasible solutions violate one or more hard
-constraints; feasible solutions may violate some soft constraints.""",}
+constraints; feasible solutions may violate some soft constraints.""",
+    "tollbooths_active":
+"""When set to 'On', tollbooths are added randomly with likelihood 20% to legs.
+The generated CQM has a hard constraint to not drive on legs with tollbooths.""",}

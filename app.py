@@ -292,12 +292,13 @@ dict(display="none"), dict(display="none"), dict(display="none"), dict(display="
 dict(display="none"), dict(display="none"), dict(display="none"), dict(display="none"), \
 dict(display="none"), dict(display="none"), dict(display="none"), dict(display="none"), \
 dict(display="none"), dict(display="none"), dict(display="none"), dict(display="none"), \
-dict(display="none"), dict(display="none"), dict(display="none"), dict(display="none")
+dict(display="none"), dict(display="none"), dict(display="none"), dict(display="none"), \
+dict(display="none")
 
     return dict(), dict(), dict(), dict(), dict(), dict(), dict(), dict(), \
 dict(), dict(), dict(), dict(), dict(), dict(), dict(), dict(), \
 dict(), dict(), dict(), dict(), dict(), dict(), dict(), dict(), \
-dict(), dict(), dict(), dict()
+dict(), dict(), dict(), dict(), dict()
 
 @app.callback(
     Output("solver_modal", "is_open"),

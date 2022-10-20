@@ -42,7 +42,7 @@ app = dash.Dash(__name__, external_stylesheets=[dbc.themes.BOOTSTRAP])
 
 try:
     client = Client.from_config()
-    client.get_solver(supported_problem_types__issubset={"cqm"})
+    client.get_solver(supported_problem_types__issuperset={"cqm"})
     init_job_status = "READY"
     job_status_color = dict()
 except Exception as client_err:
@@ -556,7 +556,7 @@ def submit_job(job_submit_time, problem_print_code, max_leg_slope,
 
     if trigger_id =="job_submit_time":
 
-        solver = client.get_solver(supported_problem_types__issubset={"cqm"})
+        solver = client.get_solver(supported_problem_types__issuperset={"cqm"})
 
         penalties = {
             "cost": weight_cost_penalty,

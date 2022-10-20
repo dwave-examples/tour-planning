@@ -208,14 +208,14 @@ layout = [
                 html.P(" ")]),
             dbc.Row([
                 dbc.Col([
+                    html.P("Hover over fields for descriptions:",
+                        style={"color": "white"}),
                     dcc.RadioItems([
                         {"label": html.Div(["On"], style={'color': 'white', 'font-size': 12}),
                         "value": "On",},
                         {"label": html.Div(["Off"], style={'color': 'white', 'font-size': 12}),
                         "value": "Off"}], value="On",
-                        id="tooltips_active", inputStyle={"margin-right": "20px"}),
-                    html.P("Hover your mouse over any field for descriptions.",
-                        style={"color": "white"})])]),],
+                        id="tooltips_active", inputStyle={"margin-right": "20px"})])]),],
             width=1)],
         justify="left"),
     dbc.Tabs([
@@ -262,12 +262,12 @@ def _weight_or_none(
 
     return weights
 
-tool_tips_targets = list(tool_tips.keys())
-tool_tips_targets.remove("btn_cancel")
-tool_tips_targets.remove("max_leg_slope")
+# tool_tips_targets = list(tool_tips.keys())
+# tool_tips_targets.remove("btn_cancel")
+# tool_tips_targets.remove("max_leg_slope")
 
 @app.callback(
-    [Output(f"tooltip_{target}", component_property="style") for target in tool_tips_targets],
+    [Output(f"tooltip_{target}", component_property="style") for target in tool_tips.keys()],
     Input("tooltips_active", "value"),)
 def activate_tooltips(tooltips_active):
     """Activate or hide tooltips."""
@@ -277,18 +277,19 @@ def activate_tooltips(tooltips_active):
 
     if trigger_id == "tooltips_active":
         if tooltips_active == "Off":
-            return dict(display="none"), dict(display="none"), dict(display="none"), \
+            return \
 dict(display="none"), dict(display="none"), dict(display="none"), dict(display="none"), \
 dict(display="none"), dict(display="none"), dict(display="none"), dict(display="none"), \
 dict(display="none"), dict(display="none"), dict(display="none"), dict(display="none"), \
 dict(display="none"), dict(display="none"), dict(display="none"), dict(display="none"), \
 dict(display="none"), dict(display="none"), dict(display="none"), dict(display="none"), \
-dict(display="none"), dict(display="none"), dict(display="none"),
+dict(display="none"), dict(display="none"), dict(display="none"), dict(display="none"), \
+dict(display="none"), dict(display="none"), dict(display="none"), dict(display="none")
 
     return dict(), dict(), dict(), dict(), dict(), dict(), dict(), dict(), \
 dict(), dict(), dict(), dict(), dict(), dict(), dict(), dict(), \
 dict(), dict(), dict(), dict(), dict(), dict(), dict(), dict(), \
-dict(), dict()
+dict(), dict(), dict(), dict()
 
 @app.callback(
     Output("solver_modal", "is_open"),

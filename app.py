@@ -117,7 +117,7 @@ tabs["CQM"] = dbc.Card([
             dcc.Textarea(id=f"cqm_print", value="",
                 style={"width": "100%"}, rows=20)],)]),])
 
-locomotion_columns = ["Mode", "Speed", "Cost", "Exercise"]
+locomotion_columns = ["Mode", "Speed", "Cost", "Exercise", "Use"]
 tabs["Locomotion"] = dbc.Card([
     dbc.Row([
         dbc.Col([
@@ -129,7 +129,16 @@ tabs["Locomotion"] = dbc.Card([
     *[dbc.Row([
         dbc.Col([html.P(f"{row}")], width=1),
         *[dbc.Col([_dcc_input(f"{name}")], width=1) for name in
-            names_locomotion_inputs if row in name]]) for row in locomotion.keys()]],
+            names_locomotion_inputs if row in name],
+        dbc.Col([dcc.RadioItems([
+            {"label": html.Div(["Use"], style={'color': 'white', 'font-size': 12}),
+            "value": True,},
+            {"label": html.Div(["Ignore"], style={'color': 'white', 'font-size': 12}),
+            "value": False}], value=True,
+            id=f"{row}_use", inputStyle={"margin-right": "20px"})]),
+
+
+]) for row in locomotion.keys()]],
         style={"color": "rgb(3, 184, 255)", "backgroundColor": "black"})
 
 # CQM configuration sections

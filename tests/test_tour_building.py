@@ -46,8 +46,8 @@ locomotion_vals = {"walk": [1, 0, 1],
 "drive": [7, 5, 0]}
 
 parametrize_vals = [
-(legs1, locomotion_vals, {'cost_min': 0, 'cost_max': 150, 'cost_avg': 75, 'time_min': 4, 'time_max': 30, 'time_avg': 8}),
-(legs2, locomotion_vals, {'cost_min': 0, 'cost_max': 900, 'cost_avg': 450, 'time_min': 26, 'time_max': 180, 'time_avg': 45})]
+(legs1, locomotion_vals, {'cost_min': 0, 'cost_max': 150.0, 'cost_avg': 75.0, 'time_min': 4.3, 'time_max': 30.0, 'time_avg': 7.5}),
+(legs2, locomotion_vals, {'cost_min': 0, 'cost_max': 900, 'cost_avg': 450.0, 'time_min': 25.7, 'time_max': 180.0, 'time_avg': 45.0})]
 
 @pytest.mark.parametrize("legs, locomotion_vals, boundaries", parametrize_vals)
 def test_tour_budget_boundaries(legs, locomotion_vals, boundaries):

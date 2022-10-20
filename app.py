@@ -36,7 +36,6 @@ from dwave.cloud.hybrid import Client
 from dwave.cloud.api import Problems, exceptions
 
 modes = locomotion.keys()  # global, but not user modified
-num_modes = len(modes)
 
 app = dash.Dash(__name__, external_stylesheets=[dbc.themes.BOOTSTRAP])
 
@@ -128,17 +127,16 @@ tabs["Locomotion"] = dbc.Card([
         dbc.Col([html.P(f"{col}")], width=1) for col in locomotion_columns]),
     *[dbc.Row([
         dbc.Col([html.P(f"{row}")], width=1),
-        *[dbc.Col([_dcc_input(f"{name}")], width=1) for name in
-            names_locomotion_inputs if row in name],
-        dbc.Col([dcc.RadioItems([
-            {"label": html.Div(["Use"], style={'color': 'white', 'font-size': 12}),
-            "value": True,},
-            {"label": html.Div(["Ignore"], style={'color': 'white', 'font-size': 12}),
-            "value": False}], value=True,
-            id=f"{row}_use", inputStyle={"margin-right": "20px"})]),
-
-
-]) for row in locomotion.keys()]],
+        *[dbc.Col(
+            [_dcc_input(f"{name}")], width=1) for name in names_locomotion_inputs if row in name],
+        dbc.Col(
+            [dcc.RadioItems([
+                {"label": html.Div(["Use"], style={'color': 'white', 'font-size': 12}),
+                    "value": True,},
+                {"label": html.Div(["Ignore"], style={'color': 'white', 'font-size': 12}),
+                    "value": False}],
+                value=True, id=f"{row}_use", inputStyle={"margin-right": "20px"})]),])
+        for row in locomotion.keys()]],
         style={"color": "rgb(3, 184, 255)", "backgroundColor": "black"})
 
 # CQM configuration sections
@@ -381,7 +379,8 @@ def display_locomotion(cqm_print, problem_print_code,
     [State(id, "value") for id in names_budget_inputs + names_weight_inputs],
     [State(f"{id}_hardsoft", "value") for id in names_weight_inputs],
     [State(f"{id}_penalty", "value") for id in names_weight_inputs],
-    [State(id, "value") for id in names_locomotion_inputs])
+    [State(id, "value") for id in names_locomotion_inputs],
+    [State(f"{id}_use", "value") for id in modes])
 def generate_cqm(changed_input, problem_print_code, max_leg_slope,
     max_cost, max_time, weight_cost, weight_time, weight_slope,
     weight_cost_hardsoft, weight_time_hardsoft, weight_slope_hardsoft,
@@ -389,7 +388,8 @@ def generate_cqm(changed_input, problem_print_code, max_leg_slope,
     walk_speed, walk_cost, walk_exercise,
     cycle_speed, cycle_cost, cycle_exercise,
     bus_speed, bus_cost, bus_exercise,
-    drive_speed, drive_cost, drive_exercise):
+    drive_speed, drive_cost, drive_exercise,
+    walk_use, cycle_use, bus_use, drive_use):
     """Create the CQM and write to json & readable text."""
 
     trigger = dash.callback_context.triggered
@@ -410,10 +410,14 @@ def generate_cqm(changed_input, problem_print_code, max_leg_slope,
             weight_cost_hardsoft, weight_time_hardsoft, weight_slope_hardsoft)
 
         locomotion_vals = \
-            {"walk":  {"speed": walk_speed, "cost": walk_cost, "exercise": walk_exercise},
-            "cycle": {"speed": cycle_speed, "cost": cycle_cost, "exercise": cycle_exercise},
-            "bus": {"speed": bus_speed, "cost": bus_cost, "exercise": bus_exercise},
-            "drive": {"speed": drive_speed, "cost": drive_cost, "exercise": drive_exercise}}
+            {"walk":  {"speed": walk_speed, "cost": walk_cost, "exercise": walk_exercise,
+                "use": walk_use},
+            "cycle": {"speed": cycle_speed, "cost": cycle_cost, "exercise": cycle_exercise,
+                "use": cycle_use},
+            "bus": {"speed": bus_speed, "cost": bus_cost, "exercise": bus_exercise,
+                "use": bus_use},
+            "drive": {"speed": drive_speed, "cost": drive_cost, "exercise": drive_exercise,
+                "use": drive_use}}
 
         cqm = build_cqm(legs, modes, max_leg_slope, max_cost, max_time,
             weights, penalties, locomotion_vals)

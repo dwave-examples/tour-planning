@@ -126,8 +126,8 @@ https://docs.ocean.dwavesys.com/en/stable/docs_dimod/reference/sampleset.html)
   tour and constraints.
 
 * **Locomotion:** displays information about your configured tour, such as the
-  minimum, maximum, and average values of cost and time, and information about
-  the available modes of locomotion.
+  minimum, maximum, and average values of cost and time, and the configurable
+  values (speed, cost, exercise) of the available modes of locomotion.
 
 ## Model Overview
 

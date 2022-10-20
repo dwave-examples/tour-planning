@@ -23,16 +23,19 @@ import plotly
 
 import dimod
 
-from app import names_locomotion_inputs
+from app import all_modes, names_locomotion_inputs
 from app import display_locomotion
 
 cqm_print = ContextVar("cqm_print")
 problem_print_code = ContextVar("problem_print_code")
 for key in names_locomotion_inputs:
     vars()[key] = ContextVar(f"{key}")
+for key in all_modes:
+    vars()[f"{key}_use"] = ContextVar(f"{key}_use")
 
 state_vals = [{"prop_id": "problem_print_code.value"}]
 state_vals.extend([{"prop_id": f"{key}.value"} for key in names_locomotion_inputs])
+state_vals.extend([{"prop_id": f"{key}_use.value"} for key in all_modes])
 
 problem_json = '[{"length": 5.3, "uphill": 7.0, "toll": false},'+\
 '{"length": 5.6, "uphill": 2.9, "toll": false}]'
@@ -40,18 +43,25 @@ problem_json = '[{"length": 5.3, "uphill": 7.0, "toll": false},'+\
 boundaries = {'cost_min': 0.0, 'cost_max': 54.5, 'cost_avg': 27.2, 'time_min': 1.6,
     'time_max': 10.9, 'time_avg': 2.7}
 
-locomotion_vals = {"walk": [1, 0, 1],
-"cycle": [3, 2, 2],
-"bus": [4, 3, 0],
-"drive": [7, 5, 0]}
-locomotion_vals = [val for vals in locomotion_vals.values() for val in vals]
+locomotion = {
+    "walk": {"speed": 1, "cost": 0, "exercise": 1, "use": True},
+    "cycle": {"speed": 3, "cost": 2, "exercise": 2, "use": True},
+     "bus": {"speed": 4, "cost": 3, "exercise": 0, "use": True},
+     "drive": {"speed": 7, "cost": 5, "exercise": 0, "use": True}}
+
+locomotion_vals = [val for vals in locomotion.values() for
+    val in vals.values() if not isinstance(val, bool)]
+locomotion_use_vals = [val for vals in locomotion.values() for
+    val in vals.values() if isinstance(val, bool)]
 
 parametrize_names = "cqm_print_val, problem_print_code_val, " + \
     ", " + ", ".join([f'{key}_val ' for key in names_locomotion_inputs]) + \
+    ", " + ", ".join([f'{key}_use_val ' for key in all_modes]) + \
     ", boundaries"
 
 parametrize_vals = [
-    (problem_json, problem_json, *locomotion_vals, boundaries),]
+    (problem_json, problem_json, *locomotion_vals, *locomotion_use_vals,
+        boundaries),]
 
 @pytest.mark.parametrize(parametrize_names, parametrize_vals)
 def test_display_locomotion(cqm_print_val, problem_print_code_val,
@@ -59,6 +69,7 @@ def test_display_locomotion(cqm_print_val, problem_print_code_val,
     cycle_speed_val, cycle_cost_val, cycle_exercise_val,
     bus_speed_val, bus_cost_val, bus_exercise_val,
     drive_speed_val, drive_cost_val, drive_exercise_val,
+    walk_use_val, cycle_use_val, bus_use_val, drive_use_val,
     boundaries):
     """Test display of locomotion modes."""
 
@@ -71,12 +82,15 @@ def test_display_locomotion(cqm_print_val, problem_print_code_val,
             walk_speed.get(), walk_cost.get(), walk_exercise.get(),  \
             cycle_speed.get(), cycle_cost.get(), cycle_exercise.get(), \
             bus_speed.get(), bus_cost.get(), bus_exercise.get(), \
-            drive_speed.get(), drive_cost.get(), drive_exercise.get())
+            drive_speed.get(), drive_cost.get(), drive_exercise.get(), \
+            walk_use.get(), cycle_use.get(), bus_use.get(), drive_use.get())
 
     cqm_print.set(cqm_print_val)
     problem_print_code.set(problem_print_code_val)
     for key in names_locomotion_inputs:
         globals()[key].set(vars()[key + "_val"])
+    for key in all_modes:
+        globals()[f"{key}_use"].set(vars()[f"{key}_use_val"])
 
     ctx = copy_context()
 

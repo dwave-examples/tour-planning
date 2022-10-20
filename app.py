@@ -270,9 +270,20 @@ def _weight_or_none(
 
     return weights
 
-# tool_tips_targets = list(tool_tips.keys())
-# tool_tips_targets.remove("btn_cancel")
-# tool_tips_targets.remove("max_leg_slope")
+@app.callback(
+    Output("solver_modal", "is_open"),
+    Input("btn_solve_cqm", "n_clicks"),)
+def alert_no_solver(btn_solve_cqm):
+    """Notify if no Leap hybrid CQM solver is accessible."""
+
+    trigger = dash.callback_context.triggered
+    trigger_id = trigger[0]["prop_id"].split(".")[0]
+
+    if trigger_id == "btn_solve_cqm":
+        if not client:
+            return True
+
+    return False
 
 @app.callback(
     [Output(f"tooltip_{target}", component_property="style") for target in tool_tips.keys()],
@@ -299,21 +310,6 @@ dict(display="none")
 dict(), dict(), dict(), dict(), dict(), dict(), dict(), dict(), \
 dict(), dict(), dict(), dict(), dict(), dict(), dict(), dict(), \
 dict(), dict(), dict(), dict(), dict()
-
-@app.callback(
-    Output("solver_modal", "is_open"),
-    Input("btn_solve_cqm", "n_clicks"),)
-def alert_no_solver(btn_solve_cqm):
-    """Notify if no Leap hybrid CQM solver is accessible."""
-
-    trigger = dash.callback_context.triggered
-    trigger_id = trigger[0]["prop_id"].split(".")[0]
-
-    if trigger_id == "btn_solve_cqm":
-        if not client:
-            return True
-
-    return False
 
 @app.callback(
     [Output("problem_print_code", "value")],
@@ -357,10 +353,11 @@ def display_locomotion(cqm_print, problem_print_code,
 
     if trigger_id == "cqm_print":
 
-        locomotion_vals = {"walk": [walk_speed, walk_cost, walk_exercise],
-    "cycle": [cycle_speed, cycle_cost, cycle_exercise],
-    "bus": [bus_speed, bus_cost, bus_exercise],
-    "drive": [drive_speed, drive_cost, drive_exercise]}
+        locomotion_vals = \
+            {"walk":  {"speed": walk_speed, "cost": walk_cost, "exercise": walk_exercise},
+            "cycle": {"speed": cycle_speed, "cost": cycle_cost, "exercise": cycle_exercise},
+            "bus": {"speed": bus_speed, "cost": bus_cost, "exercise": bus_exercise},
+            "drive": {"speed": drive_speed, "cost": drive_cost, "exercise": drive_exercise}}
 
         legs = tour_from_json(problem_print_code)
         boundaries = tour_budget_boundaries(legs, locomotion_vals)
@@ -403,10 +400,11 @@ def generate_cqm(changed_input, problem_print_code, max_leg_slope,
         weights = _weight_or_none(weight_cost, weight_time, weight_slope,
             weight_cost_hardsoft, weight_time_hardsoft, weight_slope_hardsoft)
 
-        locomotion_vals = {"walk": [walk_speed, walk_cost, walk_exercise],
-            "cycle": [cycle_speed, cycle_cost, cycle_exercise],
-            "bus": [bus_speed, bus_cost, bus_exercise],
-            "drive": [drive_speed, drive_cost, drive_exercise]}
+        locomotion_vals = \
+            {"walk":  {"speed": walk_speed, "cost": walk_cost, "exercise": walk_exercise},
+            "cycle": {"speed": cycle_speed, "cost": cycle_cost, "exercise": cycle_exercise},
+            "bus": {"speed": bus_speed, "cost": bus_cost, "exercise": bus_exercise},
+            "drive": {"speed": drive_speed, "cost": drive_cost, "exercise": drive_exercise}}
 
         cqm = build_cqm(legs, modes, max_leg_slope, max_cost, max_time,
             weights, penalties, locomotion_vals)

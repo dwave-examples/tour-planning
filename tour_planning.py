@@ -19,10 +19,10 @@ import pandas as pd
 import dimod
 
 locomotion = {
-    "walk": {"Speed": 1, "Cost": 0, "Exercise": 1},
-    "cycle": {"Speed": 3, "Cost": 2, "Exercise": 2},
-     "bus": {"Speed": 4, "Cost": 3, "Exercise": 0},
-     "drive": {"Speed": 7, "Cost": 5, "Exercise": 0}}
+    "walk": {"Speed": 1, "Cost": 0, "Exercise": 1, "Use": True},
+    "cycle": {"Speed": 3, "Cost": 2, "Exercise": 2, "Use": True},
+     "bus": {"Speed": 4, "Cost": 3, "Exercise": 0, "Use": True},
+     "drive": {"Speed": 7, "Cost": 5, "Exercise": 0, "Use": True}}
 modes = locomotion.keys()  # global
 num_modes = len(modes)
 
@@ -57,8 +57,8 @@ def tour_budget_boundaries(legs, locomotion_vals):
     """Return boundary values of tour cost & time for the given legs."""
 
     legs_total = sum(l["length"] for l in legs)
-    costs = [locomotion_vals[mode][1] for mode in locomotion_vals.keys()]
-    speeds = [locomotion_vals[mode][0] for mode in locomotion_vals.keys()]
+    costs = [locomotion_vals[mode]["cost"] for mode in locomotion_vals.keys()]
+    speeds = [locomotion_vals[mode]["speed"] for mode in locomotion_vals.keys()]
     cost_min = round(legs_total * min(costs), 1)
     cost_max = round(legs_total * max(costs), 1)
     cost_avg = round(legs_total * np.mean([min(costs), max(costs)]), 1)
@@ -71,7 +71,7 @@ def tour_budget_boundaries(legs, locomotion_vals):
 
 locomotion_ranges = {f"{mode}_{measure}": [0, 100] if measure != "speed" else
     [1, 100] for mode in locomotion.keys()
-    for measure in [key.lower() for key in locomotion[mode].keys()]}
+    for measure in [key.lower() for key in locomotion[mode].keys() if key != "Use"]}
 
 leg_ranges = {"num_legs": [5, 100],
     "max_leg_length": [1, 20],
@@ -87,7 +87,8 @@ budget_ranges =  {"max_cost": [0, 100000],
     "max_time": [0, 100000]}
 
 locomotion_init_values = {f"{mode}_{measure}": val for mode in locomotion.keys()
-    for measure, val in {key.lower(): val for key, val in locomotion[mode].items()}.items()}
+    for measure, val in {key.lower(): val for key, val in
+    locomotion[mode].items() if key != "Use"}.items()}
 
 leg_init_values = {"num_legs": 10, "max_leg_length": 10, "min_leg_length": 2}
 
@@ -113,16 +114,16 @@ def _calculate_total(t, measure, legs, locomotion_vals):
 
     if measure == "Exercise":
         return dimod.quicksum(
-            t[i]*locomotion_vals[t[i].variables[0].split("_")[0]][2] *
+            t[i]*locomotion_vals[t[i].variables[0].split("_")[0]]["exercise"] *
             legs[i//num_modes]["length"]*legs[i//num_modes]["uphill"] for
             i in range(num_modes*num_legs))
     elif measure == "Time":
 
         return dimod.quicksum(
-            t[i]*legs[i//num_modes]["length"]/locomotion_vals[t[i].variables[0].split("_")[0]][0] for
+            t[i]*legs[i//num_modes]["length"]/locomotion_vals[t[i].variables[0].split("_")[0]]["speed"] for
             i in range(num_modes*num_legs))
     else: # measure == "Cost"
-        return dimod.quicksum(t[i]*locomotion_vals[t[i].variables[0].split("_")[0]][1] *
+        return dimod.quicksum(t[i]*locomotion_vals[t[i].variables[0].split("_")[0]]["cost"] *
         legs[i//num_modes]["length"] for
         i in range(num_modes*num_legs))
 

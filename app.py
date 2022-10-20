@@ -152,7 +152,7 @@ weights_card.extend([
                     _dcc_radio(key, "hardsoft")], style={"margin-left": "30px"})])])])])
     for key, val in zip(names_weight_inputs, ["Cost", "Time", "Slope"])])
 
-tour_titles = ["Set Legs", "Set Budget", "Set Exercise Limits"]
+tour_titles = ["Set Legs", "Set Budget", "Set Exercise Limits", "Add Tollbooths"]
 field_titles = ["How Many:", "Longest Leg:", "Shortest Leg:",
     "Highest Cost:", "Longest Time:", "Steepest Leg:"]
 
@@ -180,7 +180,13 @@ tour_config = dbc.Card(
                 for tour_title in tour_titles[2:]]),
      dbc.Row([
         dbc.Col(leg_fields[5], style={"margin-right": "20px"}),
-        dbc.Col()],),
+        dbc.Col(
+            dcc.RadioItems([
+                {"label": html.Div(["On"], style={'color': 'white', 'font-size': 12}),
+                "value": True,},
+                {"label": html.Div(["Off"], style={'color': 'white', 'font-size': 12}),
+                "value": False}], value=True,
+                id="tollbooths_active", inputStyle={"margin-right": "20px"}))],),
      html.P(id="changed_input", children="", style = dict(display="none")),],
     body=True, color="secondary")
 
@@ -286,12 +292,13 @@ dict(display="none"), dict(display="none"), dict(display="none"), dict(display="
 dict(display="none"), dict(display="none"), dict(display="none"), dict(display="none"), \
 dict(display="none"), dict(display="none"), dict(display="none"), dict(display="none"), \
 dict(display="none"), dict(display="none"), dict(display="none"), dict(display="none"), \
-dict(display="none"), dict(display="none"), dict(display="none"), dict(display="none")
+dict(display="none"), dict(display="none"), dict(display="none"), dict(display="none"), \
+dict(display="none")
 
     return dict(), dict(), dict(), dict(), dict(), dict(), dict(), dict(), \
 dict(), dict(), dict(), dict(), dict(), dict(), dict(), dict(), \
 dict(), dict(), dict(), dict(), dict(), dict(), dict(), dict(), \
-dict(), dict(), dict(), dict()
+dict(), dict(), dict(), dict(), dict()
 
 @app.callback(
     Output("solver_modal", "is_open"),
@@ -312,8 +319,10 @@ def alert_no_solver(btn_solve_cqm):
     [Output("problem_print_code", "value")],
     [Output("problem_print_human", "value")],
     [Input("changed_input", "children")],
-    [State(id, "value") for id in names_leg_inputs])
-def update_legs(changed_input, num_legs, max_leg_length, min_leg_length):
+    [State(id, "value") for id in names_leg_inputs],
+    [State("tollbooths_active", "value")],)
+def update_legs(changed_input, num_legs, max_leg_length, min_leg_length,
+    tollbooths_active):
     """Generate the tour legs and write to json & readable text."""
 
     trigger = dash.callback_context.triggered
@@ -324,7 +333,7 @@ def update_legs(changed_input, num_legs, max_leg_length, min_leg_length):
     if trigger_id and not changed_input or any(changed_input == key for key in
         names_leg_inputs):
 
-        legs = set_legs(num_legs, min_leg_length, max_leg_length)
+        legs = set_legs(num_legs, min_leg_length, max_leg_length, tollbooths_active)
         return tour_to_json(legs), tour_to_display(legs)
 
     else:       # Other user inputs regenerate the CQM but not the legs

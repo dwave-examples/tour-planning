@@ -26,13 +26,18 @@ locomotion = {
 modes = locomotion.keys()  # global
 num_modes = len(modes)
 
-def set_legs(num_legs, min_leg_length, max_leg_length):
+def set_legs(num_legs, min_leg_length, max_leg_length, tollbooths=True):
     """Create legs of random length within the configured ranges."""
+
+    toll_probablity = 0.2
+    if not tollbooths:
+        toll_probablity = 0
 
     return [{"length": round((max_leg_length - min_leg_length)*random.random() \
         + min_leg_length, 1),
              "uphill": round(10*random.random(), 1),
-             "toll": bool(np.random.choice([True, False], 1, p=[0.2, 0.8])[0])}
+             "toll": bool(np.random.choice([True, False], 1,
+                p=[toll_probablity, 1 - toll_probablity])[0])}
         for i in range(num_legs)]
 
 def average_tour_budget(legs):

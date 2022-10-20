@@ -29,12 +29,14 @@ from formatting import tour_from_json, tour_to_display
 changed_input = ContextVar("changed_input")
 for key in names_leg_inputs:
     vars()[key] = ContextVar(f"{key}")
+tollbooths_active = ContextVar("tollbooths_active")
 
 states = [{"prop_id": f"{key}.value"} for key in names_leg_inputs]
+states.extend([{"prop_id": "tollbooths_active.value"}])
 
 parametrize_names = "changed_input_val, " + \
     ", ".join([f'{key}_val' for key in names_leg_inputs]) + \
-    ", problem_print_code_val, problem_print_human_val"
+    ", tollbooths_active_val, problem_print_code_val, problem_print_human_val"
 
 parametrize_vals = []
 for i in range(10):
@@ -42,11 +44,11 @@ for i in range(10):
         *names_weight_inputs])
     output = " " if any(trigger == key for key in names_leg_inputs) else \
         no_update
-    parametrize_vals.append((trigger, 10, 10, 3, output, output))
+    parametrize_vals.append((trigger, 10, 10, 3, True, output, output))
 
 @pytest.mark.parametrize(parametrize_names, parametrize_vals)
 def test_legs_generation_trigger(changed_input_val, num_legs_val,
-    max_leg_length_val, min_leg_length_val,
+    max_leg_length_val, min_leg_length_val, tollbooths_active_val,
     problem_print_code_val, problem_print_human_val):
     """Test that new legs are correctly generated only when needed."""
 
@@ -57,11 +59,12 @@ def test_legs_generation_trigger(changed_input_val, num_legs_val,
             "state_values": states}))
 
         return update_legs(changed_input.get(), num_legs.get(), max_leg_length.get(),\
-            min_leg_length.get())
+            min_leg_length.get(), tollbooths_active.get())
 
     changed_input.set(changed_input_val)
     for key in names_leg_inputs:
         globals()[key].set(vars()[f"{key}_val"])
+    tollbooths_active.set(tollbooths_active_val)
 
     ctx = copy_context()
 
@@ -73,12 +76,13 @@ def test_legs_generation_trigger(changed_input_val, num_legs_val,
         assert len(tour_from_json(output[0])) == num_legs_val   # problem_print_code_val
 
 parametrize_names = "changed_input_val, " + \
-    ", ".join([f'{key}_val' for key in names_leg_inputs])
-parametrize_vals = [("num_legs", 1, 10, 10)]
+    ", ".join([f'{key}_val' for key in names_leg_inputs]) + \
+    ", tollbooths_active_val"
+parametrize_vals = [("num_legs", 1, 10, 10, True)]
 
 @pytest.mark.parametrize(parametrize_names, parametrize_vals)
 def test_legs_output(changed_input_val, num_legs_val,
-    max_leg_length_val, min_leg_length_val):
+    max_leg_length_val, min_leg_length_val, tollbooths_active_val):
     """Test that output is correctly generated."""
 
     def run_callback():
@@ -88,11 +92,12 @@ def test_legs_output(changed_input_val, num_legs_val,
             "state_values": states}))
 
         return update_legs(changed_input.get(), num_legs.get(), max_leg_length.get(),\
-            min_leg_length.get())
+            min_leg_length.get(), tollbooths_active.get())
 
     changed_input.set(changed_input_val)
     for key in names_leg_inputs:
         globals()[key].set(vars()[f"{key}_val"])
+    tollbooths_active.set(tollbooths_active_val)
 
     ctx = copy_context()
 

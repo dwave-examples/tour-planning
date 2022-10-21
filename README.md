@@ -6,9 +6,20 @@ quantum-classical hybrid constrained quadratic (CQM) solver.
 This example solves a problem of selecting, for a tour divided into several legs
 of varying lengths and steepness, a combination of locomotion modes (walking,
 cycling, bussing, and driving) such that one can gain the greatest benefit of
-outdoor exercise while not exceeding one's budgeted cost and time.  
+outdoor exercise while not exceeding one's budgeted cost and time.
 
 ![Example Solution](assets/example_space_graph.png)
+
+The techniques used in this example are applicable to commercial problems such
+as traffic routing&mdash;selecting the optimal among available means of
+transportation, for commuters or deliveries, given constraints of pricing,
+speed, convenience, and green-energy preferences&mdash;or network routing, where
+the routing of data packets must consider bandwidth, pricing, reliance,
+service tiers, and latency across numerous hops. In general, the use of soft
+constraints can result in imperfect but good solutions to many optimization
+problems, from bin packing, which addresses problems in areas such as containers,
+pallets and aircraft, to portfolio selection, which identifies the number of
+shares of each stock to purchase in order to minimize risk and maximize returns.   
 
 ## Hard and Soft Constraints
 
@@ -118,13 +129,16 @@ found solutions.
 * **Problem:** displays the legs of the tour (length, slope, and toll booths),
   formatted for reading and for copying into your code.
 
-* **Solutions:** displays the best solution found, formatted for reading and as
+* **Solutions:** displays the returned solutions, formatted for reading and as
   a [dimod sampleset](
 https://docs.ocean.dwavesys.com/en/stable/docs_dimod/reference/sampleset.html)
   for copying into your code.
 
 * **CQM:** displays the constrained quadratic model generated for your configured
-  tour and constraints.
+  tour and constraints. A good way to learn about the construction of a CQM, is
+  to begin with a minimal problem (a single mode of locomotion, one leg, no
+  tollbooths), study the simple CQM, and watch it change as you increase the
+  problem's complexity.
 
 * **Locomotion:** contains information about your configured tour, such as the
   minimum, maximum, and average values of cost and time, and the values for
@@ -138,9 +152,9 @@ overpay) can be modeled as an optimization problem with decisions that could
 either be true or false: for any leg, should one drive? Should one
 walk?
 
-This model uses four binary variables for each leg of the tour, each one representing
-whether one particular mode of locomotion is used or not. For example, leg
-number 5 might have the following binary variables and values in one solution:
+This model uses up to four binary variables for each leg of the tour, each one
+representing whether one particular mode of locomotion is used or not. For example,
+leg number 5 might have the following binary variables and values in one solution:
 
 | Binary Variable        | Represents    | Value in a Particular Solution |
 |------------------------|---------------|--------------------------------|

@@ -37,7 +37,7 @@ def _initial_fig(fig, legs, df, x_axis, image):
 
     title = "Distance" if x_axis == "Length" else "Time"
 
-    fig.update_xaxes(showticklabels=True, title="Distance")
+    fig.update_xaxes(showticklabels=True, title=title)
     fig.update_yaxes(showticklabels=False, title=None, range=(-0.5, 0.5))
     fig.update_traces(width=.1)
     fig.update_layout(font_color="rgb(3, 184, 255)", margin=dict(l=20, r=20, t=20, b=20),
@@ -75,15 +75,15 @@ def plot_space(legs, samples=None):
 
     return fig
 
-def plot_time(legs, locomotion, samples):
+def plot_time(legs, locomotion_vals, samples):
     """Plot legs versus time and cost given solutions."""
 
     if not samples:
         return px.bar()
 
-    df_legs = pd.DataFrame({"Time": [l["length"]/locomotion[f[1]]["Speed"] for
+    df_legs = pd.DataFrame({"Time": [l["length"]/locomotion_vals[f[1]]["speed"] for
         l,f in zip(legs, samples["first"])],
-        "Cost": [locomotion[f[1]]["Speed"] for f in samples["first"]]})
+        "Cost": [locomotion_vals[f[1]]["cost"] for f in samples["first"]]})
     df_legs["Tour"] = 0
 
     fig = px.bar(df_legs, x="Time", y="Tour", color="Cost", orientation="h",
@@ -95,7 +95,7 @@ def plot_time(legs, locomotion, samples):
 
     return fig
 
-def plot_feasiblity(legs, locomotion, samples):
+def plot_feasiblity(legs, locomotion_vals, samples):
     """Plot solutions."""
 
     if not samples:
@@ -104,10 +104,10 @@ def plot_feasiblity(legs, locomotion, samples):
     #Done only once per job submission but can move to NumPy if slow
     data = {"Cost": [], "Time": [], "Energy": [], "Feasibility": []}
     for sample, energy, feasability in samples["sampleset"].data(fields=["sample", "energy", "is_feasible"]):
-        locomotion_per_leg = sorted({int(key.split("_")[1]): key.split("_")[0] for
+        locomotion_vals_per_leg = sorted({int(key.split("_")[1]): key.split("_")[0] for
             key,val in sample.items() if val==1.0}.items())
-        data["Cost"].append(sum(locomotion[f[1]]["Speed"] for f in locomotion_per_leg))
-        data["Time"].append(sum(l["length"]/locomotion[f[1]]["Speed"] for l,f in zip(legs, locomotion_per_leg)))
+        data["Cost"].append(sum(locomotion_vals[f[1]]["speed"] for f in locomotion_vals_per_leg))
+        data["Time"].append(sum(l["length"]/locomotion_vals[f[1]]["speed"] for l,f in zip(legs, locomotion_vals_per_leg)))
         data["Energy"].append(energy)
         data["Feasibility"].append(feasability)
 
@@ -118,7 +118,7 @@ def plot_feasiblity(legs, locomotion, samples):
 
     fig = px.scatter_3d(occurrences, x="Time", y="Cost", z="Energy", color="Feasibility",
         size="Occurrences", size_max=50, symbol="Feasibility",
-        color_discrete_sequence = ['red', 'blue'], symbol_sequence= ['x', 'circle'],
+        color_discrete_sequence = ['red', 'blue'], symbol_sequence= ['square', 'circle'],
         hover_data=["Cost", "Time", "Occurrences", "Energy"])
 
     fig.update_scenes(xaxis_title_text="Time",

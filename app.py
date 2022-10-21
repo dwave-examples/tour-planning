@@ -15,10 +15,6 @@
 import dash
 import dash_bootstrap_components as dbc
 from dash import dcc, html, Input, Output, State
-import json
-import numpy as np
-import pandas as pd
-import random
 import time, datetime
 
 from formatting import *
@@ -490,8 +486,15 @@ def check_user_inputs(num_legs, max_leg_length, min_leg_length, max_leg_slope,
 @app.callback(
     [Output(f"{graph.lower()}_graph", "figure") for graph in graphs],
     Input("solutions_print_code", "value"),
-    Input("problem_print_code", "value"))
-def display_graphics(solutions_print_code, problem_print_code):
+    Input("problem_print_code", "value"),
+    [State(id, "value") for id in names_locomotion_inputs],
+    [State(f"{id}_use", "value") for id in names_all_modes],)
+def display_graphics(solutions_print_code, problem_print_code,
+    walk_speed, walk_cost, walk_exercise,
+    cycle_speed, cycle_cost, cycle_exercise,
+    bus_speed, bus_cost, bus_exercise,
+    drive_speed, drive_cost, drive_exercise,
+    walk_use, cycle_use, bus_use, drive_use):
     """Generate graphics for legs and samples."""
 
     trigger = dash.callback_context.triggered
@@ -505,12 +508,19 @@ def display_graphics(solutions_print_code, problem_print_code):
         if not isinstance(samples, dict):
             samples = None
 
-    fig_space = plot_space(legs, samples)
-    fig_time = plot_time(legs, locomotion, samples)
-    fig_feasiblity = plot_feasiblity(legs, locomotion, samples)
+    locomotion_vals = \
+        {"walk":  {"speed": walk_speed, "cost": walk_cost, "exercise": walk_exercise,
+            "use": walk_use},
+        "cycle": {"speed": cycle_speed, "cost": cycle_cost, "exercise": cycle_exercise,
+            "use": cycle_use},
+        "bus": {"speed": bus_speed, "cost": bus_cost, "exercise": bus_exercise,
+            "use": bus_use},
+        "drive": {"speed": drive_speed, "cost": drive_cost, "exercise": drive_exercise,
+            "use": drive_use}}
 
-    # if not fig_time:
-    #     fig_time = fig_feasiblity = px.bar()
+    fig_space = plot_space(legs, samples)
+    fig_time = plot_time(legs, locomotion_vals, samples)
+    fig_feasiblity = plot_feasiblity(legs, locomotion_vals, samples)
 
     return fig_space, fig_time, fig_feasiblity
 

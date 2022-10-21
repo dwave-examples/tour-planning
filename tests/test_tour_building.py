@@ -22,7 +22,7 @@ import random
 import dimod
 
 from tour_planning import names_leg_inputs, names_budget_inputs, names_weight_inputs
-from tour_planning import leg_ranges, budget_ranges, weight_ranges, all_modes
+from tour_planning import leg_ranges, budget_ranges, weight_ranges, names_all_modes
 from tour_planning import average_tour_budget, build_cqm, set_legs, tour_budget_boundaries
 
 legs1 = [{"length": 10, "uphill": 5, "toll": False},

@@ -27,15 +27,13 @@ from helpers_jobs import *
 from helpers_layout import *
 from tour_planning import build_cqm, set_legs, locomotion, tour_budget_boundaries
 from tour_planning import (names_locomotion_inputs, names_leg_inputs, names_slope_inputs,
-    names_weight_inputs, names_budget_inputs)
+    names_weight_inputs, names_budget_inputs, names_all_modes)
 from tour_planning import MAX_SOLVER_RUNTIME
 from tool_tips import tool_tips
 
 import dimod
 from dwave.cloud.hybrid import Client
 from dwave.cloud.api import Problems, exceptions
-
-all_modes = locomotion.keys()  # global, but not user modified
 
 app = dash.Dash(__name__, external_stylesheets=[dbc.themes.BOOTSTRAP])
 
@@ -376,7 +374,7 @@ def update_legs(changed_input, num_legs, max_leg_length, min_leg_length,
     [Input("cqm_print", "value")],
     [State("problem_print_code", "value")],
     [State(id, "value") for id in names_locomotion_inputs],
-    [State(f"{id}_use", "value") for id in all_modes])
+    [State(f"{id}_use", "value") for id in names_all_modes])
 def display_locomotion(cqm_print, problem_print_code,
     walk_speed, walk_cost, walk_exercise,
     cycle_speed, cycle_cost, cycle_exercise,
@@ -414,7 +412,7 @@ def display_locomotion(cqm_print, problem_print_code,
     [State(f"{id}_hardsoft", "value") for id in names_weight_inputs],
     [State(f"{id}_penalty", "value") for id in names_weight_inputs],
     [State(id, "value") for id in names_locomotion_inputs],
-    [State(f"{id}_use", "value") for id in all_modes])
+    [State(f"{id}_use", "value") for id in names_all_modes])
 def generate_cqm(changed_input, problem_print_code, max_leg_slope,
     max_cost, max_time, weight_cost, weight_time, weight_slope,
     weight_cost_hardsoft, weight_time_hardsoft, weight_slope_hardsoft,
@@ -464,14 +462,14 @@ def generate_cqm(changed_input, problem_print_code, max_leg_slope,
     [Output("changed_input", "children")],
     [Output("max_leg_length", "value")],
     [Output("min_leg_length", "value")],
-    [Output(f"{id}_use", "value") for id in all_modes],
+    [Output(f"{id}_use", "value") for id in names_all_modes],
     [Output("use_modes_modal", "is_open")],
     [Input(id, "value") for id in
         names_leg_inputs + names_slope_inputs + names_budget_inputs + names_weight_inputs],
     [Input(f"{id}_penalty", "value") for id in names_weight_inputs],
     [Input(f"{id}_hardsoft", "value") for id in names_weight_inputs],
     [Input(id, "value") for id in names_locomotion_inputs],
-    [Input(f"{id}_use", "value") for id in all_modes],)
+    [Input(f"{id}_use", "value") for id in names_all_modes],)
 def check_user_inputs(num_legs, max_leg_length, min_leg_length, max_leg_slope,
     max_cost, max_time, weight_cost, weight_time, weight_slope,
     weight_cost_penalty,  weight_time_penalty, weight_slope_penalty,
@@ -493,7 +491,7 @@ def check_user_inputs(num_legs, max_leg_length, min_leg_length, max_leg_slope,
 
     use_modes_modal = dash.no_update
 
-    if any(trigger_id == f"{key}_use" for key in all_modes):
+    if any(trigger_id == f"{key}_use" for key in names_all_modes):
         if not any([walk_use, cycle_use, bus_use, drive_use]):
             walk_use = cycle_use = bus_use = drive_use = use_modes_modal = [True]
 
@@ -607,7 +605,7 @@ def set_progress_bar(job_submit_state):
     [State(f"{id}_hardsoft", "value") for id in names_weight_inputs],
     [State(f"{id}_penalty", "value") for id in names_weight_inputs],
     [State(id, "value") for id in names_locomotion_inputs],
-    [State(f"{id}_use", "value") for id in all_modes],
+    [State(f"{id}_use", "value") for id in names_all_modes],
     [State("max_runtime", "value")],)
 def submit_job(job_submit_time, problem_print_code, max_leg_slope,
     max_cost, max_time, weight_cost, weight_time, weight_slope,

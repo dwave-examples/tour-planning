@@ -24,7 +24,7 @@ from dash import no_update
 
 from app import (names_locomotion_inputs, names_leg_inputs, names_slope_inputs,
     names_budget_inputs, names_weight_inputs)
-from app import all_modes
+from app import names_all_modes
 from app import check_user_inputs
 
 from formatting import tour_from_json
@@ -38,7 +38,7 @@ for key in names_weight_inputs:
     vars()[f"{key}_penalty"] = ContextVar(f"{key}_penalty")
 for key in names_weight_inputs:
     vars()[f"{key}_hardsoft"] = ContextVar(f"{key}_hardsoft")
-for key in all_modes:
+for key in names_all_modes:
     vars()[f"{key}_use"] = ContextVar(f"{key}_use")
 
 input_vals = [{"prop_id": f"{key}.value"} for key in
@@ -49,7 +49,7 @@ input_vals.extend([{"prop_id": f"{key}_penalty.value"} for key in
 input_vals.extend([{"prop_id": f"{key}_hardsoft.value"} for key in
     names_weight_inputs])
 input_vals.extend([{"prop_id": f"{key}_use.value"} for key in
-    all_modes])
+    names_all_modes])
 
 parametrize_names = "trigger, " + ", ".join([f'{key}_in ' for key in
         names_leg_inputs +  names_slope_inputs + \
@@ -57,9 +57,9 @@ parametrize_names = "trigger, " + ", ".join([f'{key}_in ' for key in
     ", " + ", ".join([f'{key}_penalty_in ' for key in names_weight_inputs]) + \
     ", " + ", ".join([f'{key}_hardsoft_in ' for key in names_weight_inputs]) + \
     ", " + ", ".join([f'{key}_in ' for key in names_locomotion_inputs]) + \
-    ", " + ", ".join([f'{key}_use_in ' for key in all_modes]) + \
+    ", " + ", ".join([f'{key}_use_in ' for key in names_all_modes]) + \
     ", changed_input_out, max_leg_length_out, min_leg_length_out" + \
-    ", " + ", ".join([f'{key}_use_out ' for key in all_modes])
+    ", " + ", ".join([f'{key}_use_out ' for key in names_all_modes])
 
 def leg_length(trigger, max_leg_length, min_leg_length):
 
@@ -133,7 +133,7 @@ def test_user_inputs_expected_outputs(trigger, num_legs_in, max_leg_length_in,
         globals()[f"{key}_penalty"].set(vars()[f"{key}_penalty_in"])
     for key in names_weight_inputs:
         globals()[f"{key}_hardsoft"].set(vars()[f"{key}_hardsoft_in"])
-    for key in all_modes:
+    for key in names_all_modes:
         globals()[f"{key}_use"].set(vars()[f"{key}_use_in"])
 
     ctx = copy_context()

@@ -23,19 +23,19 @@ import plotly
 
 import dimod
 
-from app import all_modes, names_locomotion_inputs
+from app import names_all_modes, names_locomotion_inputs
 from app import display_locomotion
 
 cqm_print = ContextVar("cqm_print")
 problem_print_code = ContextVar("problem_print_code")
 for key in names_locomotion_inputs:
     vars()[key] = ContextVar(f"{key}")
-for key in all_modes:
+for key in names_all_modes:
     vars()[f"{key}_use"] = ContextVar(f"{key}_use")
 
 state_vals = [{"prop_id": "problem_print_code.value"}]
 state_vals.extend([{"prop_id": f"{key}.value"} for key in names_locomotion_inputs])
-state_vals.extend([{"prop_id": f"{key}_use.value"} for key in all_modes])
+state_vals.extend([{"prop_id": f"{key}_use.value"} for key in names_all_modes])
 
 problem_json = '[{"length": 5.3, "uphill": 7.0, "toll": false},'+\
 '{"length": 5.6, "uphill": 2.9, "toll": false}]'
@@ -56,7 +56,7 @@ locomotion_use_vals = [val for vals in locomotion.values() for
 
 parametrize_names = "cqm_print_val, problem_print_code_val, " + \
     ", " + ", ".join([f'{key}_val ' for key in names_locomotion_inputs]) + \
-    ", " + ", ".join([f'{key}_use_val ' for key in all_modes]) + \
+    ", " + ", ".join([f'{key}_use_val ' for key in names_all_modes]) + \
     ", boundaries"
 
 parametrize_vals = [
@@ -89,7 +89,7 @@ def test_display_locomotion(cqm_print_val, problem_print_code_val,
     problem_print_code.set(problem_print_code_val)
     for key in names_locomotion_inputs:
         globals()[key].set(vars()[key + "_val"])
-    for key in all_modes:
+    for key in names_all_modes:
         globals()[f"{key}_use"].set(vars()[f"{key}_use_val"])
 
     ctx = copy_context()

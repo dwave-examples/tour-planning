@@ -24,7 +24,7 @@ from dash import no_update
 
 import dimod
 
-from app import all_modes
+from app import names_all_modes
 from app import names_budget_inputs, names_weight_inputs, names_locomotion_inputs
 from app import submit_job
 
@@ -39,7 +39,7 @@ for key in names_weight_inputs:
     vars()[f"{key}_hardsoft"] = ContextVar(f"{key}_hardsoft")
 for key in names_weight_inputs:
     vars()[f"{key}_penalty"] = ContextVar(f"{key}_penalty")
-for key in all_modes:
+for key in names_all_modes:
     vars()[f"{key}_use"] = ContextVar(f"{key}_use")
 max_runtime = ContextVar("max_runtime")
 
@@ -49,7 +49,7 @@ state_vals.extend([{"prop_id": f"{key}.value"} for key in
     names_budget_inputs + names_weight_inputs + names_locomotion_inputs])
 state_vals.extend([{"prop_id": f"{key}_hardsoft.value"} for key in names_weight_inputs])
 state_vals.extend([{"prop_id": f"{key}_penalty.value"} for key in names_weight_inputs])
-state_vals.extend([{"prop_id": f"{key}_use.value"} for key in all_modes])
+state_vals.extend([{"prop_id": f"{key}_use.value"} for key in names_all_modes])
 
 class fake_computation():
 
@@ -103,7 +103,7 @@ parametrize_names = "job_submit_time_val, problem_print_code_val, max_leg_slope_
     ", " + ", ".join([f'{key}_hardsoft_val ' for key in names_weight_inputs]) + \
     ", " + ", ".join([f'{key}_penalty_val ' for key in names_weight_inputs]) + \
     ", " + ", ".join([f'{key}_val ' for key in names_locomotion_inputs]) + \
-    ", " + ", ".join([f'{key}_use_val ' for key in all_modes]) + \
+    ", " + ", ".join([f'{key}_use_val ' for key in names_all_modes]) + \
     ", max_runtime_val, job_id"
 
 parametrize_vals = [
@@ -155,7 +155,7 @@ def test_submit_job(job_submit_time_val, problem_print_code_val, max_leg_slope_v
         globals()[f"{key}_hardsoft"].set(vars()[f"{key}_hardsoft_val"])
     for key in names_weight_inputs:
         globals()[f"{key}_penalty"].set(vars()[f"{key}_penalty_val"])
-    for key in all_modes:
+    for key in names_all_modes:
         globals()[f"{key}_use"].set(vars()[f"{key}_use_val"])
     max_runtime.set(vars()["max_runtime_val"])
 
@@ -216,7 +216,7 @@ def test_submit_job_weights(job_submit_time_val, problem_print_code_val, max_leg
         globals()[f"{key}_hardsoft"].set(vars()[f"{key}_hardsoft_val"])
     for key in names_weight_inputs:
         globals()[f"{key}_penalty"].set(vars()[f"{key}_penalty_val"])
-    for key in all_modes:
+    for key in names_all_modes:
         globals()[f"{key}_use"].set(vars()[f"{key}_use_val"])
     max_runtime.set(vars()["max_runtime_val"])
 

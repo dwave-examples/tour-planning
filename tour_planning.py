@@ -14,7 +14,6 @@
 
 import random
 import numpy as np
-import pandas as pd
 
 import dimod
 
@@ -23,8 +22,23 @@ locomotion = {
     "cycle": {"Speed": 3, "Cost": 2, "Exercise": 2, "Use": True},
      "bus": {"Speed": 4, "Cost": 3, "Exercise": 0, "Use": True},
      "drive": {"Speed": 7, "Cost": 5, "Exercise": 0, "Use": True}}
-all_modes = locomotion.keys()  # global
-num_modes = len(all_modes)
+
+locomotion_ranges = {f"{mode}_{measure}": [0, 100] if measure != "speed" else
+    [1, 100] for mode in locomotion.keys()
+    for measure in [key.lower() for key in locomotion[mode].keys() if key != "Use"]}
+
+leg_ranges = {"num_legs": [1, 100],
+    "max_leg_length": [1, 20],
+    "min_leg_length": [1, 20]}
+
+slope_ranges = {"max_leg_slope": [0, 10]}
+
+weight_ranges = {"weight_cost": [0, 100000],
+    "weight_time": [0, 100000],
+    "weight_slope": [0, 100000],}
+
+budget_ranges =  {"max_cost": [0, 100000],
+    "max_time": [0, 100000]}
 
 def set_legs(num_legs, min_leg_length, max_leg_length, tollbooths=True):
     """Create legs of random length within the configured ranges."""
@@ -53,6 +67,27 @@ def average_tour_budget(legs):
 
     return max_cost, max_time
 
+locomotion_init_values = {f"{mode}_{measure}": val for mode in locomotion.keys()
+    for measure, val in {key.lower(): val for key, val in
+    locomotion[mode].items() if key != "Use"}.items()}
+
+leg_init_values = {"num_legs": 10, "max_leg_length": 10, "min_leg_length": 2}
+slope_init_values ={"max_leg_slope": 6}
+weight_init_values = {"weight_cost": 100, "weight_time": 30, "weight_slope": 150}
+
+budget_init_values = {}
+budget_init_values["max_cost"], budget_init_values["max_time"] = \
+    average_tour_budget(set_legs(**leg_init_values))
+
+names_all_modes = locomotion.keys()
+names_locomotion_inputs = list(locomotion_ranges.keys())
+names_leg_inputs = list(leg_ranges.keys())
+names_slope_inputs = list(slope_ranges.keys())
+names_weight_inputs = list(weight_ranges.keys())
+names_budget_inputs = list(budget_ranges.keys())
+
+MAX_SOLVER_RUNTIME = 600
+
 def tour_budget_boundaries(legs, locomotion_vals):
     """Return boundary values of tour cost & time for the given legs."""
 
@@ -70,44 +105,6 @@ def tour_budget_boundaries(legs, locomotion_vals):
 
     return {"cost_min": cost_min, "cost_max": cost_max, "cost_avg": cost_avg,
         "time_min": time_min, "time_max": time_max, "time_avg": time_avg}
-
-locomotion_ranges = {f"{mode}_{measure}": [0, 100] if measure != "speed" else
-    [1, 100] for mode in locomotion.keys()
-    for measure in [key.lower() for key in locomotion[mode].keys() if key != "Use"]}
-
-leg_ranges = {"num_legs": [1, 100],
-    "max_leg_length": [1, 20],
-    "min_leg_length": [1, 20]}
-
-slope_ranges = {"max_leg_slope": [0, 10]}
-
-weight_ranges = {"weight_cost": [0, 100000],
-    "weight_time": [0, 100000],
-    "weight_slope": [0, 100000],}
-
-budget_ranges =  {"max_cost": [0, 100000],
-    "max_time": [0, 100000]}
-
-locomotion_init_values = {f"{mode}_{measure}": val for mode in locomotion.keys()
-    for measure, val in {key.lower(): val for key, val in
-    locomotion[mode].items() if key != "Use"}.items()}
-
-leg_init_values = {"num_legs": 10, "max_leg_length": 10, "min_leg_length": 2}
-
-slope_init_values ={"max_leg_slope": 6}
-
-weight_init_values = {"weight_cost": 100, "weight_time": 30, "weight_slope": 150}
-
-budget_init_values = {}
-budget_init_values["max_cost"], budget_init_values["max_time"] = \
-    average_tour_budget(set_legs(**leg_init_values))
-
-names_locomotion_inputs = list(locomotion_ranges.keys())
-names_leg_inputs = list(leg_ranges.keys())
-names_slope_inputs = list(slope_ranges.keys())
-names_weight_inputs = list(weight_ranges.keys())
-names_budget_inputs = list(budget_ranges.keys())
-MAX_SOLVER_RUNTIME = 600
 
 def _calculate_total(t, measure, legs, locomotion_vals):
     """Helper function for building the CQM."""

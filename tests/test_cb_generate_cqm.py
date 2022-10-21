@@ -26,7 +26,7 @@ import dimod
 
 from formatting import tour_from_json
 
-from app import all_modes
+from app import names_all_modes
 from app import names_budget_inputs, names_weight_inputs, names_locomotion_inputs
 from app import generate_cqm
 
@@ -41,7 +41,7 @@ for key in names_weight_inputs:
     vars()[f"{key}_hardsoft"] = ContextVar(f"{key}_hardsoft")
 for key in names_weight_inputs:
     vars()[f"{key}_penalty"] = ContextVar(f"{key}_penalty")
-for key in all_modes:
+for key in names_all_modes:
     vars()[f"{key}_use"] = ContextVar(f"{key}_use")
 
 state_vals = [{"prop_id": "max_leg_slope"}]
@@ -49,7 +49,7 @@ state_vals.extend([{"prop_id": f"{key}.value"} for key in
     names_budget_inputs + names_weight_inputs + names_locomotion_inputs])
 state_vals.extend([{"prop_id": f"{key}_hardsoft.value"} for key in names_weight_inputs])
 state_vals.extend([{"prop_id": f"{key}_penalty.value"} for key in names_weight_inputs])
-state_vals.extend([{"prop_id": f"{key}_use.value"} for key in all_modes])
+state_vals.extend([{"prop_id": f"{key}_use.value"} for key in names_all_modes])
 
 cqm_placeholder = " "
 
@@ -72,7 +72,7 @@ parametrize_names = "trigger, changed_input_val, problem_print_code_val, max_leg
     ", " + ", ".join([f'{key}_hardsoft_val ' for key in names_weight_inputs]) + \
     ", " + ", ".join([f'{key}_penalty_val ' for key in names_weight_inputs]) + \
     ", " + ", ".join([f'{key}_val ' for key in names_locomotion_inputs]) + \
-    ", " + ", ".join([f'{key}_use_val ' for key in all_modes]) + \
+    ", " + ", ".join([f'{key}_use_val ' for key in names_all_modes]) + \
     ", cqm_print_val"
 
 parametrize_constants = ["num_legs", problem_print_placeholder, 8, 200, 20, 33, 44, 55, "soft", "soft", "hard", "linear",
@@ -122,7 +122,7 @@ def test_cqm_generation(trigger, changed_input_val, problem_print_code_val, max_
         globals()[f"{key}_hardsoft"].set(vars()[f"{key}_hardsoft_val"])
     for key in names_weight_inputs:
         globals()[f"{key}_penalty"].set(vars()[f"{key}_penalty_val"])
-    for key in all_modes:
+    for key in names_all_modes:
         globals()[f"{key}_use"].set(vars()[f"{key}_use_val"])
 
     ctx = copy_context()
@@ -188,7 +188,7 @@ def test_cqm_weights(changed_input_val, problem_print_code_val, max_leg_slope_va
         globals()[f"{key}_hardsoft"].set(vars()[f"{key}_hardsoft_val"])
     for key in names_weight_inputs:
         globals()[f"{key}_penalty"].set(vars()[f"{key}_penalty_val"])
-    for key in all_modes:
+    for key in names_all_modes:
         globals()[f"{key}_use"].set(vars()[f"{key}_use_val"])
 
     ctx = copy_context()

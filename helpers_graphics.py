@@ -66,7 +66,7 @@ def plot_time(legs, locomotion, samples):
     """Plot legs versus time and cost given solutions."""
 
     if not samples:
-        return None
+        return px.bar()
 
     df_legs = pd.DataFrame({"Time": [l["length"]/locomotion[f[1]]["Speed"] for
         l,f in zip(legs, samples["first"])],
@@ -105,7 +105,7 @@ def plot_feasiblity(legs, locomotion, samples):
     """Plot solutions."""
 
     if not samples:
-        return None
+        return px.bar()
 
     #Done only once per job submission but can move to NumPy if slow
     data = {"Cost": [], "Time": [], "Energy": [], "Feasibility": []}

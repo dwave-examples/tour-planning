@@ -510,8 +510,8 @@ def display_graphics(solutions_print_code, problem_print_code):
     fig_time = plot_time(legs, locomotion, samples)
     fig_feasiblity = plot_feasiblity(legs, locomotion, samples)
 
-    if not fig_time:
-        fig_time = fig_feasiblity = dash.no_update
+    # if not fig_time:
+    #     fig_time = fig_feasiblity = px.bar()
 
     return fig_space, fig_time, fig_feasiblity
 

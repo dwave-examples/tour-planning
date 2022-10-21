@@ -18,6 +18,46 @@ from formatting import *
 
 __all__ = ["plot_space", "plot_time", "plot_feasiblity"]
 
+
+def _initial_fig(fig, legs, df, x_axis, image):
+    """Plot the tour, background, and tollboths."""
+    fig.add_layout_image(
+            dict(source=image, xref="x", yref="y", x=0, y=0.5,
+            sizex=df[x_axis].sum(), sizey=1, sizing="stretch",
+            opacity=0.25, layer="below"))
+
+    x_pos = 0
+    x_width = df[x_axis].sum()
+    for indx, leg in enumerate(legs):
+        if leg["toll"]:
+            fig.add_layout_image(dict(source=f"assets/toll.png", xref="x",
+                yref="y", x=x_pos, y=0.2, sizex=0.025*x_width, sizey=0.025*x_width,
+                    opacity=1, layer="above"))
+        x_pos += df[x_axis][indx]
+
+    title = "Distance" if x_axis == "Length" else "Time"
+
+    fig.update_xaxes(showticklabels=True, title="Distance")
+    fig.update_yaxes(showticklabels=False, title=None, range=(-0.5, 0.5))
+    fig.update_traces(width=.1)
+    fig.update_layout(font_color="rgb(3, 184, 255)", margin=dict(l=20, r=20, t=20, b=20),
+        paper_bgcolor="rgba(0,0,0,0)")
+
+    return x_width
+
+def _plot_results(fig, samples, df, x_axis, x_width):
+    """Add the best found solution to the graphics."""
+    fig.update_traces(texttemplate = [locomotion for leg,locomotion in samples["first"]],
+        textposition = "inside")
+
+    x_pos = 0
+    for leg, icon in samples["first"]:
+        fig.add_layout_image(dict(source=f"assets/{icon}.png", xref="x",
+        yref="y", x=x_pos, y=-0.1, sizex=0.025*x_width, sizey=0.025*x_width,
+            opacity=1, layer="above"))
+        x_pos += df[x_axis][leg]
+
+
 def plot_space(legs, samples=None):
     """Plot legs versus distance and slope, optionally with solutions."""
 
@@ -28,37 +68,10 @@ def plot_space(legs, samples=None):
     fig = px.bar(df_legs, x="Length", y="Tour", color="Slope", orientation="h",
                  color_continuous_scale=px.colors.diverging.Geyser)
 
-    fig.add_layout_image(
-            dict(source="assets/background_space.jpg", xref="x", yref="y", x=0, y=0.5,
-            sizex=df_legs["Length"].sum(), sizey=1, sizing="stretch",
-            opacity=0.25, layer="below"))
-
-    x_pos = 0
-    x_width = df_legs["Length"].sum()
-    for indx, leg in enumerate(legs):
-        if leg["toll"]:
-            fig.add_layout_image(dict(source=f"assets/toll.png", xref="x",
-                yref="y", x=x_pos, y=0.2, sizex=0.025*x_width, sizey=0.025*x_width,
-                    opacity=1, layer="above"))
-        x_pos += df_legs["Length"][indx]
-
-    fig.update_xaxes(showticklabels=True, title="Distance")
-    fig.update_yaxes(showticklabels=False, title=None, range=(-0.5, 0.5))
-    fig.update_traces(width=.1)
-    fig.update_layout(font_color="rgb(3, 184, 255)", margin=dict(l=20, r=20, t=20, b=20),
-        paper_bgcolor="rgba(0,0,0,0)")
+    x_width = _initial_fig(fig, legs, df_legs, "Length", "assets/background_space.jpg")
 
     if samples:
-
-        fig.update_traces(texttemplate = [locomotion for leg,locomotion in samples["first"]],
-            textposition = "inside")
-
-        x_pos = 0
-        for leg, icon in samples["first"]:
-            fig.add_layout_image(dict(source=f"assets/{icon}.png", xref="x",
-            yref="y", x=x_pos, y=-0.1, sizex=0.025*x_width, sizey=0.025*x_width,
-                opacity=1, layer="above"))
-            x_pos += df_legs["Length"][leg]
+        _plot_results(fig, samples, df_legs, "Length", x_width)
 
     return fig
 
@@ -76,28 +89,9 @@ def plot_time(legs, locomotion, samples):
     fig = px.bar(df_legs, x="Time", y="Tour", color="Cost", orientation="h",
         color_continuous_scale=px.colors.diverging.Geyser)
 
-    fig.add_layout_image(
-        dict(source="assets/background_time.jpg", xref="x", yref="y", x=0, y=0.5,
-        sizex=df_legs["Time"].sum(), sizey=1, sizing="stretch",
-        opacity=0.25, layer="below"))
+    x_width = _initial_fig(fig, legs, df_legs, "Time", "assets/background_space.jpg")
 
-    fig.update_xaxes(showticklabels=True, title="Time")
-    fig.update_yaxes(showticklabels=False, title=None, range=(-0.5, 0.5))
-    fig.update_traces(width=.1)
-    fig.update_layout(font_color="rgb(3, 184, 255)",
-        margin=dict(l=20, r=20, t=20, b=20),
-        paper_bgcolor="rgba(0,0,0,0)")
-
-    fig.update_traces(texttemplate = [locomotion for leg,locomotion in samples["first"]],
-        textposition = "inside")
-
-    x_width = df_legs["Time"].sum()
-    x_pos = 0
-    for leg, icon in samples["first"]:
-        fig.add_layout_image(dict(source=f"assets/{icon}.png", xref="x",
-            yref="y", x=x_pos, y=-0.1, sizex=0.025*x_width, sizey=0.025*x_width,
-                opacity=1, layer="above"))
-        x_pos += df_legs["Time"][leg]
+    _plot_results(fig, samples, df_legs, "Time", x_width)
 
     return fig
 

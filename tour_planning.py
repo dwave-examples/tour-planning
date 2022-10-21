@@ -44,7 +44,7 @@ def set_legs(num_legs, min_leg_length, max_leg_length, tollbooths=True):
     """Create legs of random length within the configured ranges."""
 
     toll_probablity = 0.2
-    if not tollbooths:
+    if tollbooths == "off":
         toll_probablity = 0
 
     return [{"length": round((max_leg_length - min_leg_length)*random.random() \

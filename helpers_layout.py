@@ -14,7 +14,6 @@
 
 from dash.dcc import Input, Slider, RadioItems
 from dash import html
-import numpy as np
 
 from tour_planning import (locomotion_ranges, leg_ranges, slope_ranges,
     weight_ranges, budget_ranges)
@@ -51,12 +50,16 @@ def _dcc_slider(name, step=1):
         step=step,
         value=init_values[f"{name}"],)
 
-labels = {"hardsoft": ["Soft", "Hard"], "penalty": ["Linear", "Quadratic"]}
+labels = {"hardsoft": ["Soft", "Hard"],
+          "penalty": ["Linear", "Quadratic"],
+          "active": ["On", "Off"]}
 
 def _dcc_radio(name, suffix):
     """Construct ``dash.RadioItem`` elements for layout."""
 
-    margin = {"hardsoft": {"margin-right": "20px"}, "penalty": {"margin-right": "30px"}}
+    margin = {"hardsoft": {"margin-right": "20px"},
+              "penalty": {"margin-right": "30px"},
+              "active": {"margin-right": "20px"}}
 
     return RadioItems([
         {"label": html.Div([labels[suffix][0]], style={'color': 'white', 'font-size': 12}),

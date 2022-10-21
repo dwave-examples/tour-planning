@@ -187,13 +187,7 @@ tour_config = dbc.Card(
                 for tour_title in tour_titles[2:]]),
      dbc.Row([
         dbc.Col(leg_fields[5], style={"margin-right": "20px"}),
-        dbc.Col(
-            dcc.RadioItems([
-                {"label": html.Div(["On"], style={'color': 'white', 'font-size': 12}),
-                "value": True,},
-                {"label": html.Div(["Off"], style={'color': 'white', 'font-size': 12}),
-                "value": False}], value=True,
-                id="tollbooths_active", inputStyle={"margin-right": "20px"}))],),
+        dbc.Col([_dcc_radio("tollbooths", "active")])],),
      html.P(id="changed_input", children="", style = dict(display="none")),],
     body=True, color="secondary")
 
@@ -225,12 +219,7 @@ layout = [
                 dbc.Col([
                     html.P("Hover over fields for descriptions:",
                         style={"color": "white"}),
-                    dcc.RadioItems([
-                        {"label": html.Div(["On"], style={'color': 'white', 'font-size': 12}),
-                        "value": "On",},
-                        {"label": html.Div(["Off"], style={'color': 'white', 'font-size': 12}),
-                        "value": "Off"}], value="On",
-                        id="tooltips_active", inputStyle={"margin-right": "20px"})])]),],
+                    _dcc_radio("tooltips", "active")])]),],
             width=1)],
         justify="left"),
     dbc.Tabs([
@@ -328,7 +317,7 @@ def activate_tooltips(tooltips_active):
     trigger_id = trigger[0]["prop_id"].split(".")[0]
 
     if trigger_id == "tooltips_active":
-        if tooltips_active == "Off":
+        if tooltips_active == "off":
             return \
 dict(display="none"), dict(display="none"), dict(display="none"), dict(display="none"), \
 dict(display="none"), dict(display="none"), dict(display="none"), dict(display="none"), \

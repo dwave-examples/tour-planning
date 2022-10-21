@@ -75,7 +75,7 @@ locomotion_ranges = {f"{mode}_{measure}": [0, 100] if measure != "speed" else
     [1, 100] for mode in locomotion.keys()
     for measure in [key.lower() for key in locomotion[mode].keys() if key != "Use"]}
 
-leg_ranges = {"num_legs": [5, 100],
+leg_ranges = {"num_legs": [1, 100],
     "max_leg_length": [1, 20],
     "min_leg_length": [1, 20]}
 

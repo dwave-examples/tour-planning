@@ -1,0 +1,5 @@
+icons: https://uxwing.com/
+
+backgrounds:
+    time: https://www.dreamstime.com/royalty-free-stock-images-chessboard-game-dali-like-clock-melting-distorted-progress-image33321379
+    space: https://pixabay.com/photos/europe-asia-georgia-caucasus-1785465/

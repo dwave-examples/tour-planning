@@ -50,7 +50,7 @@ samples = {"sampleset": sampleset, "feasible": sampleset_feasible, "first": firs
 parametrize_names = "trigger, solutions_print_code_val, problem_print_code_val, fig_space, " + \
     "fig_time, fig_feasiblity"
 parametrize_vals = [
-    ("problem_print_code", "anything", problem_json, "bar", no_update, no_update),
+    ("problem_print_code", "anything", problem_json, "bar", "bar", "bar"),
     ("solutions_print_code", samples, problem_json, "bar", "bar", "scatter3d"),]
 
 @pytest.mark.parametrize(parametrize_names, parametrize_vals)
@@ -73,12 +73,8 @@ def test_display_graphics(mock, trigger, solutions_print_code_val, problem_print
     output = ctx.run(run_callback)
 
     assert output[0].to_dict()["data"][0]["type"] == fig_space
+    assert output[1].to_dict()["data"][0]["type"] == fig_time
+    assert output[2].to_dict()["data"][0]["type"] == fig_feasiblity
 
     if trigger == "problem_print_code":
-
-        assert output[1:] == (fig_time, fig_feasiblity)
-
-    else:
-
-        assert output[1].to_dict()["data"][0]["type"] == fig_time
-        assert output[2].to_dict()["data"][0]["type"] == fig_feasiblity
+        pass # TODO: add more test for this one

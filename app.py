@@ -121,7 +121,6 @@ tabs["CQM"] = dbc.Card([
 locomotion_columns = ["Mode", "Speed", "Cost", "Exercise", "Use"]
 tabs["Locomotion"] = dbc.Card([
     dbc.Row([
-
         dbc.Col([
             dbc.Row([
                 dbc.Col([html.P(f"{col}")], width=2) for col in locomotion_columns]),
@@ -130,21 +129,16 @@ tabs["Locomotion"] = dbc.Card([
                 *[dbc.Col(
                     [_dcc_input(f"{name}")], width=2) for name in names_locomotion_inputs if row in name],
                 dbc.Col(
-                    [dcc.RadioItems([
-                        {"label": html.Div(["Use"], style={'color': 'white', 'font-size': 12}),
-                            "value": True,},
-                        {"label": html.Div(["Ignore"], style={'color': 'white', 'font-size': 12}),
-                            "value": False}],
-                        value=True, id=f"{row}_use", inputStyle={"margin-right": "20px"})],
+                    [dcc.Checklist([
+                        {"label": html.Div([""],),
+                         "value": True,},], value=[True], id=f"{row}_use"),],
                         width=2),])
                 for row in locomotion.keys()]],
-        width=5),
+            width=6),
         dbc.Col([
             dcc.Textarea(id=f"locomotion_print", value="",
-                style={"width": "100%"}, rows=5)],
-                width={"size": 10, "offset": 0}),
-]),
-],
+                style={"width": "100%"}, rows=20)],
+            width=5, align="start"),]),],
         color="secondary")
 
 # CQM configuration sections
@@ -307,6 +301,24 @@ def alert_no_solver(btn_solve_cqm):
             return True
 
     return False
+
+@app.callback(
+    [Output(id, "disabled") for id in names_weight_inputs],
+    [Input(f"{id}_hardsoft", "value") for id in names_weight_inputs],)
+def disable_weights(weight_cost_hardsoft, weight_time_hardsoft, weight_slope_hardsoft):
+    """Disable ."""
+
+    trigger_id = dash.callback_context.triggered[0]["prop_id"].split(".")[0]
+
+    if any(trigger_id == f"{weight}_hardsoft" for weight in names_weight_inputs):
+
+        disable = {"cost": False, "time": False, "slope": False}
+        for weight in names_weight_inputs:
+            if vars()[f"{weight}_hardsoft"] == "hard":
+                disable[weight.split("_")[1]] = True
+        return disable["cost"], disable["time"], disable["slope"]
+
+    return dash.no_update, dash.no_update, dash.no_update
 
 @app.callback(
     [Output(f"tooltip_{target}", component_property="style") for target in tool_tips.keys()],
@@ -483,7 +495,7 @@ def check_user_inputs(num_legs, max_leg_length, min_leg_length, max_leg_slope,
 
     if any(trigger_id == f"{key}_use" for key in all_modes):
         if not any([walk_use, cycle_use, bus_use, drive_use]):
-            walk_use = cycle_use = bus_use = drive_use = use_modes_modal = True
+            walk_use = cycle_use = bus_use = drive_use = use_modes_modal = [True]
 
     return trigger_id, max_leg_length, min_leg_length, \
         walk_use, cycle_use, bus_use, drive_use, use_modes_modal
@@ -510,8 +522,8 @@ def display_graphics(solutions_print_code, problem_print_code):
     fig_time = plot_time(legs, locomotion, samples)
     fig_feasiblity = plot_feasiblity(legs, locomotion, samples)
 
-    if not fig_time:
-        fig_time = fig_feasiblity = dash.no_update
+    # if not fig_time:
+    #     fig_time = fig_feasiblity = px.bar()
 
     return fig_space, fig_time, fig_feasiblity
 

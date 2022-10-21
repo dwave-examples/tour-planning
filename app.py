@@ -134,11 +134,11 @@ tabs["Locomotion"] = dbc.Card([
                          "value": True,},], value=[True], id=f"{row}_use"),],
                         width=2),])
                 for row in locomotion.keys()]],
-        width=5),
+            width=6),
         dbc.Col([
             dcc.Textarea(id=f"locomotion_print", value="",
-                style={"width": "100%"}, rows=5)],
-                width={"size": 10, "offset": 0}),]),],
+                style={"width": "100%"}, rows=20)],
+            width=5, align="start"),]),],
         color="secondary")
 
 # CQM configuration sections
@@ -301,6 +301,24 @@ def alert_no_solver(btn_solve_cqm):
             return True
 
     return False
+
+@app.callback(
+    [Output(id, "disabled") for id in names_weight_inputs],
+    [Input(f"{id}_hardsoft", "value") for id in names_weight_inputs],)
+def disable_weights(weight_cost_hardsoft, weight_time_hardsoft, weight_slope_hardsoft):
+    """Disable ."""
+
+    trigger_id = dash.callback_context.triggered[0]["prop_id"].split(".")[0]
+
+    if any(trigger_id == f"{weight}_hardsoft" for weight in names_weight_inputs):
+
+        disable = {"cost": False, "time": False, "slope": False}
+        for weight in names_weight_inputs:
+            if vars()[f"{weight}_hardsoft"] == "hard":
+                disable[weight.split("_")[1]] = True
+        return disable["cost"], disable["time"], disable["slope"]
+
+    return dash.no_update, dash.no_update, dash.no_update
 
 @app.callback(
     [Output(f"tooltip_{target}", component_property="style") for target in tool_tips.keys()],

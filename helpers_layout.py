@@ -12,7 +12,8 @@
 #    See the License for the specific language governing permissions and
 #    limitations under the License.
 
-from dash.dcc import Input, Slider, RadioItems
+from dash.dcc import Input, Link, Slider, RadioItems
+import dash_bootstrap_components as dbc
 from dash import html
 
 from tour_planning import (locomotion_ranges, leg_ranges, slope_ranges,
@@ -20,7 +21,7 @@ from tour_planning import (locomotion_ranges, leg_ranges, slope_ranges,
 from tour_planning import (locomotion_init_values, leg_init_values, slope_init_values,
     weight_init_values, budget_init_values)
 
-__all__ = ["_dcc_input", "_dcc_slider", "_dcc_radio"]
+__all__ = ["_dcc_input", "_dcc_slider", "_dcc_radio", "_dbc_modal"]
 
 ranges = {**locomotion_ranges, **leg_ranges, **slope_ranges, **weight_ranges,
     **budget_ranges}
@@ -67,3 +68,35 @@ def _dcc_radio(name, suffix):
         {"label": html.Div([labels[suffix][1]], style={'color': 'white', 'font-size': 12}),
         "value": labels[suffix][1].lower(),},], value=labels[suffix][0].lower(),
         id=f"{name}_{suffix}", inputStyle=margin[suffix])
+
+modal_texts = {"solver": ["Leap Hybrid CQM Solver Inaccessible",
+    [
+        html.Div([
+        html.Div("Could not connect to a Leap hybrid CQM solver."),
+        html.Div(["""
+    If you are running locally, set environment variables or a
+    dwave-cloud-client configuration file as described in the
+    """,
+        Link(children=[html.Div(" Ocean")],
+            href="https://docs.ocean.dwavesys.com/en/stable/overview/sapi.html",
+            style={"display":"inline-block"}),
+        "documentation."],
+            style={"display":"inline-block"}),
+        html.Div(["If you are running in the Leap IDE, see the ",
+        Link(children=[html.Div("Leap IDE dumentation")],
+            href="https://docs.dwavesys.com/docs/latest/doc_ide_user.html",
+            style={"display":"inline-block"}),
+        "documentation"],
+            style={"display":"inline-block"}),])]
+    ],
+    "usemodes": ["One Locomotion Mode is Required",
+    [html.Div("You must set at least one mode of locomotion to 'Use'.")]]}
+
+def _dbc_modal(name):
+    name = name.split("_")[1]
+    return [html.Div([
+        dbc.Modal([
+            dbc.ModalHeader(
+                dbc.ModalTitle(modal_texts[name][0])),
+            dbc.ModalBody(modal_texts[name][1]),],
+                id=f"{name}_modal", size="sm")])]

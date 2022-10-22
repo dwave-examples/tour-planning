@@ -34,7 +34,7 @@ from dwave.cloud.api import Problems, exceptions
 app = dash.Dash(__name__, external_stylesheets=[dbc.themes.BOOTSTRAP])
 
 try:
-    client = Client.from_config()
+    client = Client.from_config(profile="test")
     client.get_solver(supported_problem_types__issuperset={"cqm"})
     init_job_status = "READY"
     job_status_color = dict()
@@ -251,20 +251,10 @@ tips = [dbc.Tooltip(
             for target, message in tool_tips.items()]
 layout.extend(tips)
 
-modal_solver = [html.Div([
-    dbc.Modal([
-        dbc.ModalHeader(
-            dbc.ModalTitle("Leap Hybrid CQM Solver Inaccessible")),
-        dbc.ModalBody(no_solver_msg),], id="solver_modal", size="sm")])]
+modal_solver = _dbc_modal("modal_solver")
 layout.extend(modal_solver)
-
-modal_use_modes = [html.Div([
-    dbc.Modal([
-        dbc.ModalHeader(
-            dbc.ModalTitle("One Locomotion Mode is Required")),
-        dbc.ModalBody([html.Div("You must set at least one mode of locomotion to 'Use'.")]),],
-            id="use_modes_modal", size="sm")])]
-layout.extend(modal_use_modes)
+modal_usemodes = _dbc_modal("modal_usemodes")
+layout.extend(modal_usemodes)
 
 app.layout = dbc.Container(
     layout, fluid=True,
@@ -468,7 +458,7 @@ def generate_cqm(changed_input, problem_print_code, max_leg_slope,
     [Output("max_leg_length", "value")],
     [Output("min_leg_length", "value")],
     [Output(f"{id}_use", "value") for id in names_all_modes],
-    [Output("use_modes_modal", "is_open")],
+    [Output("usemodes_modal", "is_open")],
     [Input(id, "value") for id in
         names_leg_inputs + names_slope_inputs + names_budget_inputs + names_weight_inputs],
     [Input(f"{id}_penalty", "value") for id in names_weight_inputs],
@@ -494,14 +484,14 @@ def check_user_inputs(num_legs, max_leg_length, min_leg_length, max_leg_slope,
     if trigger_id == "min_leg_length" and min_leg_length >= max_leg_length:
         max_leg_length = min_leg_length
 
-    use_modes_modal = dash.no_update
+    usemodes_modal = dash.no_update
 
     if any(trigger_id == f"{key}_use" for key in names_all_modes):
         if not any([walk_use, cycle_use, bus_use, drive_use]):
-            walk_use = cycle_use = bus_use = drive_use = use_modes_modal = [True]
+            walk_use = cycle_use = bus_use = drive_use = usemodes_modal = [True]
 
     return trigger_id, max_leg_length, min_leg_length, \
-        walk_use, cycle_use, bus_use, drive_use, use_modes_modal
+        walk_use, cycle_use, bus_use, drive_use, usemodes_modal
 
 @app.callback(
     [Output(f"{graph.lower()}_graph", "figure") for graph in ["Space", "Time", "Feasibility"]],

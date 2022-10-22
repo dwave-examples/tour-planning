@@ -483,14 +483,8 @@ def check_user_inputs(num_legs, max_leg_length, min_leg_length, max_leg_slope,
     [Output(f"{graph.lower()}_graph", "figure") for graph in ["Space", "Time", "Feasibility"]],
     Input("solutions_print_code", "value"),
     Input("problem_print_code", "value"),
-    [State(id, "value") for id in names_locomotion_inputs],
-    [State(f"{id}_use", "value") for id in names_all_modes],)
-def display_graphics(solutions_print_code, problem_print_code,
-    walk_speed, walk_cost, walk_exercise,
-    cycle_speed, cycle_cost, cycle_exercise,
-    bus_speed, bus_cost, bus_exercise,
-    drive_speed, drive_cost, drive_exercise,
-    walk_use, cycle_use, bus_use, drive_use):
+    [State("locomotion_state", "children")])
+def display_graphics(solutions_print_code, problem_print_code, locomotion_state):
     """Generate graphics for legs and samples."""
 
     trigger = dash.callback_context.triggered
@@ -504,15 +498,7 @@ def display_graphics(solutions_print_code, problem_print_code,
         if not isinstance(samples, dict):
             samples = None
 
-    locomotion_vals = \
-        {"walk":  {"speed": walk_speed, "cost": walk_cost, "exercise": walk_exercise,
-            "use": walk_use},
-        "cycle": {"speed": cycle_speed, "cost": cycle_cost, "exercise": cycle_exercise,
-            "use": cycle_use},
-        "bus": {"speed": bus_speed, "cost": bus_cost, "exercise": bus_exercise,
-            "use": bus_use},
-        "drive": {"speed": drive_speed, "cost": drive_cost, "exercise": drive_exercise,
-            "use": drive_use}}
+    locomotion_vals = locomotion_from_json(locomotion_state)
 
     fig_space = plot_space(legs, samples)
     fig_time = plot_time(legs, locomotion_vals, samples)
@@ -599,19 +585,20 @@ def set_progress_bar(job_submit_state):
     [State(id, "value") for id in names_weight_inputs],
     [State(f"{id}_hardsoft", "value") for id in names_weight_inputs],
     [State(f"{id}_penalty", "value") for id in names_weight_inputs],
-    [State(id, "value") for id in names_locomotion_inputs],
-    [State(f"{id}_use", "value") for id in names_all_modes],
+    # [State(id, "value") for id in names_locomotion_inputs],
+    # [State(f"{id}_use", "value") for id in names_all_modes],
+    [State("locomotion_state", "children")],
     [State("max_runtime", "value")],)
 def submit_job(job_submit_time, problem_print_code, max_leg_slope,
     max_cost, max_time, weight_cost, weight_time, weight_slope,
     weight_cost_hardsoft, weight_time_hardsoft, weight_slope_hardsoft,
     weight_cost_penalty, weight_time_penalty, weight_slope_penalty,
-    walk_speed, walk_cost, walk_exercise,
-    cycle_speed, cycle_cost, cycle_exercise,
-    bus_speed, bus_cost, bus_exercise,
-    drive_speed, drive_cost, drive_exercise,
-    walk_use, cycle_use, bus_use, drive_use,
-    max_runtime):
+    # walk_speed, walk_cost, walk_exercise,
+    # cycle_speed, cycle_cost, cycle_exercise,
+    # bus_speed, bus_cost, bus_exercise,
+    # drive_speed, drive_cost, drive_exercise,
+    # walk_use, cycle_use, bus_use, drive_use,
+    locomotion_state, max_runtime):
     """Submit job and provide job ID."""
 
     trigger_id = dash.callback_context.triggered[0]["prop_id"].split(".")[0]
@@ -630,15 +617,7 @@ def submit_job(job_submit_time, problem_print_code, max_leg_slope,
 
         legs = tour_from_json(problem_print_code)
 
-        locomotion_vals = \
-            {"walk":  {"speed": walk_speed, "cost": walk_cost, "exercise": walk_exercise,
-                "use": walk_use},
-            "cycle": {"speed": cycle_speed, "cost": cycle_cost, "exercise": cycle_exercise,
-                "use": cycle_use},
-            "bus": {"speed": bus_speed, "cost": bus_cost, "exercise": bus_exercise,
-                "use": bus_use},
-            "drive": {"speed": drive_speed, "cost": drive_cost, "exercise": drive_exercise,
-                "use": drive_use}}
+        locomotion_vals = locomotion_from_json(locomotion_state)
 
         cqm = build_cqm(legs, max_leg_slope, max_cost, max_time,
             weights, penalties, locomotion_vals)

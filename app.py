@@ -74,19 +74,39 @@ solver_card = dbc.Card([
 # Tab-construction section
 
 tabs = {}
+description_feasibility_plot = """The feasibility graphic shows all returned
+solutions: feasible solutions in blue and infeasible solutions in red. The size
+of the data point is proportional to the number of occurrences of that solution.
+Hover over a data point to see information about it.
+You can rotate and zoom in on parts of this graphic.
+"""
 
-graphs = ["Space", "Time", "Feasibility"] # also used for graph() display callback
-tabs["Graph"] = dbc.Tabs([
+graph_tabs = [dbc.Tab(
+    dbc.Card([
+        dbc.Row([
+            dbc.Col([
+                dcc.Graph(id=f"{graph.lower()}_graph")], width=12) ])],
+        color="secondary"),
+    label=f"{graph}",
+    id=f"graph_{graph.lower()}",
+    label_style={"color": "white", "backgroundColor": "black"},)
+for graph in ["Space", "Time"]]
+graph_tabs.extend([
     dbc.Tab(
         dbc.Card([
             dbc.Row([
                 dbc.Col([
-                    dcc.Graph(id=f"{graph.lower()}_graph")], width=12) ])],
+                    dcc.Graph(id="feasibility_graph")], width=8),
+
+                dbc.Col([
+                    dcc.Textarea(id=f"feasibility_text", value=description_feasibility_plot,
+                        style={"width": "100%"}, rows=10)],
+                    width=4, align="start")])],
             color="secondary"),
-        label=f"{graph}",
-        id=f"graph_{graph.lower()}",
-        label_style={"color": "white", "backgroundColor": "black"},)
-    for graph in graphs])
+        label="feasibility_graph",
+        id="graph_feasibility_graph",
+        label_style={"color": "white", "backgroundColor": "black"},)])
+tabs["Graph"] = dbc.Tabs(graph_tabs)
 
 double_tabs = {
     "Problem": "Displays the configured tour: length of each leg, elevation, and "\
@@ -484,7 +504,7 @@ def check_user_inputs(num_legs, max_leg_length, min_leg_length, max_leg_slope,
         walk_use, cycle_use, bus_use, drive_use, use_modes_modal
 
 @app.callback(
-    [Output(f"{graph.lower()}_graph", "figure") for graph in graphs],
+    [Output(f"{graph.lower()}_graph", "figure") for graph in ["Space", "Time", "Feasibility"]],
     Input("solutions_print_code", "value"),
     Input("problem_print_code", "value"),
     [State(id, "value") for id in names_locomotion_inputs],

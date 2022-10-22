@@ -69,7 +69,8 @@ def plot_space(legs, samples=None):
     df_legs["Tour"] = 0
 
     fig = px.bar(df_legs, x="Length", y="Tour", color="Slope", orientation="h",
-                 color_continuous_scale=px.colors.diverging.Geyser)
+                 color_continuous_scale=px.colors.diverging.Geyser,
+                 hover_data=["Length", "Slope"])    # looks like plotly bug (hover_data)
 
     x_width = _initial_fig(fig, legs, df_legs, "Length", "assets/background_space.jpg")
 

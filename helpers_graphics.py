@@ -14,7 +14,10 @@
 import pandas as pd
 import plotly.express as px
 
+import dimod
+
 from formatting import *
+from tour_planning import _calculate_total
 
 __all__ = ["plot_space", "plot_time", "plot_feasiblity"]
 
@@ -102,24 +105,33 @@ def plot_feasiblity(legs, locomotion_vals, samples):
         return px.bar()
 
     #Done only once per job submission but can move to NumPy if slow
-    data = {"Cost": [], "Time": [], "Energy": [], "Feasibility": []}
-    for sample, energy, feasability in samples["sampleset"].data(fields=["sample", "energy", "is_feasible"]):
-        locomotion_vals_per_leg = sorted({int(key.split("_")[1]): key.split("_")[0] for
-            key,val in sample.items() if val==1.0}.items())
-        data["Cost"].append(sum(locomotion_vals[f[1]]["speed"] for f in locomotion_vals_per_leg))
-        data["Time"].append(sum(l["length"]/locomotion_vals[f[1]]["speed"] for l,f in zip(legs, locomotion_vals_per_leg)))
-        data["Energy"].append(energy)
-        data["Feasibility"].append(feasability)
+    modes = [key for key in locomotion_vals.keys() if locomotion_vals[key]["use"]]
+    t= [dimod.Binary(f"{mode}_{i}") for i in range(len(legs)) for mode in modes]
 
+    data = {"Cost": [], "Time": [], "Exercise": [], "Energy": [], "Feasibility": []}
+    for sample, energy, feasibility in samples["sampleset"].data(
+        fields=["sample", "energy", "is_feasible"]):
+        for measure in ["Cost", "Time", "Exercise"]:
+            data[measure].append(_calculate_total(t, measure, legs, locomotion_vals).energy(sample))
+        data["Energy"].append(energy)  # we're maximizing so switch symbol
+        data["Feasibility"].append(feasibility)
     df = pd.DataFrame(data)
 
     occurrences = df.groupby(df.columns.tolist(),as_index=False).size()
     occurrences = occurrences.rename({"size": "Occurrences"}, axis=1)
 
-    fig = px.scatter_3d(occurrences, x="Time", y="Cost", z="Energy", color="Feasibility",
-        size="Occurrences", size_max=50, symbol="Feasibility",
-        color_discrete_sequence = ['red', 'blue'], symbol_sequence= ['square', 'circle'],
-        hover_data=["Cost", "Time", "Occurrences", "Energy"])
+    colors = ['blue', 'red']
+    symbols = ['circle', 'x']
+    if not occurrences.iloc[0]["Feasibility"]:
+        colors = ['red', 'blue']
+        symbols = ['x', 'circle']
+
+    # Bugfix: plotly scatter_3d seems to get stuck on small numerical precission
+    # so an energy of -23.600000000000072 is below rounded to say 3
+    fig = px.scatter_3d(occurrences.round(3), x="Time", y="Cost", z="Exercise",
+        color="Feasibility", size="Occurrences", size_max=50, symbol="Feasibility",
+        color_discrete_sequence = colors, symbol_sequence= symbols,
+        hover_data=["Cost", "Time", "Exercise", "Energy", "Occurrences"])
 
     fig.update_scenes(xaxis_title_text="Time",
                       yaxis_title_text="Cost",

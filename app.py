@@ -74,11 +74,11 @@ solver_card = dbc.Card([
 # Tab-construction section
 
 tabs = {}
-description_feasibility_plot = """The feasibility graphic shows all returned
-solutions: feasible solutions in blue and infeasible solutions in red. The size
-of the data point is proportional to the number of occurrences of that solution.
-Hover over a data point to see information about it.
-You can rotate and zoom in on parts of this graphic.
+description_feasibility_plot = """This graphic shows all returned solutions for
+a job submission, not just the best solution. All feasible solutions are plotted
+in blue and all infeasible solutions in red. Data-point size is proportional to
+the number of occurrences of a solution. You can hover over a data point to see
+information about it and can rotate and zoom in on parts of this graphic.
 """
 
 graph_tabs = [dbc.Tab(

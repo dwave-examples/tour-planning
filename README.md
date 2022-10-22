@@ -33,12 +33,13 @@ By setting appropriate weights to soft constraints in comparison to the objectiv
 and to other soft constraints, you can express the relative importance of such
 constraints. Soft constraints on binary variables can be one of two types:
 
-* linear: the penalty for violating such a constraint is proportional to its bias.
+* linear: the penalty for violating such a constraint is proportional to the
+  value of the violation (i.e., by how much the constraint is violated).
 * quadratic: the penalty for violating such a constraint is proportional to the
-  square of its bias.
+  square of the value of the violation.
 
-For example, for a soft constraint on the tour's maximum cost with a price of 3
-for driving, preferring to drive over cheaper locomotion on a leg of length 2 adds
+For example, for a soft constraint on the tour's maximum cost, with a price of 3
+for driving, preferring to drive over free locomotion on a leg of length 2 adds
 a penalty of 6 or 36, for a linear or quadratic constraint, respectively, that
 goes up, for a leg length of 3, to 9 and 81, respectively. Such a quadratic
 constraint severely discourages driving on longer legs.

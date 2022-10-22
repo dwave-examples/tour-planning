@@ -34,7 +34,7 @@ from dwave.cloud.api import Problems, exceptions
 app = dash.Dash(__name__, external_stylesheets=[dbc.themes.BOOTSTRAP])
 
 try:
-    client = Client.from_config(profile="test")
+    client = Client.from_config()
     client.get_solver(supported_problem_types__issuperset={"cqm"})
     init_job_status = "READY"
     job_status_color = dict()
@@ -152,7 +152,8 @@ tabs["Locomotion"] = dbc.Card([
         dbc.Col([
             dcc.Textarea(id=f"locomotion_print", value="",
                 style={"width": "100%"}, rows=20)],
-            width=5, align="start"),]),],
+            width=5, align="start"),
+    html.P(id="locomotion_state", children="", style = dict(display="none"))]),],
         color="secondary")
 
 # CQM configuration sections
@@ -368,14 +369,8 @@ def update_legs(changed_input, num_legs, max_leg_length, min_leg_length,
     Output("locomotion_print", "value"),
     [Input("cqm_print", "value")],
     [State("problem_print_code", "value")],
-    [State(id, "value") for id in names_locomotion_inputs],
-    [State(f"{id}_use", "value") for id in names_all_modes])
-def display_locomotion(cqm_print, problem_print_code,
-    walk_speed, walk_cost, walk_exercise,
-    cycle_speed, cycle_cost, cycle_exercise,
-    bus_speed, bus_cost, bus_exercise,
-    drive_speed, drive_cost, drive_exercise,
-    walk_use, cycle_use, bus_use, drive_use):
+    [State("locomotion_state", "children")],)
+def display_locomotion(cqm_print, problem_print_code, locomotion_state):
     """Update the locomotion display print."""
 
     trigger = dash.callback_context.triggered
@@ -383,16 +378,7 @@ def display_locomotion(cqm_print, problem_print_code,
 
     if trigger_id == "cqm_print":
 
-        locomotion_vals = \
-            {"walk":  {"speed": walk_speed, "cost": walk_cost, "exercise": walk_exercise,
-                "use": walk_use},
-            "cycle": {"speed": cycle_speed, "cost": cycle_cost, "exercise": cycle_exercise,
-                "use": cycle_use},
-            "bus": {"speed": bus_speed, "cost": bus_cost, "exercise": bus_exercise,
-                "use": bus_use},
-            "drive": {"speed": drive_speed, "cost": drive_cost, "exercise": drive_exercise,
-                "use": drive_use}}
-
+        locomotion_vals = locomotion_from_json(locomotion_state)
         legs = tour_from_json(problem_print_code)
         boundaries = tour_budget_boundaries(legs, locomotion_vals)
 
@@ -459,6 +445,7 @@ def generate_cqm(changed_input, problem_print_code, max_leg_slope,
     [Output("min_leg_length", "value")],
     [Output(f"{id}_use", "value") for id in names_all_modes],
     [Output("usemodes_modal", "is_open")],
+    [Output("locomotion_state", "children")],
     [Input(id, "value") for id in
         names_leg_inputs + names_slope_inputs + names_budget_inputs + names_weight_inputs],
     [Input(f"{id}_penalty", "value") for id in names_weight_inputs],
@@ -490,8 +477,20 @@ def check_user_inputs(num_legs, max_leg_length, min_leg_length, max_leg_slope,
         if not any([walk_use, cycle_use, bus_use, drive_use]):
             walk_use = cycle_use = bus_use = drive_use = usemodes_modal = [True]
 
+    # Could be done only when triggered but not costly
+    locomotion_vals = \
+        {"walk":  {"speed": walk_speed, "cost": walk_cost, "exercise": walk_exercise,
+            "use": walk_use},
+        "cycle": {"speed": cycle_speed, "cost": cycle_cost, "exercise": cycle_exercise,
+            "use": cycle_use},
+        "bus": {"speed": bus_speed, "cost": bus_cost, "exercise": bus_exercise,
+            "use": bus_use},
+        "drive": {"speed": drive_speed, "cost": drive_cost, "exercise": drive_exercise,
+            "use": drive_use}}
+
     return trigger_id, max_leg_length, min_leg_length, \
-        walk_use, cycle_use, bus_use, drive_use, usemodes_modal
+        walk_use, cycle_use, bus_use, drive_use, usemodes_modal, \
+        locomotion_to_json(locomotion_vals)
 
 @app.callback(
     [Output(f"{graph.lower()}_graph", "figure") for graph in ["Space", "Time", "Feasibility"]],

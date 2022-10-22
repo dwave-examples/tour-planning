@@ -71,7 +71,7 @@ def solutions_to_display(sampleset):
         return "No feasible solutions found."
     first = sorted({int(key.split('_')[1]): key.split('_')[0] for key,val in \
         sampleset_feasible.first.sample.items() if val==1.0}.items())
-    ratio = round(len(sampleset_feasible)/len(sampleset), 1)
+    ratio = round(len(sampleset_feasible)/len(sampleset), 3)
     s += "Feasible solutions: {:.1%} of {} samples.\n".format((ratio), len(sampleset))
     s += f"Best solution with energy {round(sampleset_feasible.first.energy)} is:\n"
     for leg in first:

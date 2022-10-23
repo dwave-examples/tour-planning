@@ -23,7 +23,7 @@ __all__ = ["job_status_to_str", "tour_from_json",
     "job_status_to_display",  "tour_to_display", "tour_to_json",
     "locomotion_to_display", "solutions_to_display",
     "sampleset_to_json", "sampleset_from_json", "cqm_to_display",
-    "locomotion_from_json", "locomotion_to_json"]
+    "state_from_json", "state_to_json"]
 
 def job_status_to_display(code):
     """Output status as 'Status: <status>'."""
@@ -116,12 +116,12 @@ def cqm_to_display(cqm):
 
     return print_str
 
-def locomotion_to_json(locomotion_vals):
+def state_to_json(locomotion_vals):
     """Output locomotion state for code rereading."""
 
     return json.dumps(locomotion_vals)
 
-def locomotion_from_json(locomotion_json):
+def state_from_json(locomotion_json):
     """input locomotion state from saved."""
 
     return json.loads(locomotion_json)

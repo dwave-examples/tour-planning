@@ -24,7 +24,7 @@ from dash import no_update
 
 import dimod
 
-from formatting import locomotion_to_json, tour_from_json
+from formatting import state_to_json, tour_from_json
 
 from app import names_budget_inputs, names_weight_inputs
 from app import generate_cqm
@@ -54,7 +54,7 @@ cqm_placeholder = " "
 def mock_print(self):
     return self
 
-locomotion_json = locomotion_to_json({
+locomotion_json = state_to_json({
     "walk": {"speed": 1, "cost": 0, "exercise": 1, "use": True},
     "cycle": {"speed": 3, "cost": 2, "exercise": 2, "use": True},
      "bus": {"speed": 4, "cost": 3, "exercise": 0, "use": True},

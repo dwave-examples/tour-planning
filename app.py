@@ -74,12 +74,6 @@ solver_card = dbc.Card([
 # Tab-construction section
 
 tabs = {}
-description_feasibility_plot = """This graphic shows all returned solutions for
-a job submission, not just the best solution. All feasible solutions are plotted
-in blue and all infeasible solutions in red. Data-point size is proportional to
-the number of occurrences of a solution. You can hover over a data point to see
-information about it and can rotate and zoom in on parts of this graphic.
-"""
 
 graph_tabs = [dbc.Tab(
     dbc.Card([
@@ -158,7 +152,8 @@ tabs["Locomotion"] = dbc.Card([
 
 # CQM configuration sections
 
-weights_card = [dbc.Row([html.H4("Constraint Settings", className="card-title")],
+weights_card = [dbc.Row([html.H4("Constraint Settings", className="card-title"),
+    html.P(id="weights_state", children="", style = dict(display="none"))],
     id="constraint_settings_row")]
 weights_card.extend([
     dbc.Row([
@@ -266,21 +261,6 @@ app.config["suppress_callback_exceptions"] = True
 
 # Callbacks Section
 
-def _weight_or_none(
-    weight_cost, weight_time, weight_slope,
-    weight_cost_hardsoft, weight_time_hardsoft, weight_slope_hardsoft):
-    """Helper function for `build_cqm()`, which is used twice."""
-
-    weights = {
-        "cost": None if weight_cost_hardsoft == "hard" \
-            else weight_cost,
-        "time": None if weight_time_hardsoft == "hard" \
-            else weight_time,
-        "slope": None if weight_slope_hardsoft == "hard" \
-            else weight_slope}
-
-    return weights
-
 @app.callback(
     Output("solver_modal", "is_open"),
     Input("btn_solve_cqm", "n_clicks"),)
@@ -378,7 +358,7 @@ def display_locomotion(cqm_print, problem_print_code, locomotion_state):
 
     if trigger_id == "cqm_print":
 
-        locomotion_vals = locomotion_from_json(locomotion_state)
+        locomotion_vals = state_from_json(locomotion_state)
         legs = tour_from_json(problem_print_code)
         boundaries = tour_budget_boundaries(legs, locomotion_vals)
 
@@ -389,15 +369,11 @@ def display_locomotion(cqm_print, problem_print_code, locomotion_state):
     [Input("changed_input", "children")],
     [Input("problem_print_code", "value")],
     [State("max_leg_slope", "value")],
-    [State(id, "value") for id in names_budget_inputs + names_weight_inputs],
-    [State(f"{id}_hardsoft", "value") for id in names_weight_inputs],
-    [State(f"{id}_penalty", "value") for id in names_weight_inputs],
+    [State(id, "value") for id in names_budget_inputs],
+    [State("weights_state", "children")],
     [State("locomotion_state", "children")])
 def generate_cqm(changed_input, problem_print_code, max_leg_slope,
-    max_cost, max_time, weight_cost, weight_time, weight_slope,
-    weight_cost_hardsoft, weight_time_hardsoft, weight_slope_hardsoft,
-    weight_cost_penalty, weight_time_penalty, weight_slope_penalty,
-    locomotion_state,):
+    max_cost, max_time, weights_state, locomotion_state,):
     """Create the CQM and write to json & readable text."""
 
     trigger = dash.callback_context.triggered
@@ -409,18 +385,11 @@ def generate_cqm(changed_input, problem_print_code, max_leg_slope,
     if trigger_id == "changed_input" or trigger_id == "problem_print_code":
         legs = tour_from_json(problem_print_code)
 
-        penalties = {
-            "cost": weight_cost_penalty,
-            "time": weight_time_penalty,
-            "slope": weight_slope_penalty}
-
-        weights = _weight_or_none(weight_cost, weight_time, weight_slope,
-            weight_cost_hardsoft, weight_time_hardsoft, weight_slope_hardsoft)
-
-        locomotion_vals = locomotion_from_json(locomotion_state)
+        weight_vals = state_from_json(weights_state)
+        locomotion_vals = state_from_json(locomotion_state)
 
         cqm = build_cqm(legs, max_leg_slope, max_cost, max_time,
-            weights, penalties, locomotion_vals)
+            weight_vals, locomotion_vals)
 
         return cqm_to_display(cqm)
 
@@ -433,6 +402,7 @@ def generate_cqm(changed_input, problem_print_code, max_leg_slope,
     [Output(f"{id}_use", "value") for id in names_all_modes],
     [Output("usemodes_modal", "is_open")],
     [Output("locomotion_state", "children")],
+    [Output("weights_state", "children")],
     [Input(id, "value") for id in
         names_leg_inputs + names_slope_inputs + names_budget_inputs + names_weight_inputs],
     [Input(f"{id}_penalty", "value") for id in names_weight_inputs],
@@ -464,7 +434,7 @@ def check_user_inputs(num_legs, max_leg_length, min_leg_length, max_leg_slope,
         if not any([walk_use, cycle_use, bus_use, drive_use]):
             walk_use = cycle_use = bus_use = drive_use = usemodes_modal = [True]
 
-    # Could be done only when triggered but not costly
+# These two could be done only when triggered but not costly:
     locomotion_vals = \
         {"walk":  {"speed": walk_speed, "cost": walk_cost, "exercise": walk_exercise,
             "use": walk_use},
@@ -475,9 +445,20 @@ def check_user_inputs(num_legs, max_leg_length, min_leg_length, max_leg_slope,
         "drive": {"speed": drive_speed, "cost": drive_cost, "exercise": drive_exercise,
             "use": drive_use}}
 
+    weight_val = \
+        {"weight_cost":  {
+            "weight": None if weight_cost_hardsoft == "hard" else weight_cost,
+            "penalty": weight_cost_penalty},
+         "weight_time": {
+            "weight": None if weight_time_hardsoft == "hard" else weight_time,
+            "penalty": weight_time_penalty},
+         "weight_slope": {
+            "weight": None if weight_slope_hardsoft == "hard" else weight_slope,
+            "penalty": weight_slope_penalty}}
+
     return trigger_id, max_leg_length, min_leg_length, \
         walk_use, cycle_use, bus_use, drive_use, usemodes_modal, \
-        locomotion_to_json(locomotion_vals)
+        state_to_json(locomotion_vals), state_to_json(weight_val)
 
 @app.callback(
     [Output(f"{graph.lower()}_graph", "figure") for graph in ["Space", "Time", "Feasibility"]],
@@ -497,7 +478,7 @@ def display_graphics(solutions_print_code, problem_print_code, locomotion_state)
     else:
         sampleset = None
 
-    locomotion_vals = locomotion_from_json(locomotion_state)
+    locomotion_vals = state_from_json(locomotion_state)
 
     fig_space = plot_space(legs, sampleset)
     fig_time = plot_time(legs, locomotion_vals, sampleset)
@@ -581,16 +562,11 @@ def set_progress_bar(job_submit_state):
     [State("problem_print_code", "value")],
     [State("max_leg_slope", "value")],
     [State(id, "value") for id in names_budget_inputs],
-    [State(id, "value") for id in names_weight_inputs],
-    [State(f"{id}_hardsoft", "value") for id in names_weight_inputs],
-    [State(f"{id}_penalty", "value") for id in names_weight_inputs],
+    [State("weights_state", "children")],
     [State("locomotion_state", "children")],
     [State("max_runtime", "value")],)
 def submit_job(job_submit_time, problem_print_code, max_leg_slope,
-    max_cost, max_time, weight_cost, weight_time, weight_slope,
-    weight_cost_hardsoft, weight_time_hardsoft, weight_slope_hardsoft,
-    weight_cost_penalty, weight_time_penalty, weight_slope_penalty,
-    locomotion_state, max_runtime):
+    max_cost, max_time,  weights_state, locomotion_state, max_runtime):
     """Submit job and provide job ID."""
 
     trigger_id = dash.callback_context.triggered[0]["prop_id"].split(".")[0]
@@ -599,20 +575,13 @@ def submit_job(job_submit_time, problem_print_code, max_leg_slope,
 
         solver = client.get_solver(supported_problem_types__issuperset={"cqm"})
 
-        penalties = {
-            "cost": weight_cost_penalty,
-            "time": weight_time_penalty,
-            "slope": weight_slope_penalty}
-
-        weights = _weight_or_none(weight_cost, weight_time, weight_slope,
-            weight_cost_hardsoft, weight_time_hardsoft, weight_slope_hardsoft)
+        weight_vals = state_from_json(weights_state)
+        locomotion_vals = state_from_json(locomotion_state)
 
         legs = tour_from_json(problem_print_code)
 
-        locomotion_vals = locomotion_from_json(locomotion_state)
-
         cqm = build_cqm(legs, max_leg_slope, max_cost, max_time,
-            weights, penalties, locomotion_vals)
+            weight_vals, locomotion_vals)
 
         problem_data_id = solver.upload_cqm(cqm).result()
         computation = solver.sample_cqm(problem_data_id,
@@ -702,7 +671,6 @@ def manage_submission(n_clicks, n_intervals, job_id, job_submit_state, job_submi
             dash.no_update, dash.no_update, f"Elapsed: {elapsed_time} sec."
 
     else:   # Exception state: should only ever happen in testing
-
         return False, True, 0, 0, job_status_to_display("ERROR"), dash.no_update, \
             "Please restart"
 

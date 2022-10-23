@@ -130,7 +130,7 @@ def _calculate_total(t, measure, legs, locomotion_vals):
         i in range(num_modes*num_legs))
 
 def build_cqm(legs, max_leg_slope, max_cost, max_time,
-    weights, penalties, locomotion_vals):
+    weight_vals, locomotion_vals):
     """Build CQM for maximizing exercise. """
 
     modes = [key for key in locomotion_vals.keys() if locomotion_vals[key]["use"]]
@@ -145,10 +145,14 @@ def build_cqm(legs, max_leg_slope, max_cost, max_time,
     for leg in range(num_legs):
         cqm.add_constraint(dimod.quicksum(t[num_modes*leg:num_modes*leg+num_modes]) == 1,
             label=f"One-hot leg{leg}")
-    cqm.add_constraint(_calculate_total(t, "Cost", legs, locomotion_vals) <= max_cost, label="Total cost",
-        weight=weights["cost"], penalty=penalties["cost"])
+    cqm.add_constraint(_calculate_total(t, "Cost", legs, locomotion_vals) <= max_cost,
+        label="Total cost",
+        weight=weight_vals["weight_cost"]["weight"],
+        penalty=weight_vals["weight_cost"]["penalty"])
     cqm.add_constraint(_calculate_total(t, "Time", legs, locomotion_vals) <= max_time,
-        label="Total time", weight=weights["time"], penalty=penalties["time"])
+        label="Total time",
+        weight=weight_vals["weight_time"]["weight"],
+        penalty=weight_vals["weight_time"]["penalty"])
 
     if "drive" in modes:
         drive_index = list(modes).index("drive")
@@ -163,12 +167,14 @@ def build_cqm(legs, max_leg_slope, max_cost, max_time,
         if "cycle" in modes:
              cqm.add_constraint(t[num_modes*leg:num_modes*leg+num_modes][cycle_index] * \
                 legs[leg]["uphill"] <= max_leg_slope,
-                label=f"Too steep to cycle on leg {leg}", weight=weights["slope"],
-                penalty=penalties["slope"])
+                label=f"Too steep to cycle on leg {leg}",
+                weight=weight_vals["weight_slope"]["weight"],
+                penalty=weight_vals["weight_slope"]["penalty"])
         if "walk" in modes:
              cqm.add_constraint(t[num_modes*leg:num_modes*leg+num_modes][walk_index] * \
                 legs[leg]["uphill"] <= max_leg_slope,
-                label=f"Too steep to walk on leg {leg}", weight=weights["slope"],
-                penalty=penalties["slope"])
+                label=f"Too steep to walk on leg {leg}",
+                weight=weight_vals["weight_slope"]["weight"],
+                penalty=weight_vals["weight_slope"]["penalty"])
 
     return cqm

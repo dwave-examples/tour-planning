@@ -21,7 +21,8 @@ from tour_planning import (locomotion_ranges, leg_ranges, slope_ranges,
 from tour_planning import (locomotion_init_values, leg_init_values, slope_init_values,
     weight_init_values, budget_init_values)
 
-__all__ = ["_dcc_input", "_dcc_slider", "_dcc_radio", "_dbc_modal"]
+__all__ = ["_dcc_input", "_dcc_slider", "_dcc_radio", "_dbc_modal",
+    "description_feasibility_plot"]
 
 ranges = {**locomotion_ranges, **leg_ranges, **slope_ranges, **weight_ranges,
     **budget_ranges}
@@ -100,3 +101,10 @@ def _dbc_modal(name):
                 dbc.ModalTitle(modal_texts[name][0])),
             dbc.ModalBody(modal_texts[name][1]),],
                 id=f"{name}_modal", size="sm")])]
+
+description_feasibility_plot = """This graphic shows all returned solutions for
+a job submission, not just the best solution. All feasible solutions are plotted
+in blue and all infeasible solutions in red. Data-point size is proportional to
+the number of occurrences of a solution. You can hover over a data point to see
+information about it and can rotate and zoom in on parts of this graphic.
+"""

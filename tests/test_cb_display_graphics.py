@@ -25,7 +25,7 @@ import plotly
 
 import dimod
 
-from formatting import locomotion_to_json
+from formatting import state_to_json
 
 from app import display_graphics
 
@@ -44,7 +44,7 @@ sampleset = dimod.SampleSet.from_samples(dimod.as_samples([
 sampleset = dimod.append_data_vectors(sampleset, is_satisfied=[[True], [True]])
 sampleset = dimod.append_data_vectors(sampleset, is_feasible=[True, False])
 
-locomotion_json = locomotion_to_json({
+locomotion_json = state_to_json({
     "walk": {"speed": 1, "cost": 0, "exercise": 1, "use": True},
     "cycle": {"speed": 3, "cost": 2, "exercise": 2, "use": True},
      "bus": {"speed": 4, "cost": 3, "exercise": 0, "use": True},

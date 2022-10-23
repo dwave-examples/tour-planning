@@ -23,7 +23,7 @@ import plotly
 
 import dimod
 
-from formatting import locomotion_to_json
+from formatting import state_to_json
 
 from app import display_locomotion
 
@@ -40,7 +40,7 @@ problem_json = '[{"length": 5.3, "uphill": 7.0, "toll": false},'+\
 boundaries = {'cost_min': 0.0, 'cost_max': 54.5, 'cost_avg': 27.2, 'time_min': 1.6,
     'time_max': 10.9, 'time_avg': 2.7}
 
-locomotion_json = locomotion_to_json({
+locomotion_json = state_to_json({
     "walk": {"speed": 1, "cost": 0, "exercise": 1, "use": True},
     "cycle": {"speed": 3, "cost": 2, "exercise": 2, "use": True},
      "bus": {"speed": 4, "cost": 3, "exercise": 0, "use": True},

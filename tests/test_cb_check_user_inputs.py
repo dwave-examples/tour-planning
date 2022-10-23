@@ -27,7 +27,7 @@ from app import (names_locomotion_inputs, names_leg_inputs, names_slope_inputs,
 from app import names_all_modes
 from app import check_user_inputs
 
-from formatting import locomotion_to_json, tour_from_json
+from formatting import state_to_json, tour_from_json
 from tour_planning import leg_ranges, slope_ranges, budget_ranges, weight_ranges
 from tour_planning import weight_init_values
 
@@ -140,7 +140,7 @@ def test_user_inputs_expected_outputs(trigger, num_legs_in, max_leg_length_in,
 
     output = ctx.run(run_callback)
 
-    locomotion_json = locomotion_to_json(
+    locomotion_json = state_to_json(
         {"walk":  {"speed": walk_speed_in, "cost": walk_cost_in, "exercise": walk_exercise_in,
             "use": walk_use_in},
         "cycle": {"speed": cycle_speed_in, "cost": cycle_cost_in, "exercise": cycle_exercise_in,

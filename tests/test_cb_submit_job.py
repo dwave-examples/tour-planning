@@ -24,9 +24,9 @@ from dash import no_update
 
 import dimod
 
-from formatting import state_to_json
+from formatting import state_to_json, state_from_json
 
-from app import names_budget_inputs, names_weight_inputs
+from app import names_budget_inputs
 from app import submit_job
 
 problem_print_placeholder = '[{"length": 9.4, "uphill": 0.1, "toll": false}, {"length": 6.9, "uphill": 2.5, "toll": false}]'
@@ -34,21 +34,17 @@ problem_print_placeholder = '[{"length": 9.4, "uphill": 0.1, "toll": false}, {"l
 job_submit_time = ContextVar("job_submit_time")
 problem_print_code = ContextVar("problem_print_code")
 max_leg_slope = ContextVar("max_leg_slope")
-for key in names_budget_inputs + names_weight_inputs:
+for key in names_budget_inputs:
     vars()[key] = ContextVar(f"{key}")
-for key in names_weight_inputs:
-    vars()[f"{key}_hardsoft"] = ContextVar(f"{key}_hardsoft")
-for key in names_weight_inputs:
-    vars()[f"{key}_penalty"] = ContextVar(f"{key}_penalty")
+weights_state = ContextVar("weights_state")
 locomotion_state = ContextVar("locomotion_state")
 max_runtime = ContextVar("max_runtime")
 
 state_vals = [{"prop_id": "problem_print_code"}]
 state_vals.extend([{"prop_id": "max_leg_slope"}])
 state_vals.extend([{"prop_id": f"{key}.value"} for key in
-    names_budget_inputs + names_weight_inputs])
-state_vals.extend([{"prop_id": f"{key}_hardsoft.value"} for key in names_weight_inputs])
-state_vals.extend([{"prop_id": f"{key}_penalty.value"} for key in names_weight_inputs])
+    names_budget_inputs])
+state_vals.extend([{"prop_id": "weights_state.children"}])
 state_vals.extend([{"prop_id": "locomotion_state"}])
 
 class fake_computation():
@@ -93,27 +89,24 @@ locomotion_json = state_to_json({
      "bus": {"speed": 4, "cost": 3, "exercise": 0, "use": True},
      "drive": {"speed": 7, "cost": 5, "exercise": 0, "use": True}})
 #
+weights_json = state_to_json({"weight_cost":  {"weight": None, "penalty": "linear"},
+     "weight_time": {"weight": None, "penalty": "linear"},
+     "weight_slope": {"weight": 55, "penalty": "quadratic"}})
+
 parametrize_names = "job_submit_time_val, problem_print_code_val, max_leg_slope_val, " + \
-    ", ".join([f'{key}_val ' for key in names_budget_inputs + names_weight_inputs]) + \
-    ", " + ", ".join([f'{key}_hardsoft_val ' for key in names_weight_inputs]) + \
-    ", " + ", ".join([f'{key}_penalty_val ' for key in names_weight_inputs]) + \
-    ", locomotion_val, max_runtime_val, job_id"
+    ", ".join([f'{key}_val ' for key in names_budget_inputs]) + \
+    ", weights_val, locomotion_val, max_runtime_val, job_id"
 
 parametrize_vals = [
-    ("high tea time", problem_print_placeholder, 8, 100, 20, 33, 44, 55, "soft",
-        "soft", "soft", "linear", "linear", "linear", locomotion_json,
-        5, "67890"),
-    ("later", problem_print_placeholder, 8, 100, 20, 33, 44, 55, "soft",
-        "soft", "soft", "linear", "linear", "linear", locomotion_json,
-        20, "67890"),]
+    ("high tea time", problem_print_placeholder, 8, 100, 20, weights_json,
+        locomotion_json, 5, "67890"),
+    ("later", problem_print_placeholder, 8, 100, 20, weights_json,
+        locomotion_json, 20, "67890"),]
 
 @pytest.mark.parametrize(parametrize_names, parametrize_vals)
 @patch("app.client", mock_client)
 def test_submit_job(job_submit_time_val, problem_print_code_val, max_leg_slope_val,
-    max_cost_val, max_time_val, weight_cost_val, weight_time_val, weight_slope_val,
-    weight_cost_hardsoft_val, weight_time_hardsoft_val, weight_slope_hardsoft_val,
-    weight_cost_penalty_val, weight_time_penalty_val, weight_slope_penalty_val,
-    locomotion_val, max_runtime_val, job_id):
+    max_cost_val, max_time_val, weights_val, locomotion_val, max_runtime_val, job_id):
     """Test job submission."""
 
     def run_callback():
@@ -122,22 +115,16 @@ def test_submit_job(job_submit_time_val, problem_print_code_val, max_leg_slope_v
             "triggered_inputs": [{"prop_id": "job_submit_time.children"}],
             "state_values": state_vals}))
 
-        return submit_job(job_submit_time.get(), problem_print_code.get(), max_leg_slope.get(),\
-            max_cost.get(), max_time.get(), weight_cost.get(), weight_time.get(), \
-            weight_slope.get(), weight_cost_hardsoft.get(), weight_time_hardsoft.get(), \
-            weight_slope_hardsoft.get(), weight_cost_penalty.get(), \
-            weight_time_penalty.get(), weight_slope_penalty.get(), \
-            locomotion_state.get(), max_runtime.get())
+        return submit_job(job_submit_time.get(), problem_print_code.get(), \
+            max_leg_slope.get(), max_cost.get(), max_time.get(), \
+            weights_state.get(),locomotion_state.get(), max_runtime.get())
 
     job_submit_time.set(vars()["job_submit_time_val"])
     problem_print_code.set(vars()["problem_print_code_val"])
     max_leg_slope.set(vars()["max_leg_slope_val"])
-    for key in names_budget_inputs + names_weight_inputs:
+    for key in names_budget_inputs:
         globals()[key].set(vars()[key + "_val"])
-    for key in names_weight_inputs:
-        globals()[f"{key}_hardsoft"].set(vars()[f"{key}_hardsoft_val"])
-    for key in names_weight_inputs:
-        globals()[f"{key}_penalty"].set(vars()[f"{key}_penalty_val"])
+    weights_state.set(weights_val)
     locomotion_state.set(locomotion_val)
     max_runtime.set(vars()["max_runtime_val"])
 
@@ -148,22 +135,28 @@ def test_submit_job(job_submit_time_val, problem_print_code_val, max_leg_slope_v
     assert output == job_id
 
 
-parametrize_constants = ["high tea time", problem_print_placeholder, 8, 100, 20,
-    33, 44, 55]
+parametrize_constants = ["high tea time", problem_print_placeholder, 8, 100, 20]
 parametrize_vals = []
 hardsoft = [h for h in product(["soft", "hard"], repeat=3)]
 penalty = [p for p in product(["linear", "quadratic"], repeat=3)]
 for h, p in zip(hardsoft, penalty):
-    parametrize_vals.append(tuple([*parametrize_constants, *h, *p, locomotion_json,
+    weights_json = state_to_json({
+        "weight_cost":  {
+            "weight": None if h[0] == "hard" else 33,
+            "penalty": p[0]},
+         "weight_time": {
+            "weight": None if h[1] == "hard" else 44,
+            "penalty": p[1]},
+         "weight_slope": {
+                "weight": None if h[2] == "hard" else 55,
+                "penalty": p[2]}})
+    parametrize_vals.append(tuple([*parametrize_constants, weights_json, locomotion_json,
         "return cqm", "not used"]))
 
 @pytest.mark.parametrize(parametrize_names, parametrize_vals)
 @patch("app.client", mock_client)
 def test_submit_job_weights(job_submit_time_val, problem_print_code_val, max_leg_slope_val,
-    max_cost_val, max_time_val, weight_cost_val, weight_time_val, weight_slope_val,
-    weight_cost_hardsoft_val, weight_time_hardsoft_val, weight_slope_hardsoft_val,
-    weight_cost_penalty_val, weight_time_penalty_val, weight_slope_penalty_val,
-    locomotion_val, max_runtime_val, job_id):
+    max_cost_val, max_time_val, weights_val, locomotion_val, max_runtime_val, job_id):
     """Test job submission incorporates penalties correctly.."""
 
     def run_callback():
@@ -172,22 +165,16 @@ def test_submit_job_weights(job_submit_time_val, problem_print_code_val, max_leg
             "triggered_inputs": [{"prop_id": "job_submit_time.children"}],
             "state_values": state_vals}))
 
-        return submit_job(job_submit_time.get(), problem_print_code.get(), max_leg_slope.get(),\
-            max_cost.get(), max_time.get(), weight_cost.get(), weight_time.get(), \
-            weight_slope.get(), weight_cost_hardsoft.get(), weight_time_hardsoft.get(), \
-            weight_slope_hardsoft.get(), weight_cost_penalty.get(), \
-            weight_time_penalty.get(), weight_slope_penalty.get(), \
-            locomotion_state.get(), max_runtime.get())
+        return submit_job(job_submit_time.get(), problem_print_code.get(), \
+            max_leg_slope.get(), max_cost.get(), max_time.get(), \
+            weights_state.get(), locomotion_state.get(), max_runtime.get())
 
     job_submit_time.set(vars()["job_submit_time_val"])
     problem_print_code.set(vars()["problem_print_code_val"])
     max_leg_slope.set(vars()["max_leg_slope_val"])
-    for key in names_budget_inputs + names_weight_inputs:
+    for key in names_budget_inputs:
         globals()[key].set(vars()[key + "_val"])
-    for key in names_weight_inputs:
-        globals()[f"{key}_hardsoft"].set(vars()[f"{key}_hardsoft_val"])
-    for key in names_weight_inputs:
-        globals()[f"{key}_penalty"].set(vars()[f"{key}_penalty_val"])
+    weights_state.set(weights_val)
     locomotion_state.set(locomotion_val)
     max_runtime.set(vars()["max_runtime_val"])
 
@@ -197,10 +184,14 @@ def test_submit_job_weights(job_submit_time_val, problem_print_code_val, max_leg
 
     assert type(output) == dimod.constrained.ConstrainedQuadraticModel
 
-    if weight_cost_hardsoft_val == "soft":
+    weight_vals = state_from_json(weights_val)
+
+    if weight_vals["weight_cost"]["weight"] != None:
         assert output._soft["Total cost"] == dimod.constrained.SoftConstraint(
-            weight=weight_cost_val, penalty=weight_cost_penalty_val)
+            weight=weight_vals["weight_cost"]["weight"],
+            penalty=weight_vals["weight_cost"]["penalty"])
     else:
         with pytest.raises(Exception):
             output.constraint["Total cost"] == dimod.constrained.SoftConstraint(
-                weight=weight_cost_val, penalty=weight_cost_penalty_val)
+                weight=weight_vals["weight_cost"]["weight"],
+                penalty=weight_vals["weight_cost"]["penalty"])

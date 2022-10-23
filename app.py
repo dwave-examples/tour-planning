@@ -445,7 +445,7 @@ def check_user_inputs(num_legs, max_leg_length, min_leg_length, max_leg_slope,
         "drive": {"speed": drive_speed, "cost": drive_cost, "exercise": drive_exercise,
             "use": drive_use}}
 
-    weight_val = \
+    weight_vals = \
         {"weight_cost":  {
             "weight": None if weight_cost_hardsoft == "hard" else weight_cost,
             "penalty": weight_cost_penalty},
@@ -458,7 +458,7 @@ def check_user_inputs(num_legs, max_leg_length, min_leg_length, max_leg_slope,
 
     return trigger_id, max_leg_length, min_leg_length, \
         walk_use, cycle_use, bus_use, drive_use, usemodes_modal, \
-        state_to_json(locomotion_vals), state_to_json(weight_val)
+        state_to_json(locomotion_vals), state_to_json(weight_vals)
 
 @app.callback(
     [Output(f"{graph.lower()}_graph", "figure") for graph in ["Space", "Time", "Feasibility"]],

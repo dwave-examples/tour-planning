@@ -150,6 +150,17 @@ def test_user_inputs_expected_outputs(trigger, num_legs_in, max_leg_length_in,
         "drive": {"speed": drive_speed_in, "cost": drive_cost_in, "exercise": drive_exercise_in,
             "use": drive_use_in}})
 
+    weights_json = state_to_json(
+        {"weight_cost":  {
+            "weight": None if weight_cost_hardsoft_in == "hard" else weight_cost_in,
+            "penalty": weight_cost_penalty_in},
+         "weight_time": {
+            "weight": None if weight_time_hardsoft_in == "hard" else weight_time_in,
+            "penalty": weight_time_penalty_in},
+         "weight_slope": {
+            "weight": None if weight_slope_hardsoft_in == "hard" else weight_slope_in,
+            "penalty": weight_slope_penalty_in}})
+
     assert output == (trigger, max_leg_length_out, min_leg_length_out,
         walk_use_out, cycle_use_out, bus_use_out, drive_use_out, no_update,
-        locomotion_json)
+        locomotion_json, weights_json)

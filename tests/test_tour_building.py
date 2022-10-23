@@ -21,8 +21,8 @@ import random
 
 import dimod
 
-from tour_planning import names_leg_inputs, names_budget_inputs, names_weight_inputs
-from tour_planning import leg_ranges, budget_ranges, weight_ranges, names_all_modes
+from tour_planning import names_leg_inputs, names_budget_inputs
+from tour_planning import leg_ranges, budget_ranges, weight_ranges
 from tour_planning import average_tour_budget, build_cqm, set_legs, tour_budget_boundaries
 
 legs1 = [{"length": 10, "uphill": 5, "toll": False},
@@ -59,20 +59,22 @@ def test_tour_budget_boundaries(legs, locomotion_vals, boundaries):
     assert output == boundaries
 
 parametrize_names = "legs, max_leg_slope, max_cost, max_time," + \
-    " weights, penalties, locomotion_vals"
+    " weight_vals, locomotion_vals"
 
-parametrize_vals = [(legs1, 10, 10, 10, {"cost": None, "time": 55, "slope": None},
-    {"cost": "linear", "time": "linear", "slope": "quadratic"}, locomotion_vals),
-    (legs2, 10, 10, 10, {"cost": None, "time": 55, "slope": None},
-        {"cost": "linear", "time": "linear", "slope": "quadratic"}, locomotion_vals)]
+weight_vals = {"weight_cost":  {"weight": None, "penalty": "linear"},
+     "weight_time": {"weight": 55, "penalty": "linear"},
+     "weight_slope": {"weight": None, "penalty": "quadratic"}}
+
+parametrize_vals = [(legs1, 10, 10, 10, weight_vals, locomotion_vals),
+    (legs2, 10, 10, 10, weight_vals, locomotion_vals)]
 
 @pytest.mark.parametrize(parametrize_names, parametrize_vals)
 def test_build_cqm(legs, max_leg_slope, max_cost,
-    max_time, weights, penalties, locomotion_vals):
+    max_time, weight_vals, locomotion_vals):
     """Minimal, simple testing that CQM builds correctly."""
 
     output = build_cqm(legs, max_leg_slope, max_cost,
-        max_time, weights, penalties, locomotion_vals)
+        max_time, weight_vals, locomotion_vals)
 
     assert type(output) == dimod.ConstrainedQuadraticModel
     assert len(output.constraints) >= 2 + len(legs)

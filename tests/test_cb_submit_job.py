@@ -82,12 +82,6 @@ class mock_client():
     def get_solver(cls, **kwargs):
         a_fake_solver = fake_solver()
         return a_fake_solver
-
-locomotion_json = state_to_json({
-    "walk": {"speed": 1, "cost": 0, "exercise": 1, "use": True},
-    "cycle": {"speed": 3, "cost": 2, "exercise": 2, "use": True},
-     "bus": {"speed": 4, "cost": 3, "exercise": 0, "use": True},
-     "drive": {"speed": 7, "cost": 5, "exercise": 0, "use": True}})
 #
 weights_json = state_to_json({"weight_cost":  {"weight": None, "penalty": "linear"},
      "weight_time": {"weight": None, "penalty": "linear"},
@@ -95,18 +89,18 @@ weights_json = state_to_json({"weight_cost":  {"weight": None, "penalty": "linea
 
 parametrize_names = "job_submit_time_val, problem_print_code_val, max_leg_slope_val, " + \
     ", ".join([f'{key}_val ' for key in names_budget_inputs]) + \
-    ", weights_val, locomotion_val, max_runtime_val, job_id"
+    ", weights_val, max_runtime_val, job_id"
 
 parametrize_vals = [
     ("high tea time", problem_print_placeholder, 8, 100, 20, weights_json,
-        locomotion_json, 5, "67890"),
+        5, "67890"),
     ("later", problem_print_placeholder, 8, 100, 20, weights_json,
-        locomotion_json, 20, "67890"),]
+        20, "67890"),]
 
 @pytest.mark.parametrize(parametrize_names, parametrize_vals)
 @patch("app.client", mock_client)
-def test_submit_job(job_submit_time_val, problem_print_code_val, max_leg_slope_val,
-    max_cost_val, max_time_val, weights_val, locomotion_val, max_runtime_val, job_id):
+def test_submit_job(locomotion_data_default, job_submit_time_val, problem_print_code_val,
+    max_leg_slope_val,  max_cost_val, max_time_val, weights_val, max_runtime_val, job_id):
     """Test job submission."""
 
     def run_callback():
@@ -125,7 +119,7 @@ def test_submit_job(job_submit_time_val, problem_print_code_val, max_leg_slope_v
     for key in names_budget_inputs:
         globals()[key].set(vars()[key + "_val"])
     weights_state.set(weights_val)
-    locomotion_state.set(locomotion_val)
+    locomotion_state.set(state_to_json(locomotion_data_default))
     max_runtime.set(vars()["max_runtime_val"])
 
     ctx = copy_context()
@@ -150,13 +144,14 @@ for h, p in zip(hardsoft, penalty):
          "weight_slope": {
                 "weight": None if h[2] == "hard" else 55,
                 "penalty": p[2]}})
-    parametrize_vals.append(tuple([*parametrize_constants, weights_json, locomotion_json,
+    parametrize_vals.append(tuple([*parametrize_constants, weights_json,
         "return cqm", "not used"]))
 
 @pytest.mark.parametrize(parametrize_names, parametrize_vals)
 @patch("app.client", mock_client)
-def test_submit_job_weights(job_submit_time_val, problem_print_code_val, max_leg_slope_val,
-    max_cost_val, max_time_val, weights_val, locomotion_val, max_runtime_val, job_id):
+def test_submit_job_weights(locomotion_data_default, job_submit_time_val,
+    problem_print_code_val, max_leg_slope_val, max_cost_val, max_time_val,
+    weights_val, max_runtime_val, job_id):
     """Test job submission incorporates penalties correctly.."""
 
     def run_callback():
@@ -175,7 +170,7 @@ def test_submit_job_weights(job_submit_time_val, problem_print_code_val, max_leg
     for key in names_budget_inputs:
         globals()[key].set(vars()[key + "_val"])
     weights_state.set(weights_val)
-    locomotion_state.set(locomotion_val)
+    locomotion_state.set(state_to_json(locomotion_data_default))
     max_runtime.set(vars()["max_runtime_val"])
 
     ctx = copy_context()

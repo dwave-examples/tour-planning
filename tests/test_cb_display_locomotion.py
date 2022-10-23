@@ -40,21 +40,13 @@ problem_json = '[{"length": 5.3, "uphill": 7.0, "toll": false},'+\
 boundaries = {'cost_min': 0.0, 'cost_max': 54.5, 'cost_avg': 27.2, 'time_min': 1.6,
     'time_max': 10.9, 'time_avg': 2.7}
 
-locomotion_json = state_to_json({
-    "walk": {"speed": 1, "cost": 0, "exercise": 1, "use": True},
-    "cycle": {"speed": 3, "cost": 2, "exercise": 2, "use": True},
-     "bus": {"speed": 4, "cost": 3, "exercise": 0, "use": True},
-     "drive": {"speed": 7, "cost": 5, "exercise": 0, "use": True}})
+parametrize_names = "cqm_print_val, problem_print_code_val, boundaries"
 
-parametrize_names = "cqm_print_val, problem_print_code_val, " + \
-    "locomotion_val, boundaries"
-
-parametrize_vals = [
-    (problem_json, problem_json, locomotion_json, boundaries),]
+parametrize_vals = [(problem_json, problem_json, boundaries),]
 
 @pytest.mark.parametrize(parametrize_names, parametrize_vals)
-def test_display_locomotion(cqm_print_val, problem_print_code_val,
-    locomotion_val, boundaries):
+def test_display_locomotion(locomotion_data_default, cqm_print_val,
+    problem_print_code_val, boundaries):
     """Test display of locomotion modes."""
 
     def run_callback():
@@ -67,7 +59,7 @@ def test_display_locomotion(cqm_print_val, problem_print_code_val,
 
     cqm_print.set(cqm_print_val)
     problem_print_code.set(problem_print_code_val)
-    locomotion_state.set(locomotion_val)
+    locomotion_state.set(state_to_json(locomotion_data_default))
 
     ctx = copy_context()
 

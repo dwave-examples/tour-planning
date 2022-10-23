@@ -49,22 +49,16 @@ cqm_placeholder = " "
 def mock_print(self):
     return self
 
-locomotion_json = state_to_json({
-    "walk": {"speed": 1, "cost": 0, "exercise": 1, "use": True},
-    "cycle": {"speed": 3, "cost": 2, "exercise": 2, "use": True},
-     "bus": {"speed": 4, "cost": 3, "exercise": 0, "use": True},
-     "drive": {"speed": 7, "cost": 5, "exercise": 0, "use": True}})
-
 weights_json = state_to_json({"weight_cost":  {"weight": None, "penalty": "linear"},
      "weight_time": {"weight": None, "penalty": "linear"},
      "weight_slope": {"weight": 55, "penalty": "quadratic"}})
 
 parametrize_names = "trigger, changed_input_val, problem_print_code_val, max_leg_slope_val, " + \
     ", ".join([f'{key}_val ' for key in names_budget_inputs]) + \
-    ", weights_val, locomotion_val, cqm_print_val"
+    ", weights_val, cqm_print_val"
 
 parametrize_constants = ["num_legs", problem_print_placeholder, 8, 200, 20,
-    weights_json, locomotion_json]
+    weights_json]
 parametrize_vals = [("changed_input", *parametrize_constants, cqm_placeholder),
     ("problem_print_code", *parametrize_constants, cqm_placeholder),
     (no_update, *parametrize_constants, cqm_placeholder),
@@ -72,8 +66,9 @@ parametrize_vals = [("changed_input", *parametrize_constants, cqm_placeholder),
 
 @pytest.mark.parametrize(parametrize_names, parametrize_vals)
 @patch("app.cqm_to_display", mock_print)
-def test_cqm_generation(trigger, changed_input_val, problem_print_code_val, max_leg_slope_val,
-    max_cost_val, max_time_val, weights_val, locomotion_val, cqm_print_val):
+def test_cqm_generation(locomotion_data_default, trigger, changed_input_val,
+    problem_print_code_val, max_leg_slope_val, max_cost_val, max_time_val,
+    weights_val, cqm_print_val):
     """Test that a CQM is generated based on input signals."""
 
     def run_callback():
@@ -91,7 +86,7 @@ def test_cqm_generation(trigger, changed_input_val, problem_print_code_val, max_
     max_leg_slope.set(vars()["max_leg_slope_val"])
     for key in names_budget_inputs:
         globals()[key].set(vars()[key + "_val"])
-    locomotion_state.set(locomotion_val)
+    locomotion_state.set(state_to_json(locomotion_data_default))
     weights_state.set(weights_val)
 
     ctx = copy_context()
@@ -123,13 +118,14 @@ for h, p in zip(hardsoft, penalty):
          "weight_slope": {
                 "weight": None if h[2] == "hard" else 55,
                 "penalty": p[2]}})
-    parametrize_vals.append(tuple([*parametrize_constants, weights_json, locomotion_json,
+    parametrize_vals.append(tuple([*parametrize_constants, weights_json,
         cqm_placeholder]))
 
 @pytest.mark.parametrize(parametrize_names, parametrize_vals)
 @patch("app.cqm_to_display", mock_print)
-def test_cqm_weights(changed_input_val, problem_print_code_val, max_leg_slope_val,
-    max_cost_val, max_time_val, weights_val, locomotion_val, cqm_print_val):
+def test_cqm_weights(locomotion_data_default, changed_input_val,
+    problem_print_code_val, max_leg_slope_val, max_cost_val, max_time_val,
+    weights_val, cqm_print_val):
     """Test that CQM incorporates penalties correctly."""
 
     def run_callback():
@@ -148,7 +144,7 @@ def test_cqm_weights(changed_input_val, problem_print_code_val, max_leg_slope_va
     for key in names_budget_inputs:
         globals()[key].set(vars()[key + "_val"])
     weights_state.set(weights_val)
-    locomotion_state.set(locomotion_val)
+    locomotion_state.set(state_to_json(locomotion_data_default))
 
     ctx = copy_context()
 

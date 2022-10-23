@@ -44,24 +44,17 @@ sampleset = dimod.SampleSet.from_samples(dimod.as_samples([
 sampleset = dimod.append_data_vectors(sampleset, is_satisfied=[[True], [True]])
 sampleset = dimod.append_data_vectors(sampleset, is_feasible=[True, False])
 
-locomotion_json = state_to_json({
-    "walk": {"speed": 1, "cost": 0, "exercise": 1, "use": True},
-    "cycle": {"speed": 3, "cost": 2, "exercise": 2, "use": True},
-     "bus": {"speed": 4, "cost": 3, "exercise": 0, "use": True},
-     "drive": {"speed": 7, "cost": 5, "exercise": 0, "use": True}})
-
 parametrize_names = "trigger, solutions_print_code_val, problem_print_code_val, " + \
-    "locomotion_val, fig_space, fig_time, fig_feasiblity"
+    "fig_space, fig_time, fig_feasiblity"
 parametrize_vals = [
-    ("problem_print_code", "anything", problem_json, locomotion_json,
-        "bar", "bar", "bar"),
-    ("solutions_print_code", sampleset, problem_json, locomotion_json,
-        "bar", "bar", "scatter3d"),]
+    ("problem_print_code", "anything", problem_json, "bar", "bar", "bar"),
+    ("solutions_print_code", sampleset, problem_json, "bar", "bar", "scatter3d"),]
 
 @pytest.mark.parametrize(parametrize_names, parametrize_vals)
 @patch("app.sampleset_from_json", return_value=sampleset)
-def test_display_graphics(mock, trigger, solutions_print_code_val, problem_print_code_val,
-    locomotion_val, fig_space, fig_time, fig_feasiblity):
+def test_display_graphics(mock, locomotion_data_default, trigger,
+    solutions_print_code_val, problem_print_code_val,
+    fig_space, fig_time, fig_feasiblity):
     """Test display of graphics."""
 
     def run_callback():
@@ -73,7 +66,7 @@ def test_display_graphics(mock, trigger, solutions_print_code_val, problem_print
 
     solutions_print_code.set(solutions_print_code_val)
     problem_print_code.set(problem_print_code_val)
-    locomotion_state.set(locomotion_val)
+    locomotion_state.set(state_to_json(locomotion_data_default))
 
     ctx = copy_context()
 

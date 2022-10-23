@@ -25,9 +25,8 @@ import plotly
 
 import dimod
 
-from formatting import locomotion_to_json, tour_from_json
+from formatting import locomotion_to_json
 
-from app import names_locomotion_inputs, names_all_modes
 from app import display_graphics
 
 solutions_print_code = ContextVar("solutions_print_code")
@@ -44,10 +43,6 @@ sampleset = dimod.SampleSet.from_samples(dimod.as_samples([
         "bus_1": 0, "drive_1": 1, "cycle_1": 0, "walk_1": 0}]), "BINARY", [0, 0])
 sampleset = dimod.append_data_vectors(sampleset, is_satisfied=[[True], [True]])
 sampleset = dimod.append_data_vectors(sampleset, is_feasible=[True, False])
-sampleset_feasible = sampleset.filter(lambda row: row.is_feasible)
-first = sorted({int(key.split("_")[1]): key.split("_")[0] for key,val in \
-    sampleset_feasible.first.sample.items() if val==1.0}.items())
-samples = {"sampleset": sampleset, "feasible": sampleset_feasible, "first": first}
 
 locomotion_json = locomotion_to_json({
     "walk": {"speed": 1, "cost": 0, "exercise": 1, "use": True},
@@ -60,11 +55,11 @@ parametrize_names = "trigger, solutions_print_code_val, problem_print_code_val, 
 parametrize_vals = [
     ("problem_print_code", "anything", problem_json, locomotion_json,
         "bar", "bar", "bar"),
-    ("solutions_print_code", samples, problem_json, locomotion_json,
+    ("solutions_print_code", sampleset, problem_json, locomotion_json,
         "bar", "bar", "scatter3d"),]
 
 @pytest.mark.parametrize(parametrize_names, parametrize_vals)
-@patch("app.sampleset_from_json", return_value=samples)
+@patch("app.sampleset_from_json", return_value=sampleset)
 def test_display_graphics(mock, trigger, solutions_print_code_val, problem_print_code_val,
     locomotion_val, fig_space, fig_time, fig_feasiblity):
     """Test display of graphics."""

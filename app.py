@@ -492,17 +492,16 @@ def display_graphics(solutions_print_code, problem_print_code, locomotion_state)
 
     legs = tour_from_json(problem_print_code)
 
-    samples = None
     if trigger_id == "solutions_print_code":
-        samples = sampleset_from_json(solutions_print_code)
-        if not isinstance(samples, dict):
-            samples = None
+        sampleset = sampleset_from_json(solutions_print_code)
+    else:
+        sampleset = None
 
     locomotion_vals = locomotion_from_json(locomotion_state)
 
-    fig_space = plot_space(legs, samples)
-    fig_time = plot_time(legs, locomotion_vals, samples)
-    fig_feasiblity = plot_feasiblity(legs, locomotion_vals, samples)
+    fig_space = plot_space(legs, sampleset)
+    fig_time = plot_time(legs, locomotion_vals, sampleset)
+    fig_feasiblity = plot_feasiblity(legs, locomotion_vals, sampleset)
 
     return fig_space, fig_time, fig_feasiblity
 
@@ -585,19 +584,12 @@ def set_progress_bar(job_submit_state):
     [State(id, "value") for id in names_weight_inputs],
     [State(f"{id}_hardsoft", "value") for id in names_weight_inputs],
     [State(f"{id}_penalty", "value") for id in names_weight_inputs],
-    # [State(id, "value") for id in names_locomotion_inputs],
-    # [State(f"{id}_use", "value") for id in names_all_modes],
     [State("locomotion_state", "children")],
     [State("max_runtime", "value")],)
 def submit_job(job_submit_time, problem_print_code, max_leg_slope,
     max_cost, max_time, weight_cost, weight_time, weight_slope,
     weight_cost_hardsoft, weight_time_hardsoft, weight_slope_hardsoft,
     weight_cost_penalty, weight_time_penalty, weight_slope_penalty,
-    # walk_speed, walk_cost, walk_exercise,
-    # cycle_speed, cycle_cost, cycle_exercise,
-    # bus_speed, bus_cost, bus_exercise,
-    # drive_speed, drive_cost, drive_exercise,
-    # walk_use, cycle_use, bus_use, drive_use,
     locomotion_state, max_runtime):
     """Submit job and provide job ID."""
 

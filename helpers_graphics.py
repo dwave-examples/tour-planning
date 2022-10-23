@@ -22,8 +22,9 @@ from tour_planning import _calculate_total
 __all__ = ["plot_space", "plot_time", "plot_feasiblity"]
 
 
-def _initial_fig(fig, legs, df, x_axis, image):
-    """Plot the tour, background, and tollboths."""
+def _plot_background(fig, legs, df, x_axis, image):
+    """Plot the background and tollboths. For Time, requires feasible sample."""
+
     fig.add_layout_image(
             dict(source=image, xref="x", yref="y", x=0, y=0.5,
             sizex=df[x_axis].sum(), sizey=1, sizing="stretch",
@@ -48,20 +49,32 @@ def _initial_fig(fig, legs, df, x_axis, image):
 
     return x_width
 
-def _plot_results(fig, samples, df, x_axis, x_width):
-    """Add the best found solution to the graphics."""
-    fig.update_traces(texttemplate = [locomotion for leg,locomotion in samples["first"]],
+def get_first_feasible_sorted(sampleset):
+    """Get first samples, preferably feasible."""
+
+    sampleset_feasible = sampleset.filter(lambda row: row.is_feasible)
+    if len(sampleset_feasible) > 0:
+        first = sorted({int(key.split("_")[1]): key.split("_")[0] for key,val in \
+            sampleset_feasible.first.sample.items() if val==1.0}.items())
+    else:
+        first = None
+
+    return first
+
+def _plot_results(fig, first, df, x_axis, x_width):
+    """Add the best found, feasible solution to the graphics."""
+
+    fig.update_traces(texttemplate = [locomotion for leg, locomotion in first],
         textposition = "inside")
 
     x_pos = 0
-    for leg, icon in samples["first"]:
+    for leg, icon in first:
         fig.add_layout_image(dict(source=f"assets/{icon}.png", xref="x",
         yref="y", x=x_pos, y=-0.1, sizex=0.025*x_width, sizey=0.025*x_width,
             opacity=1, layer="above"))
         x_pos += df[x_axis][leg]
 
-
-def plot_space(legs, samples=None):
+def plot_space(legs, sampleset=None):
     """Plot legs versus distance and slope, optionally with solutions."""
 
     df_legs = pd.DataFrame({"Length": [l["length"] for l in legs],
@@ -72,37 +85,50 @@ def plot_space(legs, samples=None):
                  color_continuous_scale=px.colors.diverging.Geyser,
                  hover_data=["Length", "Slope"])    # looks like plotly bug (hover_data)
 
-    x_width = _initial_fig(fig, legs, df_legs, "Length", "assets/background_space.jpg")
+    x_width = _plot_background(fig, legs, df_legs, "Length", "assets/background_space.jpg")
 
-    if samples:
-        _plot_results(fig, samples, df_legs, "Length", x_width)
+    if sampleset:
+
+        first = get_first_feasible_sorted(sampleset)
+
+        if first:
+            _plot_results(fig, first, df_legs, "Length", x_width)
+        else:
+             fig.add_annotation(x=0.1, y=0.85,  text="No feasible solutions found.",
+                xref="paper", yref="paper", font=dict(size=18, color="red"),
+                showarrow=False)
 
     return fig
 
-def plot_time(legs, locomotion_vals, samples):
+def plot_time(legs, locomotion_vals, sampleset):
     """Plot legs versus time and cost given solutions."""
 
-    if not samples:
+    if not sampleset:
+        return px.bar()
+
+    first = get_first_feasible_sorted(sampleset)
+
+    if not first:
         return px.bar()
 
     df_legs = pd.DataFrame({"Time": [l["length"]/locomotion_vals[f[1]]["speed"] for
-        l,f in zip(legs, samples["first"])],
-        "Cost": [locomotion_vals[f[1]]["cost"] for f in samples["first"]]})
+        l,f in zip(legs, first)],
+        "Cost": [locomotion_vals[f[1]]["cost"] for f in first]})
     df_legs["Tour"] = 0
 
     fig = px.bar(df_legs, x="Time", y="Tour", color="Cost", orientation="h",
         color_continuous_scale=px.colors.diverging.Geyser)
 
-    x_width = _initial_fig(fig, legs, df_legs, "Time", "assets/background_time.jpg")
+    x_width = _plot_background(fig, legs, df_legs, "Time", "assets/background_time.jpg")
 
-    _plot_results(fig, samples, df_legs, "Time", x_width)
+    _plot_results(fig, first, df_legs, "Time", x_width)
 
     return fig
 
-def plot_feasiblity(legs, locomotion_vals, samples):
+def plot_feasiblity(legs, locomotion_vals, sampleset):
     """Plot solutions."""
 
-    if not samples:
+    if not sampleset:
         return px.bar()
 
     #Done only once per job submission but can move to NumPy if slow
@@ -110,7 +136,7 @@ def plot_feasiblity(legs, locomotion_vals, samples):
     t= [dimod.Binary(f"{mode}_{i}") for i in range(len(legs)) for mode in modes]
 
     data = {"Cost": [], "Time": [], "Exercise": [], "Energy": [], "Feasibility": []}
-    for sample, energy, feasibility in samples["sampleset"].data(
+    for sample, energy, feasibility in sampleset.data(
         fields=["sample", "energy", "is_feasible"]):
         for measure in ["Cost", "Time", "Exercise"]:
             data[measure].append(_calculate_total(t, measure, legs, locomotion_vals).energy(sample))

@@ -87,14 +87,7 @@ def sampleset_to_json(sampleset):
 def sampleset_from_json(saved_sampleset):
     """Retrieve saved sampleset."""
 
-    sampleset = dimod.SampleSet.from_serializable(json.loads(saved_sampleset))
-    sampleset_feasible = sampleset.filter(lambda row: row.is_feasible)
-    if len(sampleset_feasible) == 0:
-        return "No feasible solutions found."
-    first = sorted({int(key.split("_")[1]): key.split("_")[0] for key,val in \
-        sampleset_feasible.first.sample.items() if val==1.0}.items())
-
-    return {"sampleset": sampleset, "feasible": sampleset_feasible, "first": first}
+    return dimod.SampleSet.from_serializable(json.loads(saved_sampleset))
 
 def cqm_to_display(cqm):
     """Output CQM for humans."""

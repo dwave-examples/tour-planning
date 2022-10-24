@@ -82,7 +82,7 @@ def plot_space(legs, sampleset=None):
     df_legs["Tour"] = 0
 
     fig = px.bar(df_legs, x="Length", y="Tour", color="Slope", orientation="h",
-                 color_continuous_scale=px.colors.diverging.Geyser,
+                 color_continuous_scale=["#074C91", "#2A7DE1", "#17BEBB", "#FFA143", "#F37820"],
                  hover_data=["Length", "Slope"])    # looks like plotly bug (hover_data)
 
     x_width = _plot_background(fig, legs, df_legs, "Length", "assets/background_space.jpg")
@@ -117,7 +117,7 @@ def plot_time(legs, locomotion_vals, sampleset):
     df_legs["Tour"] = 0
 
     fig = px.bar(df_legs, x="Time", y="Tour", color="Cost", orientation="h",
-        color_continuous_scale=px.colors.diverging.Geyser)
+        color_continuous_scale=["#074C91", "#2A7DE1", "#17BEBB", "#FFA143", "#F37820"])
 
     x_width = _plot_background(fig, legs, df_legs, "Time", "assets/background_time.jpg")
 

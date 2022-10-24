@@ -16,11 +16,11 @@ from parameterized import parameterized
 import pytest
 from unittest.mock import patch
 
-import time
-
 from contextvars import copy_context, ContextVar
 from dash._callback_context import context_value
 from dash._utils import AttributeDict
+
+import time
 
 from dwave.cloud import api
 

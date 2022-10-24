@@ -11,25 +11,25 @@
 #    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #    See the License for the specific language governing permissions and
 #    limitations under the License.
+from contextvars import copy_context, ContextVar
+from dash._callback_context import context_value
+from dash._utils import AttributeDict
+from dash import no_update
+
 import copy
 import numpy as np
 from parameterized import parameterized
 import pytest
 import random
 
-from contextvars import copy_context, ContextVar
-from dash._callback_context import context_value
-from dash._utils import AttributeDict
-from dash import no_update
-
-from app import (names_locomotion_inputs, names_leg_inputs, names_slope_inputs,
-    names_budget_inputs, names_weight_inputs)
-from app import names_all_modes
-from app import check_user_inputs
-
-from formatting import state_to_json, tour_from_json
+from helpers.formatting import state_to_json, tour_from_json
 from tour_planning import leg_ranges, slope_ranges, budget_ranges, weight_ranges
 from tour_planning import weight_init_values
+
+from app import (names_all_modes, names_locomotion_inputs, names_leg_inputs,
+    names_slope_inputs, names_budget_inputs, names_weight_inputs)
+
+from app import check_user_inputs
 
 for key in names_locomotion_inputs + names_leg_inputs + names_slope_inputs + \
     names_budget_inputs + names_weight_inputs:

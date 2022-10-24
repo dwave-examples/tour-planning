@@ -22,15 +22,15 @@ import time, datetime
 from dwave.cloud.hybrid import Client
 from dwave.cloud.api import Problems, exceptions
 
-from formatting import *
-from helpers_graphics import *
-from helpers_jobs import *
-from helpers_layout import *
+from helpers.formatting import *
+from helpers.graphics import *
+from helpers.jobs import *
+from helpers.layout import *
+from helpers.tool_tips import tool_tips
 from tour_planning import (build_cqm, set_legs, tour_budget_boundaries,
     names_locomotion_inputs, names_leg_inputs, names_slope_inputs,
     names_weight_inputs, names_budget_inputs, names_all_modes)
 from tour_planning import MAX_SOLVER_RUNTIME
-from tool_tips import tool_tips
 
 app = dash.Dash(__name__, external_stylesheets=[dbc.themes.BOOTSTRAP])
 

@@ -23,7 +23,7 @@ import plotly
 
 import dimod
 
-from formatting import state_to_json, tour_to_json
+from helpers.formatting import state_to_json, tour_to_json
 
 from app import display_locomotion
 

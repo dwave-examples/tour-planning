@@ -26,7 +26,8 @@ import json
 import dimod
 from dwave.cloud import api
 
-from helpers_jobs import TERMINATED
+from helpers.jobs import TERMINATED
+
 from app import display_solutions
 
 job_submit_state = ContextVar('job_submit_state')

@@ -22,10 +22,11 @@ from dash import no_update
 
 import datetime
 
-from formatting import tour_from_json
-from helpers_jobs import elapsed
+from helpers.formatting import tour_from_json
+from helpers.jobs import elapsed
 
 from app import names_leg_inputs, names_budget_inputs, names_weight_inputs
+
 from app import manage_submission
 
 n_clicks = ContextVar('n_clicks')

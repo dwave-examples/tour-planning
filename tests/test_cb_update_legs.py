@@ -22,9 +22,11 @@ from dash import no_update
 
 import random
 
+from helpers.formatting import tour_from_json, tour_to_display
+
 from app import names_leg_inputs, names_budget_inputs, names_weight_inputs
+
 from app import update_legs
-from formatting import tour_from_json, tour_to_display
 
 changed_input = ContextVar("changed_input")
 for key in names_leg_inputs:

@@ -16,7 +16,7 @@ import plotly.express as px
 
 import dimod
 
-from formatting import *
+from helpers.formatting import *
 from tour_planning import _calculate_total
 
 __all__ = ["plot_space", "plot_time", "plot_feasiblity"]

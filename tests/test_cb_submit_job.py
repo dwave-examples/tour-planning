@@ -24,9 +24,10 @@ from dash import no_update
 
 import dimod
 
-from formatting import state_to_json, state_from_json
+from helpers.formatting import state_to_json, state_from_json
 
 from app import names_budget_inputs
+
 from app import submit_job
 
 problem_print_placeholder = '[{"length": 9.4, "uphill": 0.1, "toll": false}, {"length": 6.9, "uphill": 2.5, "toll": false}]'

@@ -13,7 +13,7 @@
 #    limitations under the License.
 from dash import dcc, html
 import datetime
-from formatting import *
+from helpers.formatting import *
 
 from dwave.cloud.api import exceptions, Problems
 

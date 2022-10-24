@@ -23,7 +23,7 @@ import plotly
 
 import dimod
 
-from formatting import sampleset_to_json, state_to_json, tour_to_json
+from helpers.formatting import sampleset_to_json, state_to_json, tour_to_json
 
 from app import display_graphics
 

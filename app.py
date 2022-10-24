@@ -15,21 +15,23 @@
 import dash
 import dash_bootstrap_components as dbc
 from dash import dcc, html, Input, Output, State
+
+from json import JSONDecodeError
 import time, datetime
+
+import dimod
+from dwave.cloud.hybrid import Client
+from dwave.cloud.api import Problems, exceptions
 
 from formatting import *
 from helpers_graphics import *
 from helpers_jobs import *
 from helpers_layout import *
-from tour_planning import build_cqm, set_legs, locomotion, tour_budget_boundaries
-from tour_planning import (names_locomotion_inputs, names_leg_inputs, names_slope_inputs,
+from tour_planning import (build_cqm, set_legs, locomotion, tour_budget_boundaries,
+    names_locomotion_inputs, names_leg_inputs, names_slope_inputs,
     names_weight_inputs, names_budget_inputs, names_all_modes)
 from tour_planning import MAX_SOLVER_RUNTIME
 from tool_tips import tool_tips
-
-import dimod
-from dwave.cloud.hybrid import Client
-from dwave.cloud.api import Problems, exceptions
 
 app = dash.Dash(__name__, external_stylesheets=[dbc.themes.BOOTSTRAP])
 
@@ -91,7 +93,6 @@ graph_tabs.extend([
             dbc.Row([
                 dbc.Col([
                     dcc.Graph(id="feasibility_graph")], width=8),
-
                 dbc.Col([
                     dcc.Textarea(id=f"feasibility_text", value=description_feasibility_plot,
                         style={"width": "100%"}, rows=10)],
@@ -135,7 +136,8 @@ tabs["Locomotion"] = dbc.Card([
             *[dbc.Row([
                 dbc.Col([html.P(f"{row}")], width=2),
                 *[dbc.Col(
-                    [_dcc_input(f"{name}")], width=2) for name in names_locomotion_inputs if row in name],
+                    [_dcc_input(f"{name}")], width=2) for name in names_locomotion_inputs
+                        if row in name],
                 dbc.Col(
                     [dcc.Checklist([
                         {"label": html.Div([""],),
@@ -280,7 +282,7 @@ def alert_no_solver(btn_solve_cqm):
     [Output(id, "disabled") for id in names_weight_inputs],
     [Input(f"{id}_hardsoft", "value") for id in names_weight_inputs],)
 def disable_weights(weight_cost_hardsoft, weight_time_hardsoft, weight_slope_hardsoft):
-    """Disable ."""
+    """Disable weight inputs for hard constraints."""
 
     trigger_id = dash.callback_context.triggered[0]["prop_id"].split(".")[0]
 
@@ -418,7 +420,7 @@ def check_user_inputs(num_legs, max_leg_length, min_leg_length, max_leg_slope,
     bus_speed, bus_cost, bus_exercise,
     drive_speed, drive_cost, drive_exercise,
     walk_use, cycle_use, bus_use, drive_use):
-    """Handle user inputs and write to readable text."""
+    """Handle user inputs, identify changed input to other callbacks, save states."""
 
     trigger = dash.callback_context.triggered
     trigger_id = trigger[0]["prop_id"].split(".")[0]
@@ -474,7 +476,10 @@ def display_graphics(solutions_print_code, problem_print_code, locomotion_state)
     legs = tour_from_json(problem_print_code)
 
     if trigger_id == "solutions_print_code":
-        sampleset = sampleset_from_json(solutions_print_code)
+        try:
+            sampleset = sampleset_from_json(solutions_print_code)
+        except JSONDecodeError:
+            sampleset = None    # For cancelled/failed jobs
     else:
         sampleset = None
 
@@ -577,7 +582,6 @@ def submit_job(job_submit_time, problem_print_code, max_leg_slope,
 
         weight_vals = state_from_json(weights_state)
         locomotion_vals = state_from_json(locomotion_state)
-
         legs = tour_from_json(problem_print_code)
 
         cqm = build_cqm(legs, max_leg_slope, max_cost, max_time,

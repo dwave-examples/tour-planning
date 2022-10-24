@@ -14,18 +14,16 @@
 
 from parameterized import parameterized
 import pytest
-from unittest.mock import patch
 
 from contextvars import copy_context, ContextVar
 from dash._callback_context import context_value
 from dash._utils import AttributeDict
-from dash import no_update
 
 import plotly
 
 import dimod
 
-from formatting import state_to_json
+from formatting import sampleset_to_json, state_to_json, tour_to_json
 
 from app import display_graphics
 
@@ -33,28 +31,14 @@ solutions_print_code = ContextVar("solutions_print_code")
 problem_print_code = ContextVar("problem_print_code")
 locomotion_state = ContextVar("locomotion_state")
 
-problem_json = '[{"length": 5.3, "uphill": 7.0, "toll": false},'+\
-'{"length": 5.6, "uphill": 2.9, "toll": false}]'
-
-sampleset = dimod.SampleSet.from_samples(dimod.as_samples([
-    {"bus_0": 0, "drive_0": 1, "cycle_0": 0, "walk_0": 0,
-        "bus_1": 0, "drive_1": 1, "cycle_1": 0, "walk_1": 0},
-    {"bus_0": 0, "drive_0": 0, "cycle_0": 0, "walk_0": 1,
-        "bus_1": 0, "drive_1": 1, "cycle_1": 0, "walk_1": 0}]), "BINARY", [0, 0])
-sampleset = dimod.append_data_vectors(sampleset, is_satisfied=[[True], [True]])
-sampleset = dimod.append_data_vectors(sampleset, is_feasible=[True, False])
-
-parametrize_names = "trigger, solutions_print_code_val, problem_print_code_val, " + \
-    "fig_space, fig_time, fig_feasiblity"
+parametrize_names = "trigger, fig_space, fig_time, fig_feasiblity"
 parametrize_vals = [
-    ("problem_print_code", "anything", problem_json, "bar", "bar", "bar"),
-    ("solutions_print_code", sampleset, problem_json, "bar", "bar", "scatter3d"),]
+    ("problem_print_code", "bar", "bar", "bar"),
+    ("solutions_print_code", "bar", "bar", "scatter3d"),]
 
 @pytest.mark.parametrize(parametrize_names, parametrize_vals)
-@patch("app.sampleset_from_json", return_value=sampleset)
-def test_display_graphics(mock, locomotion_data_default, trigger,
-    solutions_print_code_val, problem_print_code_val,
-    fig_space, fig_time, fig_feasiblity):
+def test_display_graphics(locomotion_data_default, tour_data_default_2_legs,
+    samplesets_feasible_infeasible, trigger, fig_space, fig_time, fig_feasiblity):
     """Test display of graphics."""
 
     def run_callback():
@@ -64,8 +48,8 @@ def test_display_graphics(mock, locomotion_data_default, trigger,
         return display_graphics(solutions_print_code.get(), problem_print_code.get(), \
             locomotion_state.get())
 
-    solutions_print_code.set(solutions_print_code_val)
-    problem_print_code.set(problem_print_code_val)
+    solutions_print_code.set(sampleset_to_json(samplesets_feasible_infeasible["feasible"]))
+    problem_print_code.set(tour_to_json(tour_data_default_2_legs))
     locomotion_state.set(state_to_json(locomotion_data_default))
 
     ctx = copy_context()

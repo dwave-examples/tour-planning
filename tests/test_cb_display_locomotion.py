@@ -23,7 +23,7 @@ import plotly
 
 import dimod
 
-from formatting import state_to_json
+from formatting import state_to_json, tour_to_json
 
 from app import display_locomotion
 
@@ -34,19 +34,12 @@ locomotion_state = ContextVar("locomotion_state")
 state_vals = [{"prop_id": "problem_print_code.value"}]
 state_vals.extend([{"prop_id": "locomotion_state.children"}])
 
-problem_json = '[{"length": 5.3, "uphill": 7.0, "toll": false},'+\
-'{"length": 5.6, "uphill": 2.9, "toll": false}]'
-
 boundaries = {'cost_min': 0.0, 'cost_max': 54.5, 'cost_avg': 27.2, 'time_min': 1.6,
     'time_max': 10.9, 'time_avg': 2.7}
 
-parametrize_names = "cqm_print_val, problem_print_code_val, boundaries"
-
-parametrize_vals = [(problem_json, problem_json, boundaries),]
-
-@pytest.mark.parametrize(parametrize_names, parametrize_vals)
-def test_display_locomotion(locomotion_data_default, cqm_print_val,
-    problem_print_code_val, boundaries):
+@pytest.mark.parametrize("cqm_print_val, boundaries", [("a CQM", boundaries),])
+def test_display_locomotion(locomotion_data_default, tour_data_default_2_legs,
+    cqm_print_val, boundaries):
     """Test display of locomotion modes."""
 
     def run_callback():
@@ -58,7 +51,7 @@ def test_display_locomotion(locomotion_data_default, cqm_print_val,
             locomotion_state.get())
 
     cqm_print.set(cqm_print_val)
-    problem_print_code.set(problem_print_code_val)
+    problem_print_code.set(tour_to_json(tour_data_default_2_legs))
     locomotion_state.set(state_to_json(locomotion_data_default))
 
     ctx = copy_context()

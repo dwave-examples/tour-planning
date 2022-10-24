@@ -17,15 +17,15 @@ import numpy as np
 
 import dimod
 
-locomotion = {
+locomotion_default = {
     "walk": {"Speed": 1, "Cost": 0, "Exercise": 1, "Use": True},
     "cycle": {"Speed": 3, "Cost": 2, "Exercise": 2, "Use": True},
      "bus": {"Speed": 4, "Cost": 3, "Exercise": 0, "Use": True},
      "drive": {"Speed": 7, "Cost": 5, "Exercise": 0, "Use": True}}
 
 locomotion_ranges = {f"{mode}_{measure}": [0, 100] if measure != "speed" else
-    [1, 100] for mode in locomotion.keys()
-    for measure in [key.lower() for key in locomotion[mode].keys() if key != "Use"]}
+    [1, 100] for mode in locomotion_default.keys()
+    for measure in [key.lower() for key in locomotion_default[mode].keys() if key != "Use"]}
 
 leg_ranges = {"num_legs": [1, 100],
     "max_leg_length": [1, 20],
@@ -47,11 +47,12 @@ def set_legs(num_legs, min_leg_length, max_leg_length, tollbooths=True):
     if tollbooths == "off":
         toll_probablity = 0
 
-    return [{"length": round((max_leg_length - min_leg_length)*random.random() \
-        + min_leg_length, 1),
-             "uphill": round(10*random.random(), 1),
-             "toll": bool(np.random.choice([True, False], 1,
-                p=[toll_probablity, 1 - toll_probablity])[0])}
+    return [{
+        "length": round((max_leg_length - min_leg_length)*random.random() +
+            min_leg_length, 1),
+        "uphill": round(10*random.random(), 1),
+        "toll": bool(np.random.choice([True, False], 1,
+            p=[toll_probablity, 1 - toll_probablity])[0])}
         for i in range(num_legs)]
 
 def average_tour_budget(legs):
@@ -60,16 +61,16 @@ def average_tour_budget(legs):
     """
 
     legs_total = sum(l["length"] for l in legs)
-    costs = [c["Cost"] for c in locomotion.values()]
-    speeds = [s["Speed"] for s in locomotion.values()]
+    costs = [c["Cost"] for c in locomotion_default.values()]
+    speeds = [s["Speed"] for s in locomotion_default.values()]
     max_cost = round(legs_total * np.mean([min(costs), max(costs)]))
     max_time = round(legs_total / np.mean([min(speeds), max(speeds)]))
 
     return max_cost, max_time
 
-locomotion_init_values = {f"{mode}_{measure}": val for mode in locomotion.keys()
+locomotion_init_values = {f"{mode}_{measure}": val for mode in locomotion_default.keys()
     for measure, val in {key.lower(): val for key, val in
-    locomotion[mode].items() if key != "Use"}.items()}
+    locomotion_default[mode].items() if key != "Use"}.items()}
 
 leg_init_values = {"num_legs": 10, "max_leg_length": 10, "min_leg_length": 2}
 slope_init_values ={"max_leg_slope": 6}
@@ -79,7 +80,7 @@ budget_init_values = {}
 budget_init_values["max_cost"], budget_init_values["max_time"] = \
     average_tour_budget(set_legs(**leg_init_values))
 
-names_all_modes = locomotion.keys()
+names_all_modes = locomotion_default.keys()
 names_locomotion_inputs = list(locomotion_ranges.keys())
 names_leg_inputs = list(leg_ranges.keys())
 names_slope_inputs = list(slope_ranges.keys())

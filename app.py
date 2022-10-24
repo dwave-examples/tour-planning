@@ -19,7 +19,6 @@ from dash import dcc, html, Input, Output, State
 from json import JSONDecodeError
 import time, datetime
 
-import dimod
 from dwave.cloud.hybrid import Client
 from dwave.cloud.api import Problems, exceptions
 
@@ -27,7 +26,7 @@ from formatting import *
 from helpers_graphics import *
 from helpers_jobs import *
 from helpers_layout import *
-from tour_planning import (build_cqm, set_legs, locomotion, tour_budget_boundaries,
+from tour_planning import (build_cqm, set_legs, tour_budget_boundaries,
     names_locomotion_inputs, names_leg_inputs, names_slope_inputs,
     names_weight_inputs, names_budget_inputs, names_all_modes)
 from tour_planning import MAX_SOLVER_RUNTIME
@@ -143,7 +142,7 @@ tabs["Locomotion"] = dbc.Card([
                         {"label": html.Div([""],),
                          "value": True,},], value=[True], id=f"{row}_use"),],
                         width=2),])
-                for row in locomotion.keys()]],
+                for row in names_all_modes]],
             width=6),
         dbc.Col([
             dcc.Textarea(id=f"locomotion_print", value="",

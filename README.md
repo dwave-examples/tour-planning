@@ -1,7 +1,7 @@
 # Tour Planning
 
 A demonstration of using hard and soft constraints on the Leap&trade;
-quantum-classical hybrid constrained quadratic (CQM) solver.
+quantum-classical hybrid constrained quadratic model (CQM) solver.
 
 This example solves a problem of selecting, for a tour divided into several legs
 of varying lengths and steepness, a combination of locomotion modes (walking,

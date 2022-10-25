@@ -19,6 +19,11 @@ def tour_data_default_2_legs():
              {"length": 5.6, "uphill": 2.9, "toll": False}]
 
 @pytest.fixture
+def tour_data_simple():
+
+    return  [{"length": 1, "uphill": 1.0, "toll": False}]
+
+@pytest.fixture
 def samplesets_feasible_infeasible():
 
     sampleset = dimod.SampleSet.from_samples([
@@ -31,3 +36,11 @@ def samplesets_feasible_infeasible():
     sampleset_infeasible = dimod.append_data_vectors(sampleset, is_feasible=[False, False])
 
     return {"feasible": sampleset_feasible, "infeasible": sampleset_infeasible}
+
+@pytest.fixture
+def weight_data_default():
+
+    return {
+    "weight_cost":  {"weight": None, "penalty": "linear"},
+    "weight_time": {"weight": 44, "penalty": "linear"},
+    "weight_slope": {"weight": 55, "penalty": "quadratic"}}

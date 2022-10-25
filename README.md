@@ -15,13 +15,16 @@ as traffic routing&mdash;selecting the optimal among available means of
 transportation, for commuters or deliveries, given constraints of pricing,
 speed, convenience, and green-energy preferences&mdash;or network routing, where
 the routing of data packets must consider bandwidth, pricing, reliance,
-service tiers, and latency across numerous hops. In general, the use of soft
-constraints can result in imperfect but good solutions to many optimization
-problems, from bin packing, which addresses problems in areas such as containers,
-pallets and aircraft, to portfolio selection, which identifies the number of
-shares of each stock to purchase in order to minimize risk and maximize returns.   
+service tiers, and latency across numerous hops.
 
-## Hard and Soft Constraints
+* [Hard and Soft Constraints](#Hard-and-Soft-Constraints)
+* [Installation](#Installation)
+* [Usage](#Usage)
+* [Model Overview](#Model-Overview)
+* [Code](#Code)
+* [License](License)
+
+## <a name="Hard-and-Soft-Constraints"></a> Hard and Soft Constraints
 
 Constraints for optimization problems are often categorized as either “hard” or
 “soft”.
@@ -49,7 +52,55 @@ duration, and the steepest leg one can walk or cycle. The CQM has hard constrain
 that ensure a single mode of locomotion is selected for each leg and, optionally,
 prevent driving on legs with toll booths.  
 
-## Installation
+### Example Results
+
+Some of the variety of results you can obtain from the application of these
+constraints are shown below for an example tour[^1].
+
+1. All constraints are hard. For this case, acceptable solutions must satisfy all
+constraints, and the solver was unable to find a feasible solution.
+
+![Example All Hard Constraints](assets/example_hard_all_constraints.png)
+
+2. The constraints on cost and time are relaxed to soft constraints. The solver
+tries to satisfy such constraints but accepts solutions that violate one or more.
+Now the solver returns a solution. However, it provides little exercise
+because cycling is not allowed on legs even slightly steeper than 2.
+
+![Example Slope Hard Constraint](assets/example_hard_slope_constraint.png)
+
+3. The constraint on slope is also relaxed. Now the returned solution is to cycle
+on all but the steepest slopes, gaining exercise by tolerating a wide margin of
+violations of the slope constraint.
+
+![Example All Soft Linear Constraints](assets/example_soft_linear_all_constraints.png)
+
+4. The soft slope constraint is set to quadratic. Now the solver discriminates
+sharply between slopes that are just a bit over the configured maximum and those
+significantly too steep. The returned solution allows for cycling on legs that
+violate the slope constraint by a narrow margin.
+
+![Example Slope Quadratic Constraint](assets/example_quadratic_slope_linear_other_constraints.png)
+
+[^1]: The tour comprises 20 legs of equal length, 2, with budgeted cost of 150 and
+duration of 5, and a steepest leg for exercising of 2. Cycling (speed 3, cost 2)
+and bussing (speed 5, cost 4) are the available modes of locomotion. For soft
+constraints, weights are set to 5.
+
+In general, the use of soft constraints can result in imperfect but good solutions
+to many optimization problems: for example, in
+[three-dimensional bin packing](https://github.com/dwave-examples/3d-bin-packing),
+which addresses problems in areas such as containers, pallets and aircraft, boxes
+should be fully supported to ensure stability; however, satisfying such a hard
+constraint might not be possible due to a variety of box sizes or bin size. Using
+a soft constraint that enables solutions with 70% support might be acceptable.
+Another example is
+[job shop scheduling](https://github.com/dwave-examples/job-shop-scheduling-cqm),
+where jobs should complete on time. If this constraint cannot be met
+due to conflicting constraints, a soft constraint that penalizes delays by length
+might return good solutions.
+
+## <a name="Installation"></a> Installation
 
 This example can be run in the Leap IDE by accessing the following URL:
 
@@ -60,7 +111,7 @@ Alternatively, install requirements locally. Ideally, in a virtual environment.
 
     pip install -r requirements.txt
 
-## Usage
+## <a name="Usage"></a> Usage
 
 To run the demo:
 
@@ -145,7 +196,7 @@ https://docs.ocean.dwavesys.com/en/stable/docs_dimod/reference/sampleset.html)
   minimum, maximum, and average values of cost and time, and the values for
   the available modes of locomotion (speed, cost, exercise) that **you can configure**.
 
-## Model Overview
+## <a name="Model-Overview"></a> Model Overview
 
 The problem of selecting a mode of locomotion for every leg of the tour to achieve
 some objective (maximize exercise) given a number of constraints (e.g., do not
@@ -241,7 +292,7 @@ The CQM is built as follows with a single objective and several constraints:
 
     ![eq_toll](assets/formula_toll.png)
 
-## Code
+## <a name="Code"></a> Code
 
 Most the code related to configuring the CQM is in the
 [tour_planning.py](tour_planning.py) file. The remaining files mostly support

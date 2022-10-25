@@ -64,26 +64,30 @@ constraints, and the solver was unable to find a feasible solution.
 ![Example All Hard Constraints](assets/example_hard_all_constraints.png)
 </details>
 
-2. The constraints on cost and time are relaxed to soft constraints. The solver
+<details><summary>2. Constraints on cost and time are relaxed to soft constraints.</summary>
+The solver
 tries to satisfy such constraints but accepts solutions that violate one or more.
 Now the solver returns a solution. However, it provides little exercise
 because cycling is not allowed on legs even slightly steeper than the configured
 maximum.
 
 ![Example Slope Hard Constraint](assets/example_hard_slope_constraint.png)
+</details>
 
-3. The constraint on slope is also relaxed. Now the returned solution is to cycle
-on all but the steepest slopes, gaining exercise by tolerating a wide margin of
-violations of the slope constraint.
+<details><summary>3. Constraint on slope is also relaxed.</summary>
+Now the returned solution is to cycle on all but the steepest slopes, gaining exercise
+by tolerating a wide margin of violations of the slope constraint.
 
 ![Example All Soft Linear Constraints](assets/example_soft_linear_all_constraints.png)
+</details>
 
-4. The soft slope constraint is set to quadratic. Now the solver discriminates
-sharply between slopes that are just a bit over the configured maximum and those
-significantly too steep. The returned solution allows for cycling on legs that
-violate the slope constraint by a narrow margin.
+<details><summary>4. Soft constraint on slope is set to quadratic.</summary>
+Now the solver discriminates sharply between slopes that are just a bit over the
+configured maximum and those significantly too steep. The returned solution allows
+for cycling on legs that violate the slope constraint by a narrow margin.
 
 ![Example Slope Quadratic Constraint](assets/example_quadratic_slope_linear_other_constraints.png)
+</details>
 
 [^1]: The tour comprises 20 legs of equal length, 2, with budgeted cost of 150 and
 duration of 5, and a steepest leg for exercising of 2. Cycling (speed 3, cost 2)

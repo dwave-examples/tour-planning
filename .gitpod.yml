@@ -11,4 +11,4 @@ tasks:
       port=8000
       url=$(gp url "$port")
       host=${url#"https://"}
-      dash run --server.port "$port" --browser.serverAddress "$host" --browser.serverPort 80 app.py
+      python app.py

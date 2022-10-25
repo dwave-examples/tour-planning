@@ -28,6 +28,6 @@ def samplesets_feasible_infeasible():
          "bus_1": 1, "drive_1": 0, "cycle_1": 0, "walk_1": 0}], "BINARY", [0, 0])
     sampleset = dimod.append_data_vectors(sampleset, is_satisfied=[[True], [True]])
     sampleset_feasible = dimod.append_data_vectors(sampleset, is_feasible=[True, True])
-    sampleset_infeasible = dimod.append_data_vectors(sampleset, is_feasible=[True, False])
+    sampleset_infeasible = dimod.append_data_vectors(sampleset, is_feasible=[False, False])
 
     return {"feasible": sampleset_feasible, "infeasible": sampleset_infeasible}

@@ -1,6 +1,14 @@
 tasks:
+  - name: Open Dash app in a new browser window
+    command: |
+      port=8000
+      gp await-port "$port" && gp preview "$(gp url "$port")" --external
+
   - name: Run dash application
     init: |
       pip install -r requirements.txt
     command: |
-      python app.py
+      port=8000
+      url=$(gp url "$port")
+      host=${url#"https://"}
+      dash run --server.port "$port" --browser.serverAddress "$host" --browser.serverPort 80 app.py

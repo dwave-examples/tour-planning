@@ -65,7 +65,8 @@ constraints, and the solver was unable to find a feasible solution.
 2. The constraints on cost and time are relaxed to soft constraints. The solver
 tries to satisfy such constraints but accepts solutions that violate one or more.
 Now the solver returns a solution. However, it provides little exercise
-because cycling is not allowed on legs even slightly steeper than 2.
+because cycling is not allowed on legs even slightly steeper than the configured
+maximum.
 
 ![Example Slope Hard Constraint](assets/example_hard_slope_constraint.png)
 

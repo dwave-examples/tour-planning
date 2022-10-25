@@ -66,7 +66,7 @@ parametrize_vals = [("changed_input", *parametrize_constants, cqm_placeholder),
     ("num_legs", *parametrize_constants, cqm_placeholder)]
 
 @pytest.mark.parametrize(parametrize_names, parametrize_vals)
-@patch("app.cqm_to_display", mock_print)
+@patch("app.formatting.cqm_to_display", mock_print)
 def test_cqm_generation(locomotion_data_default, trigger, changed_input_val,
     problem_print_code_val, max_leg_slope_val, max_cost_val, max_time_val,
     weights_val, cqm_print_val):
@@ -123,7 +123,7 @@ for h, p in zip(hardsoft, penalty):
         cqm_placeholder]))
 
 @pytest.mark.parametrize(parametrize_names, parametrize_vals)
-@patch("app.cqm_to_display", mock_print)
+@patch("app.formatting.cqm_to_display", mock_print)
 def test_cqm_weights(locomotion_data_default, changed_input_val,
     problem_print_code_val, max_leg_slope_val, max_cost_val, max_time_val,
     weights_val, cqm_print_val):

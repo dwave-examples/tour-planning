@@ -13,10 +13,8 @@
 #    limitations under the License.
 from dash import dcc, html
 import datetime
-from helpers.formatting import *
 
 from dwave.cloud.api import exceptions, Problems
-
 
 __all__ = ["job_bar", "TERMINATED", "RUNNING", "cancel", "elapsed", "get_status",]
 

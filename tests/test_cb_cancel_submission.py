@@ -46,7 +46,7 @@ def mock_cancel(client, job_id):
     [(1, "123", "Cancelled job 123", True),
      (1, "456", "Could not cancel job: Problem does not exist or apitoken does not have access", True),
      (0, "123", "Cancelled job 123", True),])
-@patch("app.cancel", mock_cancel)
+@patch("app.jobs.cancel", mock_cancel)
 def test_cancel_submission(btn_cancel_val, job_id_val, alert_cancel_text_val,
     alert_cancel_state_val):
     """Test job cancellation."""

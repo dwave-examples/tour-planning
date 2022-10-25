@@ -57,10 +57,12 @@ prevent driving on legs with toll booths.
 Some of the variety of results you can obtain from the application of these
 constraints are shown below for an example tour[^1].
 
-1. All constraints are hard. For this case, acceptable solutions must satisfy all
+<details><summary>1. All constraints are hard.</summary>
+For this case, acceptable solutions must satisfy all
 constraints, and the solver was unable to find a feasible solution.
 
 ![Example All Hard Constraints](assets/example_hard_all_constraints.png)
+</details>
 
 2. The constraints on cost and time are relaxed to soft constraints. The solver
 tries to satisfy such constraints but accepts solutions that violate one or more.

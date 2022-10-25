@@ -8,7 +8,4 @@ tasks:
     init: |
       pip install -r requirements.txt
     command: |
-      port=8000
-      url=$(gp url "$port")
-      host=${url#"https://"}
-      python app.py
+      PORT=8000 python app.py

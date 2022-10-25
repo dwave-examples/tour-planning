@@ -15,27 +15,22 @@
 import dash
 import dash_bootstrap_components as dbc
 from dash import dcc, html, Input, Output, State
-import json
-import numpy as np
-import pandas as pd
-import random
+
+from json import JSONDecodeError
 import time, datetime
 
-from formatting import *
-from helpers_graphics import *
-from helpers_jobs import *
-from helpers_layout import *
-from tour_planning import build_cqm, set_legs, locomotion, tour_budget_boundaries
-from tour_planning import (names_locomotion_inputs, names_leg_inputs, names_slope_inputs,
-    names_weight_inputs, names_budget_inputs)
-from tour_planning import MAX_SOLVER_RUNTIME
-from tool_tips import tool_tips
-
-import dimod
 from dwave.cloud.hybrid import Client
 from dwave.cloud.api import Problems, exceptions
 
-all_modes = locomotion.keys()  # global, but not user modified
+from helpers import formatting
+from helpers import graphics
+from helpers import jobs
+from helpers import layout
+from helpers.tool_tips import tool_tips
+from tour_planning import (build_cqm, set_legs, tour_budget_boundaries,
+    names_locomotion_inputs, names_leg_inputs, names_slope_inputs,
+    names_weight_inputs, names_budget_inputs, names_all_modes)
+from tour_planning import MAX_SOLVER_RUNTIME
 
 app = dash.Dash(__name__, external_stylesheets=[dbc.themes.BOOTSTRAP])
 
@@ -58,10 +53,10 @@ solver_card = dbc.Card([
         dbc.Button("Solve CQM", id="btn_solve_cqm", color="primary", className="me-1",
             style={'marginLeft':'5px'}),
         dcc.Interval(id="wd_job", interval=None, n_intervals=0, disabled=True, max_intervals=1),
-        dbc.Progress(id="bar_job_status", value=job_bar[init_job_status][0],
-            color=job_bar[init_job_status][1], className="mb-3",
+        dbc.Progress(id="bar_job_status", value=jobs.job_bar[init_job_status][0],
+            color=jobs.job_bar[init_job_status][1], className="mb-3",
             style={'marginRight':'10px', 'marginLeft':'5px'}),
-        html.P(id="job_submit_state", children=job_status_to_display(init_job_status),
+        html.P(id="job_submit_state", children=formatting.job_status_to_display(init_job_status),
             style={"color": job_status_color, 'marginLeft':'5px'}),
         html.P(id="job_submit_time", children="", style = dict(display="none")),
         html.P(id="job_id", children="", style = dict(display="none")),
@@ -75,24 +70,37 @@ solver_card = dbc.Card([
                     html.P("Runtime limit:", style={'marginLeft':'5px'}),
                     dcc.Input(id="max_runtime", type="number", min=5, max=MAX_SOLVER_RUNTIME,
                         step=5, value=5, style={'marginRight':'10px', 'marginLeft':'5px'}),]),]),]),],
-    color="secondary")
+    color="secondary", body=True)
 
 # Tab-construction section
 
 tabs = {}
 
-graphs = ["Space", "Time", "Feasibility"] # also used for graph() display callback
-tabs["Graph"] = dbc.Tabs([
+graph_tabs = [dbc.Tab(
+    dbc.Card([
+        dbc.Row([
+            dbc.Col([
+                dcc.Graph(id=f"{graph.lower()}_graph")], width=12) ])],
+        color="secondary"),
+    label=f"{graph}",
+    id=f"graph_{graph.lower()}",
+    label_style={"color": "white", "backgroundColor": "black"},)
+for graph in ["Space", "Time"]]
+graph_tabs.extend([
     dbc.Tab(
         dbc.Card([
             dbc.Row([
                 dbc.Col([
-                    dcc.Graph(id=f"{graph.lower()}_graph")], width=12) ])],
+                    dcc.Graph(id="feasibility_graph")], width=8),
+                dbc.Col([
+                    dcc.Textarea(id=f"feasibility_text", value=layout.description_feasibility_plot,
+                        style={"width": "100%"}, rows=10)],
+                    width=4, align="start")])],
             color="secondary"),
-        label=f"{graph}",
-        id=f"graph_{graph.lower()}",
-        label_style={"color": "white", "backgroundColor": "black"},)
-    for graph in graphs])
+        label="feasibility_graph",
+        id="graph_feasibility_graph",
+        label_style={"color": "white", "backgroundColor": "black"},)])
+tabs["Graph"] = dbc.Tabs(graph_tabs)
 
 double_tabs = {
     "Problem": "Displays the configured tour: length of each leg, elevation, and "\
@@ -127,23 +135,26 @@ tabs["Locomotion"] = dbc.Card([
             *[dbc.Row([
                 dbc.Col([html.P(f"{row}")], width=2),
                 *[dbc.Col(
-                    [_dcc_input(f"{name}")], width=2) for name in names_locomotion_inputs if row in name],
+                    [layout._dcc_input(f"{name}")], width=2) for name in names_locomotion_inputs
+                        if row in name],
                 dbc.Col(
                     [dcc.Checklist([
                         {"label": html.Div([""],),
                          "value": True,},], value=[True], id=f"{row}_use"),],
                         width=2),])
-                for row in locomotion.keys()]],
+                for row in names_all_modes]],
             width=6),
         dbc.Col([
             dcc.Textarea(id=f"locomotion_print", value="",
                 style={"width": "100%"}, rows=20)],
-            width=5, align="start"),]),],
+            width=5, align="start"),
+    html.P(id="locomotion_state", children="", style = dict(display="none"))]),],
         color="secondary")
 
 # CQM configuration sections
 
-weights_card = [dbc.Row([html.H4("Constraint Settings", className="card-title")],
+weights_card = [dbc.Row([html.H4("Constraint Settings", className="card-title"),
+    html.P(id="weights_state", children="", style = dict(display="none"))],
     id="constraint_settings_row")]
 weights_card.extend([
     dbc.Row([
@@ -153,12 +164,12 @@ weights_card.extend([
             dbc.Row([
                 dbc.Col([
                     html.Div([
-                        _dcc_input(key, step=1)],
+                        layout._dcc_input(key, step=1)],
                             style=dict(display="flex", justifyContent="right")),
-                        _dcc_radio(key, "penalty")],
+                        layout._dcc_radio(key, "penalty")],
                     style={"margin-right": "20px"}),
                 dbc.Col([
-                    _dcc_radio(key, "hardsoft")], style={"margin-left": "30px"})])])])])
+                    layout._dcc_radio(key, "hardsoft")], style={"margin-left": "30px"})])])])])
     for key, val in zip(names_weight_inputs, ["Cost", "Time", "Slope"])])
 
 tour_titles = ["Set Legs", "Set Budget", "Set Exercise Limits", "Add Tollbooths"]
@@ -167,8 +178,8 @@ field_titles = ["How Many:", "Longest Leg:", "Shortest Leg:",
 
 leg_fields = [dbc.Row([
     dbc.Label(f"{val}"),
-    _dcc_input(key, step=1) if key != "max_leg_slope" else
-    _dcc_slider(key, step=1)], style={"marginLeft": "5px", "marginRight": "5px"})
+    layout._dcc_input(key, step=1) if key != "max_leg_slope" else
+    layout._dcc_slider(key, step=1)], style={"marginLeft": "5px", "marginRight": "5px"})
     for key, val in zip(names_leg_inputs + names_budget_inputs + names_slope_inputs, field_titles)]
 tour_config = dbc.Card(
     [dbc.Row([
@@ -189,19 +200,13 @@ tour_config = dbc.Card(
                 for tour_title in tour_titles[2:]]),
      dbc.Row([
         dbc.Col(leg_fields[5], style={"margin-right": "20px"}),
-        dbc.Col(
-            dcc.RadioItems([
-                {"label": html.Div(["On"], style={'color': 'white', 'font-size': 12}),
-                "value": True,},
-                {"label": html.Div(["Off"], style={'color': 'white', 'font-size': 12}),
-                "value": False}], value=True,
-                id="tollbooths_active", inputStyle={"margin-right": "20px"}))],),
+        dbc.Col([layout._dcc_radio("tollbooths", "active")])],),
      html.P(id="changed_input", children="", style = dict(display="none")),],
     body=True, color="secondary")
 
 # Page-layout section
 
-layout = [
+app_layout = [
     dbc.Row([
         dbc.Col([
             html.H1("Tour Planner", style={"textAlign": "left"})], width=10),
@@ -227,12 +232,7 @@ layout = [
                 dbc.Col([
                     html.P("Hover over fields for descriptions:",
                         style={"color": "white"}),
-                    dcc.RadioItems([
-                        {"label": html.Div(["On"], style={'color': 'white', 'font-size': 12}),
-                        "value": "On",},
-                        {"label": html.Div(["Off"], style={'color': 'white', 'font-size': 12}),
-                        "value": "Off"}], value="On",
-                        id="tooltips_active", inputStyle={"margin-right": "20px"})])]),],
+                    layout._dcc_radio("tooltips", "active")])]),],
             width=1)],
         justify="left"),
     dbc.Tabs([
@@ -246,46 +246,21 @@ layout = [
 tips = [dbc.Tooltip(
             message, target=target, id=f"tooltip_{target}", style = dict())
             for target, message in tool_tips.items()]
-layout.extend(tips)
+app_layout.extend(tips)
 
-modal_solver = [html.Div([
-    dbc.Modal([
-        dbc.ModalHeader(
-            dbc.ModalTitle("Leap Hybrid CQM Solver Inaccessible")),
-        dbc.ModalBody(no_solver_msg),], id="solver_modal", size="sm")])]
-layout.extend(modal_solver)
-
-modal_use_modes = [html.Div([
-    dbc.Modal([
-        dbc.ModalHeader(
-            dbc.ModalTitle("One Locomotion Mode is Required")),
-        dbc.ModalBody([html.Div("You must set at least one mode of locomotion to 'Use'.")]),],
-            id="use_modes_modal", size="sm")])]
-layout.extend(modal_use_modes)
+modal_solver = layout._dbc_modal("modal_solver")
+app_layout.extend(modal_solver)
+modal_usemodes = layout._dbc_modal("modal_usemodes")
+app_layout.extend(modal_usemodes)
 
 app.layout = dbc.Container(
-    layout, fluid=True,
+    app_layout, fluid=True,
     style={"backgroundColor": "black", "color": "rgb(3, 184, 255)"})
 
 server = app.server
 app.config["suppress_callback_exceptions"] = True
 
 # Callbacks Section
-
-def _weight_or_none(
-    weight_cost, weight_time, weight_slope,
-    weight_cost_hardsoft, weight_time_hardsoft, weight_slope_hardsoft):
-    """Helper function for `build_cqm()`, which is used twice."""
-
-    weights = {
-        "cost": None if weight_cost_hardsoft == "hard" \
-            else weight_cost,
-        "time": None if weight_time_hardsoft == "hard" \
-            else weight_time,
-        "slope": None if weight_slope_hardsoft == "hard" \
-            else weight_slope}
-
-    return weights
 
 @app.callback(
     Output("solver_modal", "is_open"),
@@ -306,7 +281,7 @@ def alert_no_solver(btn_solve_cqm):
     [Output(id, "disabled") for id in names_weight_inputs],
     [Input(f"{id}_hardsoft", "value") for id in names_weight_inputs],)
 def disable_weights(weight_cost_hardsoft, weight_time_hardsoft, weight_slope_hardsoft):
-    """Disable ."""
+    """Disable weight inputs for hard constraints."""
 
     trigger_id = dash.callback_context.triggered[0]["prop_id"].split(".")[0]
 
@@ -330,7 +305,7 @@ def activate_tooltips(tooltips_active):
     trigger_id = trigger[0]["prop_id"].split(".")[0]
 
     if trigger_id == "tooltips_active":
-        if tooltips_active == "Off":
+        if tooltips_active == "off":
             return \
 dict(display="none"), dict(display="none"), dict(display="none"), dict(display="none"), \
 dict(display="none"), dict(display="none"), dict(display="none"), dict(display="none"), \
@@ -365,7 +340,7 @@ def update_legs(changed_input, num_legs, max_leg_length, min_leg_length,
         names_leg_inputs):
 
         legs = set_legs(num_legs, min_leg_length, max_leg_length, tollbooths_active)
-        return tour_to_json(legs), tour_to_display(legs)
+        return formatting.tour_to_json(legs), formatting.tour_to_display(legs)
 
     else:       # Other user inputs regenerate the CQM but not the legs
 
@@ -375,14 +350,8 @@ def update_legs(changed_input, num_legs, max_leg_length, min_leg_length,
     Output("locomotion_print", "value"),
     [Input("cqm_print", "value")],
     [State("problem_print_code", "value")],
-    [State(id, "value") for id in names_locomotion_inputs],
-    [State(f"{id}_use", "value") for id in all_modes])
-def display_locomotion(cqm_print, problem_print_code,
-    walk_speed, walk_cost, walk_exercise,
-    cycle_speed, cycle_cost, cycle_exercise,
-    bus_speed, bus_cost, bus_exercise,
-    drive_speed, drive_cost, drive_exercise,
-    walk_use, cycle_use, bus_use, drive_use):
+    [State("locomotion_state", "children")],)
+def display_locomotion(cqm_print, problem_print_code, locomotion_state):
     """Update the locomotion display print."""
 
     trigger = dash.callback_context.triggered
@@ -390,40 +359,22 @@ def display_locomotion(cqm_print, problem_print_code,
 
     if trigger_id == "cqm_print":
 
-        locomotion_vals = \
-            {"walk":  {"speed": walk_speed, "cost": walk_cost, "exercise": walk_exercise,
-                "use": walk_use},
-            "cycle": {"speed": cycle_speed, "cost": cycle_cost, "exercise": cycle_exercise,
-                "use": cycle_use},
-            "bus": {"speed": bus_speed, "cost": bus_cost, "exercise": bus_exercise,
-                "use": bus_use},
-            "drive": {"speed": drive_speed, "cost": drive_cost, "exercise": drive_exercise,
-                "use": drive_use}}
-
-        legs = tour_from_json(problem_print_code)
+        locomotion_vals = formatting.state_from_json(locomotion_state)
+        legs = formatting.tour_from_json(problem_print_code)
         boundaries = tour_budget_boundaries(legs, locomotion_vals)
 
-        return locomotion_to_display(boundaries)
+        return formatting.locomotion_to_display(boundaries)
 
 @app.callback(
     Output("cqm_print", "value"),
     [Input("changed_input", "children")],
     [Input("problem_print_code", "value")],
     [State("max_leg_slope", "value")],
-    [State(id, "value") for id in names_budget_inputs + names_weight_inputs],
-    [State(f"{id}_hardsoft", "value") for id in names_weight_inputs],
-    [State(f"{id}_penalty", "value") for id in names_weight_inputs],
-    [State(id, "value") for id in names_locomotion_inputs],
-    [State(f"{id}_use", "value") for id in all_modes])
+    [State(id, "value") for id in names_budget_inputs],
+    [State("weights_state", "children")],
+    [State("locomotion_state", "children")])
 def generate_cqm(changed_input, problem_print_code, max_leg_slope,
-    max_cost, max_time, weight_cost, weight_time, weight_slope,
-    weight_cost_hardsoft, weight_time_hardsoft, weight_slope_hardsoft,
-    weight_cost_penalty, weight_time_penalty, weight_slope_penalty,
-    walk_speed, walk_cost, walk_exercise,
-    cycle_speed, cycle_cost, cycle_exercise,
-    bus_speed, bus_cost, bus_exercise,
-    drive_speed, drive_cost, drive_exercise,
-    walk_use, cycle_use, bus_use, drive_use):
+    max_cost, max_time, weights_state, locomotion_state,):
     """Create the CQM and write to json & readable text."""
 
     trigger = dash.callback_context.triggered
@@ -433,30 +384,15 @@ def generate_cqm(changed_input, problem_print_code, max_leg_slope,
     # to wait for `problem_print_code`: update_legs() callback completes
     # first, even if it is deliberately slowed.
     if trigger_id == "changed_input" or trigger_id == "problem_print_code":
-        legs = tour_from_json(problem_print_code)
+        legs = formatting.tour_from_json(problem_print_code)
 
-        penalties = {
-            "cost": weight_cost_penalty,
-            "time": weight_time_penalty,
-            "slope": weight_slope_penalty}
-
-        weights = _weight_or_none(weight_cost, weight_time, weight_slope,
-            weight_cost_hardsoft, weight_time_hardsoft, weight_slope_hardsoft)
-
-        locomotion_vals = \
-            {"walk":  {"speed": walk_speed, "cost": walk_cost, "exercise": walk_exercise,
-                "use": walk_use},
-            "cycle": {"speed": cycle_speed, "cost": cycle_cost, "exercise": cycle_exercise,
-                "use": cycle_use},
-            "bus": {"speed": bus_speed, "cost": bus_cost, "exercise": bus_exercise,
-                "use": bus_use},
-            "drive": {"speed": drive_speed, "cost": drive_cost, "exercise": drive_exercise,
-                "use": drive_use}}
+        weight_vals = formatting.state_from_json(weights_state)
+        locomotion_vals = formatting.state_from_json(locomotion_state)
 
         cqm = build_cqm(legs, max_leg_slope, max_cost, max_time,
-            weights, penalties, locomotion_vals)
+            weight_vals, locomotion_vals)
 
-        return cqm_to_display(cqm)
+        return formatting.cqm_to_display(cqm)
 
     return dash.no_update
 
@@ -464,14 +400,16 @@ def generate_cqm(changed_input, problem_print_code, max_leg_slope,
     [Output("changed_input", "children")],
     [Output("max_leg_length", "value")],
     [Output("min_leg_length", "value")],
-    [Output(f"{id}_use", "value") for id in all_modes],
-    [Output("use_modes_modal", "is_open")],
+    [Output(f"{id}_use", "value") for id in names_all_modes],
+    [Output("usemodes_modal", "is_open")],
+    [Output("locomotion_state", "children")],
+    [Output("weights_state", "children")],
     [Input(id, "value") for id in
         names_leg_inputs + names_slope_inputs + names_budget_inputs + names_weight_inputs],
     [Input(f"{id}_penalty", "value") for id in names_weight_inputs],
     [Input(f"{id}_hardsoft", "value") for id in names_weight_inputs],
     [Input(id, "value") for id in names_locomotion_inputs],
-    [Input(f"{id}_use", "value") for id in all_modes],)
+    [Input(f"{id}_use", "value") for id in names_all_modes],)
 def check_user_inputs(num_legs, max_leg_length, min_leg_length, max_leg_slope,
     max_cost, max_time, weight_cost, weight_time, weight_slope,
     weight_cost_penalty,  weight_time_penalty, weight_slope_penalty,
@@ -481,7 +419,7 @@ def check_user_inputs(num_legs, max_leg_length, min_leg_length, max_leg_slope,
     bus_speed, bus_cost, bus_exercise,
     drive_speed, drive_cost, drive_exercise,
     walk_use, cycle_use, bus_use, drive_use):
-    """Handle user inputs and write to readable text."""
+    """Handle user inputs, identify changed input to other callbacks, save states."""
 
     trigger = dash.callback_context.triggered
     trigger_id = trigger[0]["prop_id"].split(".")[0]
@@ -491,39 +429,64 @@ def check_user_inputs(num_legs, max_leg_length, min_leg_length, max_leg_slope,
     if trigger_id == "min_leg_length" and min_leg_length >= max_leg_length:
         max_leg_length = min_leg_length
 
-    use_modes_modal = dash.no_update
+    usemodes_modal = dash.no_update
 
-    if any(trigger_id == f"{key}_use" for key in all_modes):
+    if any(trigger_id == f"{key}_use" for key in names_all_modes):
         if not any([walk_use, cycle_use, bus_use, drive_use]):
-            walk_use = cycle_use = bus_use = drive_use = use_modes_modal = [True]
+            walk_use = cycle_use = bus_use = drive_use = usemodes_modal = [True]
+
+# These two could be done only when triggered but not costly:
+    locomotion_vals = \
+        {"walk":  {"speed": walk_speed, "cost": walk_cost, "exercise": walk_exercise,
+            "use": walk_use},
+        "cycle": {"speed": cycle_speed, "cost": cycle_cost, "exercise": cycle_exercise,
+            "use": cycle_use},
+        "bus": {"speed": bus_speed, "cost": bus_cost, "exercise": bus_exercise,
+            "use": bus_use},
+        "drive": {"speed": drive_speed, "cost": drive_cost, "exercise": drive_exercise,
+            "use": drive_use}}
+
+    weight_vals = \
+        {"weight_cost":  {
+            "weight": None if weight_cost_hardsoft == "hard" else weight_cost,
+            "penalty": weight_cost_penalty},
+         "weight_time": {
+            "weight": None if weight_time_hardsoft == "hard" else weight_time,
+            "penalty": weight_time_penalty},
+         "weight_slope": {
+            "weight": None if weight_slope_hardsoft == "hard" else weight_slope,
+            "penalty": weight_slope_penalty}}
 
     return trigger_id, max_leg_length, min_leg_length, \
-        walk_use, cycle_use, bus_use, drive_use, use_modes_modal
+        walk_use, cycle_use, bus_use, drive_use, usemodes_modal, \
+        formatting.state_to_json(locomotion_vals), formatting.state_to_json(weight_vals)
 
 @app.callback(
-    [Output(f"{graph.lower()}_graph", "figure") for graph in graphs],
+    [Output(f"{graph.lower()}_graph", "figure") for graph in ["Space", "Time", "Feasibility"]],
     Input("solutions_print_code", "value"),
-    Input("problem_print_code", "value"))
-def display_graphics(solutions_print_code, problem_print_code):
+    Input("problem_print_code", "value"),
+    [State("locomotion_state", "children")])
+def display_graphics(solutions_print_code, problem_print_code, locomotion_state):
     """Generate graphics for legs and samples."""
 
     trigger = dash.callback_context.triggered
     trigger_id = trigger[0]["prop_id"].split(".")[0]
 
-    legs = tour_from_json(problem_print_code)
+    legs = formatting.tour_from_json(problem_print_code)
 
-    samples = None
     if trigger_id == "solutions_print_code":
-        samples = sampleset_from_json(solutions_print_code)
-        if not isinstance(samples, dict):
-            samples = None
+        try:
+            sampleset = formatting.sampleset_from_json(solutions_print_code)
+        except JSONDecodeError:
+            sampleset = None    # For cancelled/failed jobs
+    else:
+        sampleset = None
 
-    fig_space = plot_space(legs, samples)
-    fig_time = plot_time(legs, locomotion, samples)
-    fig_feasiblity = plot_feasiblity(legs, locomotion, samples)
+    locomotion_vals = formatting.state_from_json(locomotion_state)
 
-    # if not fig_time:
-    #     fig_time = fig_feasiblity = px.bar()
+    fig_space = graphics.plot_space(legs, sampleset)
+    fig_time = graphics.plot_time(legs, locomotion_vals, sampleset)
+    fig_feasiblity = graphics.plot_feasiblity(legs, locomotion_vals, sampleset)
 
     return fig_space, fig_time, fig_feasiblity
 
@@ -541,7 +504,7 @@ def cancel_submission(btn_cancel, job_id):
         return dash.no_update, dash.no_update
     else:
         try:
-            status = cancel(client, job_id)
+            status = jobs.cancel(client, job_id)
             if status.status.name == "CANCELLED":
                 alert = f"Cancelled job {job_id}"
             else:
@@ -565,17 +528,17 @@ def disable_buttons(job_submit_state):
         return dash.no_update, dash.no_update, dash.no_update, dash.no_update, \
             dash.no_update
 
-    if job_status_to_str(job_submit_state) == "SUBMITTED":
+    if formatting.job_status_to_str(job_submit_state) == "SUBMITTED":
         return  dict(), True, True, True, True
 
-    if job_status_to_str(job_submit_state) == "PENDING":
+    if formatting.job_status_to_str(job_submit_state) == "PENDING":
         return  dict(), False, True, True, True
 
-    elif job_status_to_str(job_submit_state) == "IN_PROGRESS":
+    elif formatting.job_status_to_str(job_submit_state) == "IN_PROGRESS":
         return dict(display="none"), True, dash.no_update, dash.no_update, \
             dash.no_update
 
-    elif any(job_status_to_str(job_submit_state) == status for status in TERMINATED):
+    elif any(formatting.job_status_to_str(job_submit_state) == status for status in jobs.TERMINATED):
         return dict(display="none"), False, False, False, False
 
     else:
@@ -592,10 +555,10 @@ def set_progress_bar(job_submit_state):
     trigger_id = dash.callback_context.triggered[0]["prop_id"].split(".")[0]
 
     if trigger_id != "job_submit_state":
-        return job_bar["READY"][0], job_bar["READY"][1]
+        return jobs.job_bar["READY"][0], jobs.job_bar["READY"][1]
     else:
-        state = job_status_to_str(job_submit_state)
-        return job_bar[state][0], job_bar[state][1]
+        state = formatting.job_status_to_str(job_submit_state)
+        return jobs.job_bar[state][0], jobs.job_bar[state][1]
 
 @app.callback(
     Output("job_id", "children"),
@@ -603,22 +566,11 @@ def set_progress_bar(job_submit_state):
     [State("problem_print_code", "value")],
     [State("max_leg_slope", "value")],
     [State(id, "value") for id in names_budget_inputs],
-    [State(id, "value") for id in names_weight_inputs],
-    [State(f"{id}_hardsoft", "value") for id in names_weight_inputs],
-    [State(f"{id}_penalty", "value") for id in names_weight_inputs],
-    [State(id, "value") for id in names_locomotion_inputs],
-    [State(f"{id}_use", "value") for id in all_modes],
+    [State("weights_state", "children")],
+    [State("locomotion_state", "children")],
     [State("max_runtime", "value")],)
 def submit_job(job_submit_time, problem_print_code, max_leg_slope,
-    max_cost, max_time, weight_cost, weight_time, weight_slope,
-    weight_cost_hardsoft, weight_time_hardsoft, weight_slope_hardsoft,
-    weight_cost_penalty, weight_time_penalty, weight_slope_penalty,
-    walk_speed, walk_cost, walk_exercise,
-    cycle_speed, cycle_cost, cycle_exercise,
-    bus_speed, bus_cost, bus_exercise,
-    drive_speed, drive_cost, drive_exercise,
-    walk_use, cycle_use, bus_use, drive_use,
-    max_runtime):
+    max_cost, max_time,  weights_state, locomotion_state, max_runtime):
     """Submit job and provide job ID."""
 
     trigger_id = dash.callback_context.triggered[0]["prop_id"].split(".")[0]
@@ -627,28 +579,12 @@ def submit_job(job_submit_time, problem_print_code, max_leg_slope,
 
         solver = client.get_solver(supported_problem_types__issuperset={"cqm"})
 
-        penalties = {
-            "cost": weight_cost_penalty,
-            "time": weight_time_penalty,
-            "slope": weight_slope_penalty}
-
-        weights = _weight_or_none(weight_cost, weight_time, weight_slope,
-            weight_cost_hardsoft, weight_time_hardsoft, weight_slope_hardsoft)
-
-        legs = tour_from_json(problem_print_code)
-
-        locomotion_vals = \
-            {"walk":  {"speed": walk_speed, "cost": walk_cost, "exercise": walk_exercise,
-                "use": walk_use},
-            "cycle": {"speed": cycle_speed, "cost": cycle_cost, "exercise": cycle_exercise,
-                "use": cycle_use},
-            "bus": {"speed": bus_speed, "cost": bus_cost, "exercise": bus_exercise,
-                "use": bus_use},
-            "drive": {"speed": drive_speed, "cost": drive_cost, "exercise": drive_exercise,
-                "use": drive_use}}
+        weight_vals = formatting.state_from_json(weights_state)
+        locomotion_vals = formatting.state_from_json(locomotion_state)
+        legs = formatting.tour_from_json(problem_print_code)
 
         cqm = build_cqm(legs, max_leg_slope, max_cost, max_time,
-            weights, penalties, locomotion_vals)
+            weight_vals, locomotion_vals)
 
         problem_data_id = solver.upload_cqm(cqm).result()
         computation = solver.sample_cqm(problem_data_id,
@@ -672,10 +608,10 @@ def display_solutions(job_submit_state, job_id):
     if trigger_id != "job_submit_state":
         return dash.no_update, dash.no_update
 
-    if any(job_status_to_str(job_submit_state) == status for status in TERMINATED):
-        if job_status_to_str(job_submit_state) == "COMPLETED":
+    if any(formatting.job_status_to_str(job_submit_state) == status for status in jobs.TERMINATED):
+        if formatting.job_status_to_str(job_submit_state) == "COMPLETED":
             sampleset = client.retrieve_answer(job_id).sampleset
-            return sampleset_to_json(sampleset), solutions_to_display(sampleset)
+            return formatting.sampleset_to_json(sampleset), formatting.solutions_to_display(sampleset)
         else:
             return "No solutions for last submission", "No solutions for last submission"
     else: # Other submission states like PENDING
@@ -710,27 +646,27 @@ def manage_submission(n_clicks, n_intervals, job_id, job_submit_state, job_submi
         disable_watchdog = False
 
         return disable_btn, disable_watchdog, 0.2*1000, 0, \
-            job_status_to_display("SUBMITTED"), submit_time, f"Elapsed: 0 sec."
+            formatting.job_status_to_display("SUBMITTED"), submit_time, f"Elapsed: 0 sec."
 
-    if any(job_status_to_str(job_submit_state) == status for status in
-        ["SUBMITTED", *RUNNING]):
+    if any(formatting.job_status_to_str(job_submit_state) == status for status in
+        ["SUBMITTED", *jobs.RUNNING]):
 
-        job_submit_state = get_status(client, job_id, job_submit_time)
+        job_submit_state = jobs.get_status(client, job_id, job_submit_time)
         if not job_submit_state:
             job_submit_state = "SUBMITTED"
             wd_time = 0.2*1000
         else:
             wd_time = 1*1000
 
-        elapsed_time = elapsed(job_submit_time)
+        elapsed_time = jobs.elapsed(job_submit_time)
 
         return True, False, wd_time, 0, \
-            job_status_to_display(job_submit_state), dash.no_update, \
+            formatting.job_status_to_display(job_submit_state), dash.no_update, \
             f"Elapsed: {elapsed_time} sec."
 
-    if any(job_status_to_str(job_submit_state) == status for status in TERMINATED):
+    if any(formatting.job_status_to_str(job_submit_state) == status for status in jobs.TERMINATED):
 
-        elapsed_time = elapsed(job_submit_time)
+        elapsed_time = jobs.elapsed(job_submit_time)
         disable_btn = False
         disable_watchdog = True
 
@@ -738,8 +674,7 @@ def manage_submission(n_clicks, n_intervals, job_id, job_submit_state, job_submi
             dash.no_update, dash.no_update, f"Elapsed: {elapsed_time} sec."
 
     else:   # Exception state: should only ever happen in testing
-
-        return False, True, 0, 0, job_status_to_display("ERROR"), dash.no_update, \
+        return False, True, 0, 0, formatting.job_status_to_display("ERROR"), dash.no_update, \
             "Please restart"
 
 if __name__ == "__main__":

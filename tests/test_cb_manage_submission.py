@@ -22,10 +22,11 @@ from dash import no_update
 
 import datetime
 
-from formatting import tour_from_json
-from helpers_jobs import elapsed
+from helpers.formatting import tour_from_json
+from helpers.jobs import elapsed
 
 from app import names_leg_inputs, names_budget_inputs, names_weight_inputs
+
 from app import manage_submission
 
 n_clicks = ContextVar('n_clicks')
@@ -129,7 +130,7 @@ parametrize_vals = [
         0, 0, "Status: ERROR", no_update, "Please restart"),]
 
 @pytest.mark.parametrize(parametrize_names, parametrize_vals)
-@patch("app.get_status", mock_get_status)
+@patch("app.jobs.get_status", mock_get_status)
 def test_manage_submission_watchdog(btn_solve_cqm_clicks, wd_job_intervals,
     job_id_val, submit_state_in, submit_time_in, btn_solve_cqm_disabled,
     wd_job_disabled, wd_job_interval, wd_job_n, submit_state_out, submit_time_out,

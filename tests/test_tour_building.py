@@ -12,8 +12,6 @@
 #    See the License for the specific language governing permissions and
 #    limitations under the License.
 
-import copy
-import numpy as np
 from parameterized import parameterized
 import pandas as pd
 import pytest
@@ -21,13 +19,14 @@ import random
 
 import dimod
 
-from tour_planning import names_leg_inputs, names_budget_inputs, names_weight_inputs
-from tour_planning import leg_ranges, budget_ranges, weight_ranges, all_modes
-from tour_planning import average_tour_budget, build_cqm, set_legs, tour_budget_boundaries
+from tour_planning import (average_tour_budget, build_cqm, leg_ranges,
+    names_leg_inputs, set_legs, tour_budget_boundaries)
 
-legs1 = [{"length": 10, "uphill": 5, "toll": False},
+legs1 = [
+    {"length": 10, "uphill": 5, "toll": False},
     {"length": 20, "uphill": 10, "toll": True}]
-legs2 = [{"length": 30, "uphill": 5, "toll": False},
+legs2 = [
+    {"length": 30, "uphill": 5, "toll": False},
     {"length": 40, "uphill": 6, "toll": True},
     {"length": 50, "uphill": 7, "toll": False},
     {"length": 60, "uphill": 8, "toll": True}]
@@ -40,47 +39,43 @@ def test_average_tour_budget(legs, maximums):
 
     assert output == maximums
 
-locomotion_vals = {
-    "walk": {"speed": 1, "cost": 0, "exercise": 1, "use": True},
-    "cycle": {"speed": 3, "cost": 2, "exercise": 2, "use": True},
-     "bus": {"speed": 4, "cost": 3, "exercise": 0, "use": True},
-     "drive": {"speed": 7, "cost": 5, "exercise": 0, "use": True}}
-
 parametrize_vals = [
-(legs1, locomotion_vals, {'cost_min': 0, 'cost_max': 150.0, 'cost_avg': 75.0, 'time_min': 4.3, 'time_max': 30.0, 'time_avg': 7.5}),
-(legs2, locomotion_vals, {'cost_min': 0, 'cost_max': 900, 'cost_avg': 450.0, 'time_min': 25.7, 'time_max': 180.0, 'time_avg': 45.0})]
+(legs1, {'cost_min': 0, 'cost_max': 150.0, 'cost_avg': 75.0, 'time_min': 4.3,
+    'time_max': 30.0, 'time_avg': 7.5}),
+(legs2, {'cost_min': 0, 'cost_max': 900, 'cost_avg': 450.0, 'time_min': 25.7,
+    'time_max': 180.0, 'time_avg': 45.0})]
 
-@pytest.mark.parametrize("legs, locomotion_vals, boundaries", parametrize_vals)
-def test_tour_budget_boundaries(legs, locomotion_vals, boundaries):
+@pytest.mark.parametrize("legs, boundaries", parametrize_vals)
+def test_tour_budget_boundaries(locomotion_data_default, legs, boundaries):
     """Test that tour boundaries are calculated correctly."""
 
-    output = tour_budget_boundaries(legs, locomotion_vals)
+    output = tour_budget_boundaries(legs, locomotion_data_default)
 
     assert output == boundaries
 
-parametrize_names = "legs, max_leg_slope, max_cost, max_time," + \
-    " weights, penalties, locomotion_vals"
+parametrize_names = "legs, max_leg_slope, max_cost, max_time, weight_vals"
 
-parametrize_vals = [(legs1, 10, 10, 10, {"cost": None, "time": 55, "slope": None},
-    {"cost": "linear", "time": "linear", "slope": "quadratic"}, locomotion_vals),
-    (legs2, 10, 10, 10, {"cost": None, "time": 55, "slope": None},
-        {"cost": "linear", "time": "linear", "slope": "quadratic"}, locomotion_vals)]
+weight_vals = {"weight_cost":  {"weight": None, "penalty": "linear"},
+     "weight_time": {"weight": 55, "penalty": "linear"},
+     "weight_slope": {"weight": None, "penalty": "quadratic"}}
+
+parametrize_vals = [(legs1, 5, 10, 20, weight_vals),
+    (legs2, 8, 15, 25, weight_vals)]
 
 @pytest.mark.parametrize(parametrize_names, parametrize_vals)
-def test_build_cqm(legs, max_leg_slope, max_cost,
-    max_time, weights, penalties, locomotion_vals):
+def test_build_cqm(locomotion_data_default, legs, max_leg_slope, max_cost,
+    max_time, weight_vals):
     """Minimal, simple testing that CQM builds correctly."""
 
     output = build_cqm(legs, max_leg_slope, max_cost,
-        max_time, weights, penalties, locomotion_vals)
+        max_time, weight_vals, locomotion_data_default)
 
     assert type(output) == dimod.ConstrainedQuadraticModel
     assert len(output.constraints) >= 2 + len(legs)
-    assert len(output.variables) == len(locomotion_vals.keys())*len(legs)
+    assert len(output.variables) == len(locomotion_data_default.keys())*len(legs)
     assert output.constraints["Total cost"].rhs == max_cost
     assert output.constraints["Total time"].rhs == max_time
     assert "walk_0 + cycle_0 + bus_0 + drive_0" in output.constraints["One-hot leg0"].to_polystring()
-
 
 parametrize_names = "num_legs_val, max_leg_length_val, min_leg_length_val, "
 

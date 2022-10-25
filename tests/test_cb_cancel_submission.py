@@ -16,11 +16,11 @@ from parameterized import parameterized
 import pytest
 from unittest.mock import patch
 
-import time
-
 from contextvars import copy_context, ContextVar
 from dash._callback_context import context_value
 from dash._utils import AttributeDict
+
+import time
 
 from dwave.cloud import api
 
@@ -46,7 +46,7 @@ def mock_cancel(client, job_id):
     [(1, "123", "Cancelled job 123", True),
      (1, "456", "Could not cancel job: Problem does not exist or apitoken does not have access", True),
      (0, "123", "Cancelled job 123", True),])
-@patch("app.cancel", mock_cancel)
+@patch("app.jobs.cancel", mock_cancel)
 def test_cancel_submission(btn_cancel_val, job_id_val, alert_cancel_text_val,
     alert_cancel_state_val):
     """Test job cancellation."""

@@ -13,13 +13,10 @@
 #    limitations under the License.
 from dash import dcc, html
 import datetime
-from formatting import *
 
 from dwave.cloud.api import exceptions, Problems
 
-
-__all__ = ["job_bar", "TERMINATED", "RUNNING", "cancel", "elapsed", "get_status",
-    "no_solver_msg", ]
+__all__ = ["job_bar", "TERMINATED", "RUNNING", "cancel", "elapsed", "get_status",]
 
 job_bar = {"READY": [0, "link"],
 #          "WAITING": [0, "dark"],     Placeholder, to remember the color
@@ -33,25 +30,6 @@ job_bar = {"READY": [0, "link"],
 
 TERMINATED = ["COMPLETED", "CANCELLED", "FAILED"]
 RUNNING = ["PENDING", "IN_PROGRESS"]
-
-no_solver_msg = [
-    html.Div([
-    html.Div("Could not connect to a Leap hybrid CQM solver."),
-    html.Div(["""
-If you are running locally, set environment variables or a
-dwave-cloud-client configuration file as described in the
-""",
-    dcc.Link(children=[html.Div(" Ocean")],
-        href="https://docs.ocean.dwavesys.com/en/stable/overview/sapi.html",
-        style={"display":"inline-block"}),
-    "documentation."],
-        style={"display":"inline-block"}),
-    html.Div(["If you are running in the Leap IDE, see the ",
-    dcc.Link(children=[html.Div("Leap IDE dumentation")],
-        href="https://docs.dwavesys.com/docs/latest/doc_ide_user.html",
-        style={"display":"inline-block"}),
-    "documentation"],
-        style={"display":"inline-block"}),])]
 
 def cancel(client, job_id):
     """Try to cancel a job submission."""

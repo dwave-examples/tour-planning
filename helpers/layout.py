@@ -12,16 +12,17 @@
 #    See the License for the specific language governing permissions and
 #    limitations under the License.
 
-from dash.dcc import Input, Slider, RadioItems
+from dash.dcc import Input, Link, Slider, RadioItems
+import dash_bootstrap_components as dbc
 from dash import html
-import numpy as np
 
 from tour_planning import (locomotion_ranges, leg_ranges, slope_ranges,
     weight_ranges, budget_ranges)
 from tour_planning import (locomotion_init_values, leg_init_values, slope_init_values,
     weight_init_values, budget_init_values)
 
-__all__ = ["_dcc_input", "_dcc_slider", "_dcc_radio"]
+__all__ = ["_dcc_input", "_dcc_slider", "_dcc_radio", "_dbc_modal",
+    "description_feasibility_plot"]
 
 ranges = {**locomotion_ranges, **leg_ranges, **slope_ranges, **weight_ranges,
     **budget_ranges}
@@ -51,12 +52,16 @@ def _dcc_slider(name, step=1):
         step=step,
         value=init_values[f"{name}"],)
 
-labels = {"hardsoft": ["Soft", "Hard"], "penalty": ["Linear", "Quadratic"]}
+labels = {"hardsoft": ["Soft", "Hard"],
+          "penalty": ["Linear", "Quadratic"],
+          "active": ["On", "Off"]}
 
 def _dcc_radio(name, suffix):
     """Construct ``dash.RadioItem`` elements for layout."""
 
-    margin = {"hardsoft": {"margin-right": "20px"}, "penalty": {"margin-right": "30px"}}
+    margin = {"hardsoft": {"margin-right": "20px"},
+              "penalty": {"margin-right": "30px"},
+              "active": {"margin-right": "20px"}}
 
     return RadioItems([
         {"label": html.Div([labels[suffix][0]], style={'color': 'white', 'font-size': 12}),
@@ -64,3 +69,42 @@ def _dcc_radio(name, suffix):
         {"label": html.Div([labels[suffix][1]], style={'color': 'white', 'font-size': 12}),
         "value": labels[suffix][1].lower(),},], value=labels[suffix][0].lower(),
         id=f"{name}_{suffix}", inputStyle=margin[suffix])
+
+modal_texts = {"solver": ["Leap Hybrid CQM Solver Inaccessible",
+    [
+        html.Div([
+        html.Div("Could not connect to a Leap hybrid CQM solver."),
+        html.Div(["""
+    If you are running locally, set environment variables or a
+    dwave-cloud-client configuration file as described in the
+    """,
+        Link(children=[html.Div(" Ocean")],
+            href="https://docs.ocean.dwavesys.com/en/stable/overview/sapi.html",
+            style={"display":"inline-block"}),
+        "documentation."],
+            style={"display":"inline-block"}),
+        html.Div(["If you are running in the Leap IDE, see the ",
+        Link(children=[html.Div("Leap IDE dumentation")],
+            href="https://docs.dwavesys.com/docs/latest/doc_ide_user.html",
+            style={"display":"inline-block"}),
+        "documentation"],
+            style={"display":"inline-block"}),])]
+    ],
+    "usemodes": ["One Locomotion Mode is Required",
+    [html.Div("You must set at least one mode of locomotion to 'Use'.")]]}
+
+def _dbc_modal(name):
+    name = name.split("_")[1]
+    return [html.Div([
+        dbc.Modal([
+            dbc.ModalHeader(
+                dbc.ModalTitle(modal_texts[name][0])),
+            dbc.ModalBody(modal_texts[name][1]),],
+                id=f"{name}_modal", size="sm")])]
+
+description_feasibility_plot = """This graphic shows all returned solutions for
+a job submission, not just the best solution. All feasible solutions are plotted
+in blue and all infeasible solutions in red. Data-point size is proportional to
+the number of occurrences of a solution. You can hover over a data point to see
+information about it and can rotate and zoom in on parts of this graphic.
+"""

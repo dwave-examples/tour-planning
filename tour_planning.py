@@ -14,30 +14,45 @@
 
 import random
 import numpy as np
-import pandas as pd
 
 import dimod
 
-locomotion = {
+locomotion_default = {
     "walk": {"Speed": 1, "Cost": 0, "Exercise": 1, "Use": True},
     "cycle": {"Speed": 3, "Cost": 2, "Exercise": 2, "Use": True},
      "bus": {"Speed": 4, "Cost": 3, "Exercise": 0, "Use": True},
      "drive": {"Speed": 7, "Cost": 5, "Exercise": 0, "Use": True}}
-all_modes = locomotion.keys()  # global
-num_modes = len(all_modes)
+
+locomotion_ranges = {f"{mode}_{measure}": [0, 100] if measure != "speed" else
+    [1, 100] for mode in locomotion_default.keys()
+    for measure in [key.lower() for key in locomotion_default[mode].keys() if key != "Use"]}
+
+leg_ranges = {"num_legs": [1, 100],
+    "max_leg_length": [1, 20],
+    "min_leg_length": [1, 20]}
+
+slope_ranges = {"max_leg_slope": [0, 10]}
+
+weight_ranges = {"weight_cost": [0, 100000],
+    "weight_time": [0, 100000],
+    "weight_slope": [0, 100000],}
+
+budget_ranges =  {"max_cost": [0, 100000],
+    "max_time": [0, 100000]}
 
 def set_legs(num_legs, min_leg_length, max_leg_length, tollbooths=True):
     """Create legs of random length within the configured ranges."""
 
     toll_probablity = 0.2
-    if not tollbooths:
+    if tollbooths == "off":
         toll_probablity = 0
 
-    return [{"length": round((max_leg_length - min_leg_length)*random.random() \
-        + min_leg_length, 1),
-             "uphill": round(10*random.random(), 1),
-             "toll": bool(np.random.choice([True, False], 1,
-                p=[toll_probablity, 1 - toll_probablity])[0])}
+    return [{
+        "length": round((max_leg_length - min_leg_length)*random.random() +
+            min_leg_length, 1),
+        "uphill": round(10*random.random(), 1),
+        "toll": bool(np.random.choice([True, False], 1,
+            p=[toll_probablity, 1 - toll_probablity])[0])}
         for i in range(num_legs)]
 
 def average_tour_budget(legs):
@@ -46,12 +61,33 @@ def average_tour_budget(legs):
     """
 
     legs_total = sum(l["length"] for l in legs)
-    costs = [c["Cost"] for c in locomotion.values()]
-    speeds = [s["Speed"] for s in locomotion.values()]
+    costs = [c["Cost"] for c in locomotion_default.values()]
+    speeds = [s["Speed"] for s in locomotion_default.values()]
     max_cost = round(legs_total * np.mean([min(costs), max(costs)]))
     max_time = round(legs_total / np.mean([min(speeds), max(speeds)]))
 
     return max_cost, max_time
+
+locomotion_init_values = {f"{mode}_{measure}": val for mode in locomotion_default.keys()
+    for measure, val in {key.lower(): val for key, val in
+    locomotion_default[mode].items() if key != "Use"}.items()}
+
+leg_init_values = {"num_legs": 10, "max_leg_length": 10, "min_leg_length": 2}
+slope_init_values ={"max_leg_slope": 6}
+weight_init_values = {"weight_cost": 100, "weight_time": 30, "weight_slope": 150}
+
+budget_init_values = {}
+budget_init_values["max_cost"], budget_init_values["max_time"] = \
+    average_tour_budget(set_legs(**leg_init_values))
+
+names_all_modes = locomotion_default.keys()
+names_locomotion_inputs = list(locomotion_ranges.keys())
+names_leg_inputs = list(leg_ranges.keys())
+names_slope_inputs = list(slope_ranges.keys())
+names_weight_inputs = list(weight_ranges.keys())
+names_budget_inputs = list(budget_ranges.keys())
+
+MAX_SOLVER_RUNTIME = 600
 
 def tour_budget_boundaries(legs, locomotion_vals):
     """Return boundary values of tour cost & time for the given legs."""
@@ -70,44 +106,6 @@ def tour_budget_boundaries(legs, locomotion_vals):
 
     return {"cost_min": cost_min, "cost_max": cost_max, "cost_avg": cost_avg,
         "time_min": time_min, "time_max": time_max, "time_avg": time_avg}
-
-locomotion_ranges = {f"{mode}_{measure}": [0, 100] if measure != "speed" else
-    [1, 100] for mode in locomotion.keys()
-    for measure in [key.lower() for key in locomotion[mode].keys() if key != "Use"]}
-
-leg_ranges = {"num_legs": [1, 100],
-    "max_leg_length": [1, 20],
-    "min_leg_length": [1, 20]}
-
-slope_ranges = {"max_leg_slope": [0, 10]}
-
-weight_ranges = {"weight_cost": [0, 100000],
-    "weight_time": [0, 100000],
-    "weight_slope": [0, 100000],}
-
-budget_ranges =  {"max_cost": [0, 100000],
-    "max_time": [0, 100000]}
-
-locomotion_init_values = {f"{mode}_{measure}": val for mode in locomotion.keys()
-    for measure, val in {key.lower(): val for key, val in
-    locomotion[mode].items() if key != "Use"}.items()}
-
-leg_init_values = {"num_legs": 10, "max_leg_length": 10, "min_leg_length": 2}
-
-slope_init_values ={"max_leg_slope": 6}
-
-weight_init_values = {"weight_cost": 100, "weight_time": 30, "weight_slope": 150}
-
-budget_init_values = {}
-budget_init_values["max_cost"], budget_init_values["max_time"] = \
-    average_tour_budget(set_legs(**leg_init_values))
-
-names_locomotion_inputs = list(locomotion_ranges.keys())
-names_leg_inputs = list(leg_ranges.keys())
-names_slope_inputs = list(slope_ranges.keys())
-names_weight_inputs = list(weight_ranges.keys())
-names_budget_inputs = list(budget_ranges.keys())
-MAX_SOLVER_RUNTIME = 600
 
 def _calculate_total(t, measure, legs, locomotion_vals):
     """Helper function for building the CQM."""
@@ -133,7 +131,7 @@ def _calculate_total(t, measure, legs, locomotion_vals):
         i in range(num_modes*num_legs))
 
 def build_cqm(legs, max_leg_slope, max_cost, max_time,
-    weights, penalties, locomotion_vals):
+    weight_vals, locomotion_vals):
     """Build CQM for maximizing exercise. """
 
     modes = [key for key in locomotion_vals.keys() if locomotion_vals[key]["use"]]
@@ -148,10 +146,14 @@ def build_cqm(legs, max_leg_slope, max_cost, max_time,
     for leg in range(num_legs):
         cqm.add_constraint(dimod.quicksum(t[num_modes*leg:num_modes*leg+num_modes]) == 1,
             label=f"One-hot leg{leg}")
-    cqm.add_constraint(_calculate_total(t, "Cost", legs, locomotion_vals) <= max_cost, label="Total cost",
-        weight=weights["cost"], penalty=penalties["cost"])
+    cqm.add_constraint(_calculate_total(t, "Cost", legs, locomotion_vals) <= max_cost,
+        label="Total cost",
+        weight=weight_vals["weight_cost"]["weight"],
+        penalty=weight_vals["weight_cost"]["penalty"])
     cqm.add_constraint(_calculate_total(t, "Time", legs, locomotion_vals) <= max_time,
-        label="Total time", weight=weights["time"], penalty=penalties["time"])
+        label="Total time",
+        weight=weight_vals["weight_time"]["weight"],
+        penalty=weight_vals["weight_time"]["penalty"])
 
     if "drive" in modes:
         drive_index = list(modes).index("drive")
@@ -166,12 +168,14 @@ def build_cqm(legs, max_leg_slope, max_cost, max_time,
         if "cycle" in modes:
              cqm.add_constraint(t[num_modes*leg:num_modes*leg+num_modes][cycle_index] * \
                 legs[leg]["uphill"] <= max_leg_slope,
-                label=f"Too steep to cycle on leg {leg}", weight=weights["slope"],
-                penalty=penalties["slope"])
+                label=f"Too steep to cycle on leg {leg}",
+                weight=weight_vals["weight_slope"]["weight"],
+                penalty=weight_vals["weight_slope"]["penalty"])
         if "walk" in modes:
              cqm.add_constraint(t[num_modes*leg:num_modes*leg+num_modes][walk_index] * \
                 legs[leg]["uphill"] <= max_leg_slope,
-                label=f"Too steep to walk on leg {leg}", weight=weights["slope"],
-                penalty=penalties["slope"])
+                label=f"Too steep to walk on leg {leg}",
+                weight=weight_vals["weight_slope"]["weight"],
+                penalty=weight_vals["weight_slope"]["penalty"])
 
     return cqm

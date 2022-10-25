@@ -22,7 +22,8 @@ from tour_planning import weight_ranges, budget_ranges
 __all__ = ["job_status_to_str", "tour_from_json",
     "job_status_to_display",  "tour_to_display", "tour_to_json",
     "locomotion_to_display", "solutions_to_display",
-    "sampleset_to_json", "sampleset_from_json", "cqm_to_display"]
+    "sampleset_to_json", "sampleset_from_json", "cqm_to_display",
+    "state_from_json", "state_to_json"]
 
 def job_status_to_display(code):
     """Output status as 'Status: <status>'."""
@@ -71,7 +72,7 @@ def solutions_to_display(sampleset):
         return "No feasible solutions found."
     first = sorted({int(key.split('_')[1]): key.split('_')[0] for key,val in \
         sampleset_feasible.first.sample.items() if val==1.0}.items())
-    ratio = round(len(sampleset_feasible)/len(sampleset), 1)
+    ratio = round(len(sampleset_feasible)/len(sampleset), 3)
     s += "Feasible solutions: {:.1%} of {} samples.\n".format((ratio), len(sampleset))
     s += f"Best solution with energy {round(sampleset_feasible.first.energy)} is:\n"
     for leg in first:
@@ -86,14 +87,7 @@ def sampleset_to_json(sampleset):
 def sampleset_from_json(saved_sampleset):
     """Retrieve saved sampleset."""
 
-    sampleset = dimod.SampleSet.from_serializable(json.loads(saved_sampleset))
-    sampleset_feasible = sampleset.filter(lambda row: row.is_feasible)
-    if len(sampleset_feasible) == 0:
-        return "No feasible solutions found."
-    first = sorted({int(key.split("_")[1]): key.split("_")[0] for key,val in \
-        sampleset_feasible.first.sample.items() if val==1.0}.items())
-
-    return {"sampleset": sampleset, "feasible": sampleset_feasible, "first": first}
+    return dimod.SampleSet.from_serializable(json.loads(saved_sampleset))
 
 def cqm_to_display(cqm):
     """Output CQM for humans."""
@@ -121,3 +115,13 @@ def cqm_to_display(cqm):
     print_str += "\n\nToll Booth Constraints: \n" + toll_str
 
     return print_str
+
+def state_to_json(locomotion_vals):
+    """Output locomotion state for code rereading."""
+
+    return json.dumps(locomotion_vals)
+
+def state_from_json(locomotion_json):
+    """input locomotion state from saved."""
+
+    return json.loads(locomotion_json)

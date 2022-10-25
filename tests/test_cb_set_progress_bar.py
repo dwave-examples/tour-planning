@@ -20,7 +20,7 @@ from dash._callback_context import context_value
 from dash._utils import AttributeDict
 from dash import no_update
 
-from helpers_jobs import job_bar, TERMINATED, RUNNING
+from helpers.jobs import job_bar, TERMINATED, RUNNING
 
 from app import set_progress_bar
 

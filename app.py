@@ -271,7 +271,8 @@ app_layout.extend(modal_usemodes)
 
 app.layout = dbc.Container(
     app_layout, fluid=True,
-    style={"backgroundColor": "black", "color": "rgb(3, 184, 255)"})
+    style={"backgroundColor": "black", "color": "rgb(3, 184, 255)",
+        "paddingBottom": 20, "paddingLeft": 20, "paddingRight": 20, "paddingTop": 20})
 
 server = app.server
 app.config["suppress_callback_exceptions"] = True

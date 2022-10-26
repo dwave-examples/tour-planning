@@ -106,27 +106,26 @@ def _dbc_modal(name):
 
 
 
-description_space_plot = ["""The colored bar represents the tour in space, with
-each segment representing a leg, its relative width the length of the leg, and its
-color the elevation gain for the leg. Toll booths, if present, are shown as icons
-above the tour; there is a constraint not to drive on legs with toll booths.
-The modes of locomotion in the best returned solution are written onto the tour
-and represented by icons below it."""]
+description_space_plot = ["""This tab represents the tour in space as a colored bar,
+with each segment being a leg, its relative width the length of the leg, and its
+color the elevation gain for that leg. Toll booths, if present, are shown as icons
+above the tour (there is a constraint not to drive on legs with toll booths).
+For submitted jobs, the modes of locomotion in the best returned solution are
+written onto the tour and shown as icons below it."""]
 
 description_time_plot = ["""This tab shows a time graph for the best feasible solution
 returned from your job submission.""",
 html.Br(),
-"""The colored bar represents the tour in time, with
-each segment representing a leg, its relative width and color the time and cost,
-respectively, of traversing the leg using the mode of locomotion in the best
-returned solution. Toll booths, if present, are shown as icons above the
-tour; there is a constraint not to drive on legs with toll booths.
-The best modes of locomotion found in returned solutions are written
-onto the tour and represented by icons below it.""",
+"""The colored bar represents the tour in time, with each segment being a leg,
+its relative width and color the time and cost, respectively, of traversing the
+leg at the speed of the mode of locomotion selected by the best returned solution.
+Toll booths, if present, are shown as icons above the tour (there is a constraint
+not to drive on legs with toll booths). The best modes of locomotion found in returned
+solutions are written onto the tour and shown as icons below it.""",
 html.Br(),
 """Look here to see the overall duration of the tour."""]
 
-description_feasibility_plot = ["""This tab shows a 3d graphic of all returned
+description_feasibility_plot = ["""This tab shows a graphic of all returned
 solutions for a job submission (not just the best solution).""",
 html.Br(),
 """Feasible solutions are plotted in blue and infeasible solutions in red.
@@ -138,12 +137,22 @@ html.Br(),
 """You can hover over a data point to see information about it and can rotate and
 zoom in on parts of this graphic."""]
 
-description_problem_print = """Displays the legs of the tour (length, slope, and
-toll booths), formatted for reading and for copying into your code."""
-description_solutions_print = """Displays the best solution found, formatted for
-reading and as a dimod sampleset for copying into your code."""
-description_cqm_print = """Displays the constrained quadratic model generated for
-your configured tour and constraints."""
+description_problem_print = """This tab provides information on the legs configured
+for the tour (length, slope, and toll booths), formatted for both reading and
+copying and pasting into your code."""
+
+description_solutions_print = """This tab displays the best solution found,
+formatted for reading and as a dimod sampleset you can copy and paste into your
+code or Python terminal."""
+
+description_cqm_print = ["""This tab displays the constrained quadratic model (CQM)
+generated for your configured tour and its constraints.""",
+html.Br(),
+"""To understand how the CQM is built up, it can be helpful to look at this display
+for a minimal tour (set the number of legs to one, the maximum leg length to one,
+enable a single mode of locomotion, turn off tollbooths, etc), and then gradually
+increment the complexity while studying the changes to the resultant CQM."""]
+
 description_locomotion_print = ["""Displays information about your configured tour,
 such as the minimum, maximum, and average values of cost and time, and information
 about the available modes of locomotion.""",

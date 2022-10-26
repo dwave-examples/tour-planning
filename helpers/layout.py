@@ -22,7 +22,9 @@ from tour_planning import (locomotion_init_values, leg_init_values, slope_init_v
     weight_init_values, budget_init_values)
 
 __all__ = ["_dcc_input", "_dcc_slider", "_dcc_radio", "_dbc_modal",
-    "description_feasibility_plot"]
+    "description_feasibility_plot", "description_space_plot", "description_time_plot",
+    "description_problem_print", "description_solutions_print", "description_cqm_print",
+    "description_locomotion_print"]
 
 ranges = {**locomotion_ranges, **leg_ranges, **slope_ranges, **weight_ranges,
     **budget_ranges}
@@ -102,9 +104,51 @@ def _dbc_modal(name):
             dbc.ModalBody(modal_texts[name][1]),],
                 id=f"{name}_modal", size="sm")])]
 
-description_feasibility_plot = """This graphic shows all returned solutions for
-a job submission, not just the best solution. All feasible solutions are plotted
-in blue and all infeasible solutions in red. Data-point size is proportional to
-the number of occurrences of a solution. You can hover over a data point to see
-information about it and can rotate and zoom in on parts of this graphic.
-"""
+
+
+description_space_plot = ["""The colored bar represents the tour in space, with
+each segment representing a leg, its relative width the length of the leg, and its
+color the elevation gain for the leg. Toll booths, if present, are shown as icons
+above the tour; there is a constraint not to drive on legs with toll booths.
+The modes of locomotion in the best returned solution are written onto the tour
+and represented by icons below it."""]
+
+description_time_plot = ["""This tab shows a time graph for the best feasible solution
+returned from your job submission.""",
+html.Br(),
+"""The colored bar represents the tour in time, with
+each segment representing a leg, its relative width and color the time and cost,
+respectively, of traversing the leg using the mode of locomotion in the best
+returned solution. Toll booths, if present, are shown as icons above the
+tour; there is a constraint not to drive on legs with toll booths.
+The best modes of locomotion found in returned solutions are written
+onto the tour and represented by icons below it.""",
+html.Br(),
+"""Look here to see the overall duration of the tour."""]
+
+description_feasibility_plot = ["""This tab shows a 3d graphic of all returned
+solutions for a job submission (not just the best solution).""",
+html.Br(),
+"""Feasible solutions are plotted in blue and infeasible solutions in red.
+Data-point size is proportional to the number of occurrences of a solution.""",
+html.Br(),
+"""Look here to see the quality of your solutions (e.g., overall tour cost and
+exercise).""",
+html.Br(),
+"""You can hover over a data point to see information about it and can rotate and
+zoom in on parts of this graphic."""]
+
+description_problem_print = """Displays the legs of the tour (length, slope, and
+toll booths), formatted for reading and for copying into your code."""
+description_solutions_print = """Displays the best solution found, formatted for
+reading and as a dimod sampleset for copying into your code."""
+description_cqm_print = """Displays the constrained quadratic model generated for
+your configured tour and constraints."""
+description_locomotion_print = ["""Displays information about your configured tour,
+such as the minimum, maximum, and average values of cost and time, and information
+about the available modes of locomotion.""",
+html.Br(),
+"""Here you can also configure parameters for the modes of locomotion used in the
+problem.""",
+html.Br(),
+"""Look here to see what values make sense for your tour budgets (cost and duration)."""]

@@ -58,19 +58,20 @@ labels = {"hardsoft": ["Soft", "Hard"],
           "penalty": ["Linear", "Quadratic"],
           "active": ["On", "Off"]}
 
+margin = {"hardsoft": {"margin-right": "20px"},
+          "penalty": {"margin-right": "30px"},
+          "active": {"margin-right": "20px"}}
+
 def _dcc_radio(name, suffix):
     """Construct ``dash.RadioItem`` elements for layout."""
 
-    margin = {"hardsoft": {"margin-right": "20px"},
-              "penalty": {"margin-right": "30px"},
-              "active": {"margin-right": "20px"}}
-
     return RadioItems([
-        {"label": html.Div([labels[suffix][0]], style={'color': 'white', 'font-size': 12}),
-        "value": labels[suffix][0].lower(),},
-        {"label": html.Div([labels[suffix][1]], style={'color': 'white', 'font-size': 12}),
-        "value": labels[suffix][1].lower(),},], value=labels[suffix][0].lower(),
-        id=f"{name}_{suffix}", inputStyle=margin[suffix])
+        {"label": html.Div([labels[suffix][0]]), "value": labels[suffix][0].lower(),},
+        {"label": html.Div([labels[suffix][1]]), "value": labels[suffix][1].lower(),},],
+        value=labels[suffix][0].lower(),
+        id=f"{name}_{suffix}",
+        labelStyle={"color": "white", "font-size": 12},
+        inputStyle=margin[suffix])
 
 modal_texts = {"solver": ["Leap Hybrid CQM Solver Inaccessible",
     [

@@ -294,8 +294,14 @@ def alert_no_solver(btn_solve_cqm):
 
     return False
 
+def radio_disable(disable):
+    return [
+        {"label": "Linear", "value": "linear", "disabled": disable},
+        {"label": "Quadratic", "value": "quadratic", "disabled": disable}]
+
 @app.callback(
     [Output(id, "disabled") for id in names_weight_inputs],
+    [Output(f"{id}_penalty", component_property="options") for id in names_weight_inputs],
     [Input(f"{id}_hardsoft", "value") for id in names_weight_inputs],)
 def disable_weights(weight_cost_hardsoft, weight_time_hardsoft, weight_slope_hardsoft):
     """Disable weight inputs for hard constraints."""
@@ -308,9 +314,13 @@ def disable_weights(weight_cost_hardsoft, weight_time_hardsoft, weight_slope_har
         for weight in names_weight_inputs:
             if vars()[f"{weight}_hardsoft"] == "hard":
                 disable[weight.split("_")[1]] = True
-        return disable["cost"], disable["time"], disable["slope"]
+        return disable["cost"], disable["time"], disable["slope"], \
+            radio_disable(disable["cost"]), \
+            radio_disable(disable["time"]), \
+            radio_disable(disable["slope"]),
 
-    return dash.no_update, dash.no_update, dash.no_update
+    return dash.no_update, dash.no_update, dash.no_update, \
+           dash.no_update, dash.no_update, dash.no_update,
 
 @app.callback(
     [Output(f"tooltip_{target}", component_property="style") for target in tool_tips.keys()],

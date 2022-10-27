@@ -225,10 +225,10 @@ tour_config = dbc.Card(
 app_layout = [
     dbc.Row([
         dbc.Col([
-            html.H1("Tour Planner", style={"textAlign": "left"})], width=10),
+            html.H1("Tour Planner", style={"textAlign": "left"})], width=9),
         dbc.Col([
-            html.Img(src="assets/ocean.png", height="50px",
-                style={"textAlign": "right"})], width=2)]),
+            html.Img(src="assets/leap_logo_dark.jpg", height="50px",
+                style={"textAlign": "left"})], width=3)]),
     dbc.Row([
         dbc.Col(
             tour_config, width=4),

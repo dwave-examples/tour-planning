@@ -26,6 +26,9 @@ from helpers import formatting
 from helpers import graphics
 from helpers import jobs
 from helpers import layout
+from helpers.layout import (description_space_plot, description_time_plot,
+    description_feasibility_plot, description_problem_print, description_solutions_print,
+    description_cqm_print, description_locomotion_print)
 from helpers.tool_tips import tool_tips
 from tour_planning import (build_cqm, set_legs, tour_budget_boundaries,
     names_locomotion_inputs, names_leg_inputs, names_slope_inputs,
@@ -80,26 +83,18 @@ graph_tabs = [dbc.Tab(
     dbc.Card([
         dbc.Row([
             dbc.Col([
-                dcc.Graph(id=f"{graph.lower()}_graph")], width=12) ])],
+                dcc.Graph(id=f"{graph.lower()}_graph")], width=12)]),
+        dbc.Row([
+            dbc.Col([
+                html.P(globals()[f"description_{graph.lower()}_plot"],
+                    style={"color": "white"})],
+                width=10)],
+            align="start")],
         color="secondary"),
     label=f"{graph}",
     id=f"graph_{graph.lower()}",
     label_style={"color": "white", "backgroundColor": "black"},)
-for graph in ["Space", "Time"]]
-graph_tabs.extend([
-    dbc.Tab(
-        dbc.Card([
-            dbc.Row([
-                dbc.Col([
-                    dcc.Graph(id="feasibility_graph")], width=8),
-                dbc.Col([
-                    dcc.Textarea(id=f"feasibility_text", value=layout.description_feasibility_plot,
-                        style={"width": "100%"}, rows=10)],
-                    width=4, align="start")])],
-            color="secondary"),
-        label="feasibility_graph",
-        id="graph_feasibility_graph",
-        label_style={"color": "white", "backgroundColor": "black"},)])
+    for graph in ["Space", "Time", "Feasibility"]]
 tabs["Graph"] = dbc.Tabs(graph_tabs)
 
 double_tabs = {
@@ -110,21 +105,36 @@ readers = ["Human", "Code"]
 viewer_tabs = {}
 for key, val in double_tabs.items():
     tabs[key] = dbc.Tabs([
-        dbc.Tab(dbc.Card([
-            dbc.Row([
-                dbc.Col([
-                    dcc.Textarea(id=f"{key.lower()}_print_{reader.lower()}", value=val,
-                        style={"width": "100%"}, rows=20)], width=12)]),], color="secondary"),
+        dbc.Tab(
+            dbc.Card([
+                dbc.Row([
+                    dbc.Col([
+                        dcc.Textarea(id=f"{key.lower()}_print_{reader.lower()}", value=val,
+                            style={"width": "100%"}, rows=10)], width=12)]),
+                dbc.Row([
+                    dbc.Col([
+                        html.P(globals()[f"description_{key.lower()}_print"],
+                            style={"color": "white"})],
+                        width=10)],
+                    align="start"),],
+                color="secondary"),
             label=f"{reader} Readable",
             tab_id=f"tab_{key}_print_{reader.lower()}",
             label_style={"color": "white", "backgroundColor": "black"},)
-    for reader in readers])
+        for reader in readers])
 
 tabs["CQM"] = dbc.Card([
     dbc.Row([
         dbc.Col([
             dcc.Textarea(id=f"cqm_print", value="",
-                style={"width": "100%"}, rows=20)],)]),])
+                style={"width": "100%"}, rows=15)],),
+    dbc.Row([
+        dbc.Col([
+            html.P(description_cqm_print,
+                style={"color": "white"})],
+            width=10)],
+        align="start")]),],
+    color="secondary")
 
 locomotion_columns = ["Mode", "Speed", "Cost", "Exercise", "Use"]
 tabs["Locomotion"] = dbc.Card([
@@ -146,10 +156,16 @@ tabs["Locomotion"] = dbc.Card([
             width=6),
         dbc.Col([
             dcc.Textarea(id=f"locomotion_print", value="",
-                style={"width": "100%"}, rows=20)],
+                style={"width": "100%"}, rows=5)],
             width=5, align="start"),
-    html.P(id="locomotion_state", children="", style = dict(display="none"))]),],
-        color="secondary")
+    html.P(id="locomotion_state", children="", style = dict(display="none"))]),
+    dbc.Row([
+        dbc.Col([
+            html.P(description_locomotion_print,
+                style={"color": "white"})],
+            width=10)],
+        align="start")],
+    color="secondary")
 
 # CQM configuration sections
 
@@ -255,7 +271,8 @@ app_layout.extend(modal_usemodes)
 
 app.layout = dbc.Container(
     app_layout, fluid=True,
-    style={"backgroundColor": "black", "color": "rgb(3, 184, 255)"})
+    style={"backgroundColor": "black", "color": "rgb(3, 184, 255)",
+        "paddingBottom": 20, "paddingLeft": 20, "paddingRight": 20, "paddingTop": 20})
 
 server = app.server
 app.config["suppress_callback_exceptions"] = True

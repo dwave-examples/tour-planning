@@ -106,14 +106,14 @@ def _dbc_modal(name):
 
 
 
-description_space_plot = ["""This tab represents the tour in space as a colored bar,
+description_space_plot = ["""The tour in space represented as a colored bar,
 with each segment being a leg, its relative width the length of the leg, and its
 color the elevation gain for that leg. Toll booths, if present, are shown as icons
 above the tour (there is a constraint not to drive on legs with toll booths).
 For submitted jobs, the modes of locomotion in the best returned solution are
 written onto the tour and shown as icons below it."""]
 
-description_time_plot = ["""This tab shows a time graph for the best feasible solution
+description_time_plot = ["""A time graph for the best feasible solution
 returned from your job submission.""",
 html.Br(),
 """The colored bar represents the tour in time, with each segment being a leg,
@@ -125,8 +125,8 @@ solutions are written onto the tour and shown as icons below it.""",
 html.Br(),
 """Look here to see the overall duration of the tour."""]
 
-description_feasibility_plot = ["""This tab shows a graphic of all returned
-solutions for a job submission (not just the best solution).""",
+description_feasibility_plot = ["""All returned solutions for a job submission
+(not just the best solution).""",
 html.Br(),
 """Feasible solutions are plotted in blue and infeasible solutions in red.
 Data-point size is proportional to the number of occurrences of a solution.""",
@@ -137,15 +137,15 @@ html.Br(),
 """You can hover over a data point to see information about it and can rotate and
 zoom in on parts of this graphic."""]
 
-description_problem_print = """This tab provides information on the legs configured
+description_problem_print = """Information on the legs configured
 for the tour (length, slope, and toll booths), formatted for both reading and
 copying and pasting into your code."""
 
-description_solutions_print = """This tab displays the best solution found,
-formatted for reading and as a dimod sampleset you can copy and paste into your
+description_solutions_print = """The best solution found, formatted for reading,
+and the returned dimod sampleset, which you can copy and paste into your
 code or Python terminal."""
 
-description_cqm_print = ["""This tab displays the constrained quadratic model (CQM)
+description_cqm_print = ["""The constrained quadratic model (CQM)
 generated for your configured tour and its constraints.""",
 html.Br(),
 """To understand how the CQM is built up, it can be helpful to look at this display
@@ -153,9 +153,9 @@ for a minimal tour (set the number of legs to one, the maximum leg length to one
 enable a single mode of locomotion, turn off tollbooths, etc), and then gradually
 increment the complexity while studying the changes to the resultant CQM."""]
 
-description_locomotion_print = ["""Displays information about your configured tour,
-such as the minimum, maximum, and average values of cost and time, and information
-about the available modes of locomotion.""",
+description_locomotion_print = ["""Information about your configured tour,
+such as the minimum, maximum, and average values of cost and time, and the
+available modes of locomotion.""",
 html.Br(),
 """Here you can also configure parameters for the modes of locomotion used in the
 problem.""",

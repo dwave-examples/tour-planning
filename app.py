@@ -174,18 +174,19 @@ weights_card = [dbc.Row([html.H4("Constraint Settings", className="card-title"),
     id="constraint_settings_row")]
 weights_card.extend([
     dbc.Row([
-       dbc.Col([
+        dbc.Col([
+            html.Div([
+                layout._dcc_radio(key, "hardsoft")])], width=5),
+        dbc.Col([
             html.Div([
             dbc.Label(f"{val} Weight"),
             dbc.Row([
                 dbc.Col([
-                    html.Div([
-                        layout._dcc_input(key, step=1)],
-                            style=dict(display="flex", justifyContent="right")),
-                        layout._dcc_radio(key, "penalty")],
-                    style={"margin-right": "20px"}),
+                        layout._dcc_input(key, step=1),])]),
+            dbc.Row([
                 dbc.Col([
-                    layout._dcc_radio(key, "hardsoft")], style={"margin-left": "30px"})])])])])
+                    html.Div([
+                        layout._dcc_radio(key, "penalty")])])])])], width=7)])
     for key, val in zip(names_weight_inputs, ["Cost", "Time", "Slope"])])
 
 tour_titles = ["Set Legs", "Set Budget", "Set Exercise Limits", "Add Tollbooths"]
@@ -299,9 +300,12 @@ def radio_disable(disable):
         {"label": "Linear", "value": "linear", "disabled": disable},
         {"label": "Quadratic", "value": "quadratic", "disabled": disable}]
 
+radio_label_style = {"color": "white", "font-size": 12, "display": "flex"}
+
 @app.callback(
     [Output(id, "disabled") for id in names_weight_inputs],
     [Output(f"{id}_penalty", component_property="options") for id in names_weight_inputs],
+    [Output(f"{id}_penalty", component_property="labelStyle") for id in names_weight_inputs],
     [Input(f"{id}_hardsoft", "value") for id in names_weight_inputs],)
 def disable_weights(weight_cost_hardsoft, weight_time_hardsoft, weight_slope_hardsoft):
     """Disable weight inputs for hard constraints."""
@@ -317,10 +321,12 @@ def disable_weights(weight_cost_hardsoft, weight_time_hardsoft, weight_slope_har
         return disable["cost"], disable["time"], disable["slope"], \
             radio_disable(disable["cost"]), \
             radio_disable(disable["time"]), \
-            radio_disable(disable["slope"]),
+            radio_disable(disable["slope"]), \
+            radio_label_style, radio_label_style, radio_label_style
 
     return dash.no_update, dash.no_update, dash.no_update, \
-           dash.no_update, dash.no_update, dash.no_update,
+           dash.no_update, dash.no_update, dash.no_update, \
+            dash.no_update, dash.no_update, dash.no_update
 
 @app.callback(
     [Output(f"tooltip_{target}", component_property="style") for target in tool_tips.keys()],

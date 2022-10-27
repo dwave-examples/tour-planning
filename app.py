@@ -72,7 +72,8 @@ solver_card = dbc.Card([
                 html.Div([
                     html.P("Runtime limit:", style={'marginLeft':'5px'}),
                     dcc.Input(id="max_runtime", type="number", min=5, max=MAX_SOLVER_RUNTIME,
-                        step=5, value=5, style={'marginRight':'10px', 'marginLeft':'5px'}),]),]),]),],
+                        step=5, value=5,
+                        style={'marginRight':'10px', 'marginLeft':'5px','max-width': '95%'}),]),]),]),],
     color="secondary", body=True)
 
 # Tab-construction section

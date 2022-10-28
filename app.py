@@ -73,7 +73,7 @@ solver_card = dbc.Card([
                     html.P("Runtime limit:", style={'marginLeft':'5px'}),
                     dcc.Input(id="max_runtime", type="number", min=5, max=MAX_SOLVER_RUNTIME,
                         step=5, value=5,
-                        style={'marginRight':'10px', 'marginLeft':'5px','max-width': '95%'}),]),]),]),],
+                        style={'marginRight':'10px', 'marginLeft':'5px','max-width': '50%'}),]),]),]),],
     color="secondary", body=True)
 
 # Tab-construction section
@@ -175,19 +175,19 @@ weights_card = [dbc.Row([html.H4("Constraint Settings", className="card-title"),
     id="constraint_settings_row")]
 weights_card.extend([
     dbc.Row([
+        html.B(f"{val}", style={"text-decoration": "underline"}),
         dbc.Col([
-            html.Div([
-                layout._dcc_radio(key, "hardsoft")])], width=5),
+            layout._dcc_radio(key, "hardsoft")],
+            width=5),
         dbc.Col([
-            html.Div([
-            dbc.Label(f"{val} Weight"),
+            dbc.Label(f"Weight", style={"color": "white", "font-size": 12}),
             dbc.Row([
                 dbc.Col([
-                        layout._dcc_input(key, step=1),])]),
+                    layout._dcc_input(key, step=1),])]),
             dbc.Row([
                 dbc.Col([
-                    html.Div([
-                        layout._dcc_radio(key, "penalty")])])])])], width=7)])
+                    layout._dcc_radio(key, "penalty")])])],
+            width=7)])
     for key, val in zip(names_weight_inputs, ["Cost", "Time", "Slope"])])
 
 tour_titles = ["Set Legs", "Set Budget", "Set Exercise Limits", "Add Tollbooths"]

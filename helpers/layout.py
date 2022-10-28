@@ -41,7 +41,7 @@ def _dcc_input(name, step=None):
         max=ranges[name][1],
         step=step,
         value=init_values[name],
-        style={'max-width': '95%'})
+        style={'max-width': '75%'})
 
 def _dcc_slider(name, step=1):
     """Construct ``dash.Slider`` elements for layout."""

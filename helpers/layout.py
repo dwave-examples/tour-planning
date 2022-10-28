@@ -40,7 +40,8 @@ def _dcc_input(name, step=None):
         min=ranges[name][0],
         max=ranges[name][1],
         step=step,
-        value=init_values[name])
+        value=init_values[name],
+        style={'max-width': '75%'})
 
 def _dcc_slider(name, step=1):
     """Construct ``dash.Slider`` elements for layout."""
@@ -61,16 +62,12 @@ labels = {"hardsoft": ["Soft", "Hard"],
 def _dcc_radio(name, suffix):
     """Construct ``dash.RadioItem`` elements for layout."""
 
-    margin = {"hardsoft": {"margin-right": "20px"},
-              "penalty": {"margin-right": "30px"},
-              "active": {"margin-right": "20px"}}
-
     return RadioItems([
-        {"label": html.Div([labels[suffix][0]], style={'color': 'white', 'font-size': 12}),
-        "value": labels[suffix][0].lower(),},
-        {"label": html.Div([labels[suffix][1]], style={'color': 'white', 'font-size': 12}),
-        "value": labels[suffix][1].lower(),},], value=labels[suffix][0].lower(),
-        id=f"{name}_{suffix}", inputStyle=margin[suffix])
+        {"label": html.Div([labels[suffix][0]]), "value": labels[suffix][0].lower(),},
+        {"label": html.Div([labels[suffix][1]]), "value": labels[suffix][1].lower(),},],
+        value=labels[suffix][0].lower(),
+        id=f"{name}_{suffix}",
+        labelStyle={"color": "white", "font-size": 12, "display": "flex"})
 
 modal_texts = {"solver": ["Leap Hybrid CQM Solver Inaccessible",
     [

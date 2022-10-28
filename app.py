@@ -69,11 +69,13 @@ solver_card = dbc.Card([
         dbc.Button("Cancel Job", id="btn_cancel", color="warning", className="me-1",
             style = dict(display="none")),
         dbc.Row([
-                html.Div([
-                    html.P("Runtime limit:", style={'marginLeft':'5px'}),
-                    dcc.Input(id="max_runtime", type="number", min=5, max=MAX_SOLVER_RUNTIME,
-                        step=5, value=5,
-                        style={'marginRight':'10px', 'marginLeft':'5px','max-width': '50%'}),]),]),]),],
+            html.Hr(),
+            html.Div([
+                html.P("Runtime limit:",
+                    style={"color": "white", "font-size": 12, "marginLeft":"5px"}),
+                dcc.Input(id="max_runtime", type="number", min=5, max=MAX_SOLVER_RUNTIME,
+                    step=5, value=5,
+                    style={"marginRight":"10px", "marginLeft": "5px", "max-width": "50%"}),]),]),]),],
     color="dark", body=True)
 
 # Tab-construction section
@@ -210,9 +212,11 @@ tour_config = dbc.Card(
             html.B(f"{tour_title}",) ])
                 for tour_title in tour_titles[:2]]),
     dbc.Row([
-        dbc.Col(leg_fields[:3], style={"margin-right": "20px"}),
-        dbc.Col(leg_fields[3:5], style={"margin-left": "20px"}),]),
-dbc.Row([dbc.Col([html.Hr()])]),
+        dbc.Col(leg_fields[:3],
+            style={"margin-right": "20px", "color": "white", "font-size": 12}),
+        dbc.Col(leg_fields[3:5],
+            style={"margin-left": "20px", "color": "white", "font-size": 12}),]),
+dbc.Row([dbc.Col([html.Hr()], style={"PaddingBottom": "5px"})]),
     dbc.Row([
         dbc.Col([
             html.Br(),
@@ -227,12 +231,12 @@ dbc.Row([dbc.Col([html.Hr()])]),
 # Page-layout section
 
 app_layout = [
-    dbc.Row([
-        dbc.Col([
-            html.H1("Tour Planner", style={"textAlign": "left", "color": "white"})], width=9),
-        dbc.Col([
-            html.Img(src="assets/dwave_logo.png", height="25px",
-                style={"textAlign": "left"})], width=3)]),
+    # dbc.Row([
+    #     dbc.Col([
+    #         html.H1("Tour Planner", style={"textAlign": "left", "color": "white"})], width=9),
+    #     dbc.Col([
+    #         html.Img(src="assets/dwave_logo.png", height="25px",
+    #             style={"textAlign": "left"})], width=3)]),
     dbc.Row([
         dbc.Col(
             tour_config, width=4),
@@ -268,10 +272,31 @@ app_layout.extend(modal_solver)
 modal_usemodes = layout._dbc_modal("modal_usemodes")
 app_layout.extend(modal_usemodes)
 
-app.layout = dbc.Container(
-    app_layout, fluid=True,
-    style={"backgroundColor": "black", "color": "rgb(3, 184, 255)",
-        "paddingBottom": 20, "paddingLeft": 50, "paddingRight": 50, "paddingTop": 20})
+# app.layout = dbc.Container(
+#     app_layout, fluid=True,
+#     style={"backgroundColor": "black", "color": "rgb(3, 184, 255)",
+#         "paddingBottom": 20, "paddingLeft": 50, "paddingRight": 50, "paddingTop": 20,
+#         "background-image": "url('assets/electric_squids.png')",
+#         "background-size": "cover"})
+
+app.layout = dbc.Container([
+    dbc.Row([
+        dbc.Col([
+            html.H1("Tour Planner", style={"textAlign": "left", "color": "white"})], width=9),
+        dbc.Col([
+            html.Img(src="assets/dwave_logo.png", height="25px",
+                style={"textAlign": "left"})], width=3)]),
+
+
+    dbc.Container(app_layout, fluid=True,
+        style={"backgroundColor": "black", "color": "rgb(3, 184, 255)",
+            "paddingLeft": 10, "paddingRight": 10})],
+    style={"backgroundColor": "black",
+        "background-image": "url('assets/electric_squids.png')",
+        "background-size": "cover",
+        "paddingLeft": 100, "paddingRight": 100,
+        "paddingTop": 25, "paddingBottom": 50}, fluid=True)
+
 
 server = app.server
 app.config["suppress_callback_exceptions"] = True

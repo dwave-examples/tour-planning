@@ -51,14 +51,14 @@ except Exception as client_err:
 
 solver_card = dbc.Card([
     html.H4("Job Submission", className="card-title",
-        style={'marginLeft':'5px', 'marginRight':'5px'}),
+        style={'marginLeft':'5px', 'marginRight':'5px', "color":"rgb(243, 120, 32)"}),
     dbc.Col([
         dbc.Button("Solve CQM", id="btn_solve_cqm", color="primary", className="me-1",
             style={'marginLeft':'5px'}),
         dcc.Interval(id="wd_job", interval=None, n_intervals=0, disabled=True, max_intervals=1),
         dbc.Progress(id="bar_job_status", value=jobs.job_bar[init_job_status][0],
             color=jobs.job_bar[init_job_status][1], className="mb-3",
-            style={'marginRight':'10px', 'marginLeft':'5px'}),
+            style={'marginRight':'10px', 'marginLeft':'5px', "width": "60%"}),
         html.P(id="job_submit_state", children=formatting.job_status_to_display(init_job_status),
             style={"color": job_status_color, 'marginLeft':'5px'}),
         html.P(id="job_submit_time", children="", style = dict(display="none")),
@@ -74,7 +74,7 @@ solver_card = dbc.Card([
                     dcc.Input(id="max_runtime", type="number", min=5, max=MAX_SOLVER_RUNTIME,
                         step=5, value=5,
                         style={'marginRight':'10px', 'marginLeft':'5px','max-width': '50%'}),]),]),]),],
-    color="secondary", body=True)
+    color="dark", body=True)
 
 # Tab-construction section
 
@@ -91,7 +91,7 @@ graph_tabs = [dbc.Tab(
                     style={"color": "white"})],
                 width=10)],
             align="start")],
-        color="secondary"),
+        color="dark"),
     label=f"{graph}",
     id=f"graph_{graph.lower()}",
     label_style={"color": "white", "backgroundColor": "black"},)
@@ -118,7 +118,7 @@ for key, val in double_tabs.items():
                             style={"color": "white"})],
                         width=10)],
                     align="start"),],
-                color="secondary"),
+                color="dark"),
             label=f"{reader} Readable",
             tab_id=f"tab_{key}_print_{reader.lower()}",
             label_style={"color": "white", "backgroundColor": "black"},)
@@ -135,7 +135,7 @@ tabs["CQM"] = dbc.Card([
                 style={"color": "white"})],
             width=10)],
         align="start")]),],
-    color="secondary")
+    color="dark")
 
 locomotion_columns = ["Mode", "Speed", "Cost", "Exercise", "Use"]
 tabs["Locomotion"] = dbc.Card([
@@ -166,16 +166,17 @@ tabs["Locomotion"] = dbc.Card([
                 style={"color": "white"})],
             width=10)],
         align="start")],
-    color="secondary")
+    color="dark")
 
 # CQM configuration sections
 
-weights_card = [dbc.Row([html.H4("Constraint Settings", className="card-title"),
+weights_card = [dbc.Row([html.H4("Constraint Settings", className="card-title",
+    style={"color": "rgb(243, 120, 32)"}),
     html.P(id="weights_state", children="", style = dict(display="none"))],
     id="constraint_settings_row")]
 weights_card.extend([
     dbc.Row([
-        html.B(f"{val}", style={"text-decoration": "underline"}),
+        html.B(f"{val}"),
         dbc.Col([
             layout._dcc_radio(key, "hardsoft")],
             width=5),
@@ -201,57 +202,53 @@ leg_fields = [dbc.Row([
     for key, val in zip(names_leg_inputs + names_budget_inputs + names_slope_inputs, field_titles)]
 tour_config = dbc.Card(
     [dbc.Row([
-        html.H4("Tour Settings", className="card-title", style={"textAlign": "left"})],
+        html.H4("Tour Settings", className="card-title", style={"textAlign": "left",
+            "color": "rgb(243, 120, 32)"})],
         id="tour_settings_row"),
-     dbc.Row([
+    dbc.Row([
         dbc.Col([
-            html.B(f"{tour_title}", style={"text-decoration": "underline"},) ])
+            html.B(f"{tour_title}",) ])
                 for tour_title in tour_titles[:2]]),
-     dbc.Row([
+    dbc.Row([
         dbc.Col(leg_fields[:3], style={"margin-right": "20px"}),
         dbc.Col(leg_fields[3:5], style={"margin-left": "20px"}),]),
-
-     dbc.Row([
+dbc.Row([dbc.Col([html.Hr()])]),
+    dbc.Row([
         dbc.Col([
             html.Br(),
-            html.B(f"{tour_title}", style={"text-decoration": "underline"},) ])
+            html.B(f"{tour_title}",) ])
                 for tour_title in tour_titles[2:]]),
-     dbc.Row([
+    dbc.Row([
         dbc.Col(leg_fields[5], style={"margin-right": "20px"}),
         dbc.Col([layout._dcc_radio("tollbooths", "active")])],),
      html.P(id="changed_input", children="", style = dict(display="none")),],
-    body=True, color="secondary")
+    body=True, color="dark")
 
 # Page-layout section
 
 app_layout = [
     dbc.Row([
         dbc.Col([
-            html.H1("Tour Planner", style={"textAlign": "left"})], width=9),
+            html.H1("Tour Planner", style={"textAlign": "left", "color": "white"})], width=9),
         dbc.Col([
-            html.Img(src="assets/leap_logo_dark.jpg", height="50px",
+            html.Img(src="assets/dwave_logo.png", height="25px",
                 style={"textAlign": "left"})], width=3)]),
     dbc.Row([
         dbc.Col(
             tour_config, width=4),
         dbc.Col(
-            dbc.Card(weights_card, body=True, color="secondary"),
+            dbc.Card(weights_card, body=True, color="dark"),
             width=3),
         dbc.Col([
             dbc.Row([
                 dbc.Col([
-                    solver_card])]),],
-            width=2),
-        dbc.Col([], width=1),
-        dbc.Col([
-            dbc.Row([
-                html.P(" ")]),
+                    solver_card])]),
             dbc.Row([
                 dbc.Col([
                     html.P("Hover over fields for descriptions:",
-                        style={"color": "white"}),
+                        style={"color": "white", "paddingBottom": 5, "paddingTop": 30}),
                     layout._dcc_radio("tooltips", "active")])]),],
-            width=1)],
+            width=3),],
         justify="left"),
     dbc.Tabs([
         dbc.Tab(
@@ -274,7 +271,7 @@ app_layout.extend(modal_usemodes)
 app.layout = dbc.Container(
     app_layout, fluid=True,
     style={"backgroundColor": "black", "color": "rgb(3, 184, 255)",
-        "paddingBottom": 20, "paddingLeft": 20, "paddingRight": 20, "paddingTop": 20})
+        "paddingBottom": 20, "paddingLeft": 50, "paddingRight": 50, "paddingTop": 20})
 
 server = app.server
 app.config["suppress_callback_exceptions"] = True

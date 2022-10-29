@@ -144,7 +144,7 @@ def build_cqm(legs, max_leg_slope, max_cost, max_time,
     cqm.set_objective(-_calculate_total(t, "Exercise", legs, locomotion_vals))
 
     for leg in range(num_legs):
-        cqm.add_discrete(dimod.quicksum(t[num_modes*leg:num_modes*leg+num_modes]),
+        cqm.add_constraint(dimod.quicksum(t[num_modes*leg:num_modes*leg+num_modes]) == 1,
             label=f"One-hot leg{leg}")
     cqm.add_constraint(_calculate_total(t, "Cost", legs, locomotion_vals) <= max_cost,
         label="Total cost",

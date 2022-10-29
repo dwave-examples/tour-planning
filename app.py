@@ -192,39 +192,40 @@ for key, val in zip(names_weight_inputs, ["Cost", "Time", "Slope"]):
         dbc.Row([
             dbc.Col([
                 dbc.Label(f"Constraint:",
-                    style={"color": "white", "font-size": 12, "marginLeft":"5px"})],
+                    style={"color": "white", "font-size": 12, "marginLeft":"0px"})],
                 width=4),
             dbc.Col([
                 dbc.Label(f"Weight:",
-                    style={"color": "white", "font-size": 12, "marginLeft":"5px"})],
-                width=4),
+                    style={"color": "white", "font-size": 12, "marginLeft":"0px"})],
+                width=5),
             dbc.Col([
                 dbc.Label(f"Penalty:",
-                    style={"color": "white", "font-size": 12, "marginLeft":"5px"})],
-                width=4)])])
+                    style={"color": "white", "font-size": 12, "marginLeft":"0px"})],
+                width=3)])])
     weights_card.extend([
         dbc.Row([
             dbc.Col([
                 layout._dcc_radio(key, "hardsoft")],
-                style={"margin-top": "5px"},
+                style={"margin-top": "2px"},
                 width=4),
             dbc.Col([
                 layout._dcc_input(key, step=1),],
-                    style={"margin-top": "5px"},
-                width=4),
+                    style={"margin-top": "2px"},
+                width=5),
             dbc.Col([
                 layout._dcc_radio(key, "penalty")],
-                    style={"margin-top": "5px"},
-                width=4)])])
+                    style={"margin-top": "2px"},
+                width=3)])])
 
-tour_titles = ["Set Legs", "Set Budget", "Set Exercise Limits", "Add Tollbooths"]
-field_titles = ["How Many:", "Longest Leg:", "Shortest Leg:",
-    "Highest Cost:", "Longest Time:", "Steepest Leg:"]
+tour_titles = ["Legs", "Budget", "Exercise Limits", "Tollbooths"]
+field_titles = ["How Many:", "Longest:", "Shortest:",
+    "Cost:", "Time:", "Steepest Leg:"]
 
 leg_fields = [dbc.Row([
-    dbc.Label(f"{val}"),
+    dbc.Label(f"{val}", style={"color": "white", "font-size": 12}),
     layout._dcc_input(key, step=1) if key != "max_leg_slope" else
-    layout._dcc_slider(key, step=1)], style={"marginLeft": "5px", "marginRight": "5px"})
+    layout._dcc_slider(key, step=1)],
+        style={"marginLeft": "0px", "marginRight": "0px"})
     for key, val in zip(names_leg_inputs + names_budget_inputs + names_slope_inputs, field_titles)]
 tour_config = dbc.Card(
     [dbc.Row([
@@ -236,10 +237,8 @@ tour_config = dbc.Card(
             html.B(f"{tour_title}",) ])
                 for tour_title in tour_titles[:2]]),
     dbc.Row([
-        dbc.Col(leg_fields[:3],
-            style={"margin-right": "20px", "color": "white", "font-size": 12}),
-        dbc.Col(leg_fields[3:5],
-            style={"margin-left": "20px", "color": "white", "font-size": 12}),]),
+        dbc.Col(leg_fields[:3]),
+        dbc.Col(leg_fields[3:5]),]),
 dbc.Row([dbc.Col([html.Hr()], style={"PaddingBottom": "5px"})]),
     dbc.Row([
         dbc.Col([
@@ -248,7 +247,7 @@ dbc.Row([dbc.Col([html.Hr()], style={"PaddingBottom": "5px"})]),
                 for tour_title in tour_titles[2:]]),
     dbc.Row([
         dbc.Col(leg_fields[5],
-            style={"margin-right": "20px", "color": "white", "font-size": 12}),
+            style={"margin-right": "0px", "color": "white", "font-size": 12}),
         dbc.Col([layout._dcc_radio("tollbooths", "active")])],),
      html.P(id="changed_input", children="", style = dict(display="none")),],
     body=True, color="dark")
@@ -262,7 +261,7 @@ app_layout = [
             width=4),
         dbc.Col(
             dbc.Card(weights_card, body=True, color="dark"),
-            width=4),
+            width=5),
         dbc.Col([
             dbc.Row([
                 dbc.Col([

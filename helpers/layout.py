@@ -53,7 +53,7 @@ def _dcc_slider(name, step=1):
         marks={i: {"label": f"{str(i)}", "style": {"color": "white"}} for i in
             range(ranges[name][0], ranges[name][1] + 1, 2*step)},
         step=step,
-        value=init_values[f"{name}"],)
+        value=init_values[f"{name}"])
 
 labels = {"hardsoft": ["Soft", "Hard"],
           "penalty": ["Linear", "Quadratic"],

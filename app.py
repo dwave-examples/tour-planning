@@ -181,24 +181,41 @@ weights_card = [dbc.Row([html.H4("Constraint Settings", className="card-title",
     style={"color": "rgb(243, 120, 32)"}),
     html.P(id="weights_state", children="", style = dict(display="none"))],
     id="constraint_settings_row")]
-weights_card.extend([
-    dbc.Row([
-        html.B(f"{val}"),
-        dbc.Col([
-            layout._dcc_radio(key, "hardsoft")],
-            style={"margin-top": "20px"},
-            width=5),
-        dbc.Col([
-            dbc.Label(f"Weight:", style={"color": "white", "font-size": 12}),
-            dbc.Row([
-                dbc.Col([
-                    layout._dcc_input(key, step=1),])]),
-            dbc.Row([
-                dbc.Col([
-                    layout._dcc_radio(key, "penalty")],
-                    style={"margin-top": "20px"},)])],
-            width=7)])
-    for key, val in zip(names_weight_inputs, ["Cost", "Time", "Slope"])])
+
+for key, val in zip(names_weight_inputs, ["Cost", "Time", "Slope"]):
+    weights_card.extend([
+        dbc.Row([
+            dbc.Col([
+                html.B(f"{val}")],
+                width=12)])])
+    weights_card.extend([
+        dbc.Row([
+            dbc.Col([
+                dbc.Label(f"Constraint:",
+                    style={"color": "white", "font-size": 12, "marginLeft":"5px"})],
+                width=4),
+            dbc.Col([
+                dbc.Label(f"Weight:",
+                    style={"color": "white", "font-size": 12, "marginLeft":"5px"})],
+                width=4),
+            dbc.Col([
+                dbc.Label(f"Penalty:",
+                    style={"color": "white", "font-size": 12, "marginLeft":"5px"})],
+                width=4)])])
+    weights_card.extend([
+        dbc.Row([
+            dbc.Col([
+                layout._dcc_radio(key, "hardsoft")],
+                style={"margin-top": "5px"},
+                width=4),
+            dbc.Col([
+                layout._dcc_input(key, step=1),],
+                    style={"margin-top": "5px"},
+                width=4),
+            dbc.Col([
+                layout._dcc_radio(key, "penalty")],
+                    style={"margin-top": "5px"},
+                width=4)])])
 
 tour_titles = ["Set Legs", "Set Budget", "Set Exercise Limits", "Add Tollbooths"]
 field_titles = ["How Many:", "Longest Leg:", "Shortest Leg:",
@@ -245,7 +262,7 @@ app_layout = [
             width=4),
         dbc.Col(
             dbc.Card(weights_card, body=True, color="dark"),
-            width=3),
+            width=4),
         dbc.Col([
             dbc.Row([
                 dbc.Col([

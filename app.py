@@ -86,7 +86,8 @@ graph_tabs = [dbc.Tab(
     dbc.Card([
         dbc.Row([
             dbc.Col([
-                dcc.Graph(id=f"{graph.lower()}_graph")], width=12)]),
+                dcc.Graph(id=f"{graph.lower()}_graph")],
+                width=12)]),
         dbc.Row([
             dbc.Col([
                 html.P(globals()[f"description_{graph.lower()}_plot"],
@@ -113,7 +114,8 @@ for key, val in double_tabs.items():
                 dbc.Row([
                     dbc.Col([
                         dcc.Textarea(id=f"{key.lower()}_print_{reader.lower()}", value=val,
-                            style={"width": "100%"}, rows=10)], width=12)]),
+                            style={"width": "100%"}, rows=10)],
+                            width=12)]),
                 dbc.Row([
                     dbc.Col([
                         html.P(globals()[f"description_{key.lower()}_print"],
@@ -144,12 +146,15 @@ tabs["Locomotion"] = dbc.Card([
     dbc.Row([
         dbc.Col([
             dbc.Row([
-                dbc.Col([html.P(f"{col}")], width=2) for col in locomotion_columns]),
+                dbc.Col([html.P(f"{col}")],
+                    width=2) for col in locomotion_columns]),
             *[dbc.Row([
-                dbc.Col([html.P(f"{row}")], width=2),
+                dbc.Col([html.P(f"{row}:",
+                    style={"color": "white", "font-size": 12})],
+                    width=2),
                 *[dbc.Col(
-                    [layout._dcc_input(f"{name}")], width=2) for name in names_locomotion_inputs
-                        if row in name],
+                    [layout._dcc_input(f"{name}")],
+                        width=2) for name in names_locomotion_inputs if row in name],
                 dbc.Col(
                     [dcc.Checklist([
                         {"label": html.Div([""],),
@@ -181,15 +186,17 @@ weights_card.extend([
         html.B(f"{val}"),
         dbc.Col([
             layout._dcc_radio(key, "hardsoft")],
+            style={"margin-top": "20px"},
             width=5),
         dbc.Col([
-            dbc.Label(f"Weight", style={"color": "white", "font-size": 12}),
+            dbc.Label(f"Weight:", style={"color": "white", "font-size": 12}),
             dbc.Row([
                 dbc.Col([
                     layout._dcc_input(key, step=1),])]),
             dbc.Row([
                 dbc.Col([
-                    layout._dcc_radio(key, "penalty")])])],
+                    layout._dcc_radio(key, "penalty")],
+                    style={"margin-top": "20px"},)])],
             width=7)])
     for key, val in zip(names_weight_inputs, ["Cost", "Time", "Slope"])])
 
@@ -223,7 +230,8 @@ dbc.Row([dbc.Col([html.Hr()], style={"PaddingBottom": "5px"})]),
             html.B(f"{tour_title}",) ])
                 for tour_title in tour_titles[2:]]),
     dbc.Row([
-        dbc.Col(leg_fields[5], style={"margin-right": "20px"}),
+        dbc.Col(leg_fields[5],
+            style={"margin-right": "20px", "color": "white", "font-size": 12}),
         dbc.Col([layout._dcc_radio("tollbooths", "active")])],),
      html.P(id="changed_input", children="", style = dict(display="none")),],
     body=True, color="dark")
@@ -231,15 +239,10 @@ dbc.Row([dbc.Col([html.Hr()], style={"PaddingBottom": "5px"})]),
 # Page-layout section
 
 app_layout = [
-    # dbc.Row([
-    #     dbc.Col([
-    #         html.H1("Tour Planner", style={"textAlign": "left", "color": "white"})], width=9),
-    #     dbc.Col([
-    #         html.Img(src="assets/dwave_logo.png", height="25px",
-    #             style={"textAlign": "left"})], width=3)]),
     dbc.Row([
         dbc.Col(
-            tour_config, width=4),
+            tour_config,
+            width=4),
         dbc.Col(
             dbc.Card(weights_card, body=True, color="dark"),
             width=3),
@@ -272,22 +275,15 @@ app_layout.extend(modal_solver)
 modal_usemodes = layout._dbc_modal("modal_usemodes")
 app_layout.extend(modal_usemodes)
 
-# app.layout = dbc.Container(
-#     app_layout, fluid=True,
-#     style={"backgroundColor": "black", "color": "rgb(3, 184, 255)",
-#         "paddingBottom": 20, "paddingLeft": 50, "paddingRight": 50, "paddingTop": 20,
-#         "background-image": "url('assets/electric_squids.png')",
-#         "background-size": "cover"})
-
 app.layout = dbc.Container([
     dbc.Row([
         dbc.Col([
-            html.H1("Tour Planner", style={"textAlign": "left", "color": "white"})], width=9),
+            html.H1("Tour Planner", style={"textAlign": "left", "color": "white"})],
+            width=9),
         dbc.Col([
             html.Img(src="assets/dwave_logo.png", height="25px",
-                style={"textAlign": "left"})], width=3)]),
-
-
+                style={"textAlign": "left"})],
+            width=3)]),
     dbc.Container(app_layout, fluid=True,
         style={"backgroundColor": "black", "color": "rgb(3, 184, 255)",
             "paddingLeft": 10, "paddingRight": 10})],
@@ -296,7 +292,6 @@ app.layout = dbc.Container([
         "background-size": "cover",
         "paddingLeft": 100, "paddingRight": 100,
         "paddingTop": 25, "paddingBottom": 50}, fluid=True)
-
 
 server = app.server
 app.config["suppress_callback_exceptions"] = True

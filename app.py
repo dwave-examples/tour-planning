@@ -72,10 +72,10 @@ solver_card = dbc.Card([
             html.Hr(),
             html.Div([
                 html.P("Runtime limit:",
-                    style={"color": "white", "font-size": 12, "marginLeft":"5px"}),
+                    style={"color": "white", "font-size": 12, "margin":"3px"}),
                 dcc.Input(id="max_runtime", type="number", min=5, max=MAX_SOLVER_RUNTIME,
                     step=5, value=5,
-                    style={"marginRight":"10px", "marginLeft": "5px", "max-width": "50%"}),]),]),]),],
+                    style={"marginRight":"10px", "marginLeft": "5px", "max-width": "30%"}),]),]),],),],
     color="dark", body=True)
 
 # Tab-construction section
@@ -186,70 +186,75 @@ for key, val in zip(names_weight_inputs, ["Cost", "Time", "Slope"]):
     weights_card.extend([
         dbc.Row([
             dbc.Col([
-                html.B(f"{val}")],
-                width=12)])])
-    weights_card.extend([
+                html.P(f"{val}", style={"margin": "5px"})],
+                width=12)]),
         dbc.Row([
             dbc.Col([
-                dbc.Label(f"Constraint:",
-                    style={"color": "white", "font-size": 12, "marginLeft":"0px"})],
-                width=4),
-            dbc.Col([
-                dbc.Label(f"Weight:",
-                    style={"color": "white", "font-size": 12, "marginLeft":"0px"})],
-                width=5),
-            dbc.Col([
-                dbc.Label(f"Penalty:",
-                    style={"color": "white", "font-size": 12, "marginLeft":"0px"})],
-                width=3)])])
-    weights_card.extend([
+                html.P(f"{key}",
+                    style={"color": "white", "font-size": 12, "margin":"3px"})],
+                width=4)
+                for key in ["Constraint:", "Weight:", "Penalty:"]]),
         dbc.Row([
             dbc.Col([
                 layout._dcc_radio(key, "hardsoft")],
-                style={"margin-top": "2px"},
+                style={"margin-top": "3px"},
                 width=4),
             dbc.Col([
                 layout._dcc_input(key, step=1),],
-                    style={"margin-top": "2px"},
-                width=5),
+                    style={"margin-top": "3px"},
+                width=4),
             dbc.Col([
                 layout._dcc_radio(key, "penalty")],
-                    style={"margin-top": "2px"},
-                width=3)])])
+                    style={"margin-top": "3px"},
+                width=4)]),
+        dbc.Row([dbc.Col([html.Hr()], style={"PaddingBottom": "5px"})]) if
+            val != "Slope" else html.P(style={"margin": "0px"})
+])
 
-tour_titles = ["Legs", "Budget", "Exercise Limits", "Tollbooths"]
-field_titles = ["How Many:", "Longest:", "Shortest:",
-    "Cost:", "Time:", "Steepest Leg:"]
-
-leg_fields = [dbc.Row([
-    dbc.Label(f"{val}", style={"color": "white", "font-size": 12}),
-    layout._dcc_input(key, step=1) if key != "max_leg_slope" else
-    layout._dcc_slider(key, step=1)],
-        style={"marginLeft": "0px", "marginRight": "0px"})
-    for key, val in zip(names_leg_inputs + names_budget_inputs + names_slope_inputs, field_titles)]
-tour_config = dbc.Card(
-    [dbc.Row([
-        html.H4("Tour Settings", className="card-title", style={"textAlign": "left",
-            "color": "rgb(243, 120, 32)"})],
+tour_config = dbc.Card([
+    dbc.Row([
+        dbc.Col([
+            html.H4("Tour Settings", className="card-title",
+                style={"textAlign": "left", "color": "rgb(243, 120, 32)"})])],
         id="tour_settings_row"),
     dbc.Row([
         dbc.Col([
-            html.B(f"{tour_title}",) ])
-                for tour_title in tour_titles[:2]]),
-    dbc.Row([
-        dbc.Col(leg_fields[:3]),
-        dbc.Col(leg_fields[3:5]),]),
-dbc.Row([dbc.Col([html.Hr()], style={"PaddingBottom": "5px"})]),
+            html.P(f"{title}", style={"margin": "5px"}) ], width=6)
+                for title in ["Legs", "Budget"]]),
     dbc.Row([
         dbc.Col([
-            html.Br(),
-            html.B(f"{tour_title}",) ])
-                for tour_title in tour_titles[2:]]),
+            dbc.Row([
+                dbc.Col([
+                    html.P(f"{label}",
+                        style={"color": "white", "font-size": 12, "margin": "3px"}),
+                    layout._dcc_input(input_name, step=1)], width=12)
+                for label, input_name in
+                zip(["How Many:", "Longest:", "Shortest:"], names_leg_inputs)])],
+            width=6),
+        dbc.Col([
+            dbc.Row([
+                dbc.Col([
+                    html.P(f"{label}",
+                        style={"color": "white", "font-size": 12, "margin": "3px"}),
+                    layout._dcc_input(input_name, step=1)], width=12)
+                for label, input_name in
+                zip(["Cost:", "Time:"], names_budget_inputs)]),],
+            width=6)]),
+    dbc.Row([dbc.Col([html.Hr()], style={"PaddingBottom": "5px"})]),
     dbc.Row([
-        dbc.Col(leg_fields[5],
+        dbc.Col([
+            html.P(f"{title}", style={"margin": "5px"}) ])
+                for title in ["Exercise Limits", "Tollbooths"]]),
+    dbc.Row([
+        dbc.Col([
+            html.P("Steepest Leg:",
+                style={"color": "white", "font-size": 12, "margin": "3px"}),
+            html.Div([
+                layout._dcc_slider(names_slope_inputs[0], step=1)],
+                style={"margin-left": "-20px"})],
             style={"margin-right": "0px", "color": "white", "font-size": 12}),
-        dbc.Col([layout._dcc_radio("tollbooths", "active")])],),
-     html.P(id="changed_input", children="", style = dict(display="none")),],
+        dbc.Col([layout._dcc_radio("tollbooths", "active")]),
+        html.P(id="changed_input", children="", style = dict(display="none")),],)],
     body=True, color="dark")
 
 # Page-layout section
@@ -261,7 +266,7 @@ app_layout = [
             width=4),
         dbc.Col(
             dbc.Card(weights_card, body=True, color="dark"),
-            width=5),
+            width=4),
         dbc.Col([
             dbc.Row([
                 dbc.Col([

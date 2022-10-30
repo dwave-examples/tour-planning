@@ -51,31 +51,30 @@ except Exception as client_err:
 
 solver_card = dbc.Card([
     html.H4("Job Submission", className="card-title",
-        style={'marginLeft':'5px', 'marginRight':'5px', "color":"rgb(243, 120, 32)"}),
+        style={"color":"rgb(243, 120, 32)"}),
     dbc.Col([
         dbc.Button("Solve CQM", id="btn_solve_cqm", color="primary", className="me-1",
-            style={'marginLeft':'5px'}),
+            style={"marginBottom":"5px"}),
         dcc.Interval(id="wd_job", interval=None, n_intervals=0, disabled=True, max_intervals=1),
         dbc.Progress(id="bar_job_status", value=jobs.job_bar[init_job_status][0],
             color=jobs.job_bar[init_job_status][1], className="mb-3",
-            style={'marginRight':'10px', 'marginLeft':'5px', "width": "60%"}),
+            style={"width": "60%"}),
         html.P(id="job_submit_state", children=formatting.job_status_to_display(init_job_status),
-            style={"color": job_status_color, 'marginLeft':'5px'}),
+            style={"color": job_status_color}),
         html.P(id="job_submit_time", children="", style = dict(display="none")),
         html.P(id="job_id", children="", style = dict(display="none")),
-        html.P(id="job_elapsed_time", children="", style={'marginLeft':'5px'}),
+        html.P(id="job_elapsed_time", children="", style={}),
         dbc.Alert(id="alert_cancel", children="", dismissable=True,
             is_open=False,),
         dbc.Button("Cancel Job", id="btn_cancel", color="warning", className="me-1",
             style = dict(display="none")),
-        dbc.Row([
-            html.Hr(),
-            html.Div([
-                html.P("Runtime limit:",
-                    style={"color": "white", "font-size": 12, "margin":"3px"}),
-                dcc.Input(id="max_runtime", type="number", min=5, max=MAX_SOLVER_RUNTIME,
-                    step=5, value=5,
-                    style={"marginRight":"10px", "marginLeft": "5px", "max-width": "30%"}),]),]),],),],
+        html.Hr(),
+        html.P("Runtime limit:",
+            style={"color": "white", "fontSize": 12, "marginBottom": 5}),
+        dcc.Input(id="max_runtime", type="number", min=5, max=MAX_SOLVER_RUNTIME,
+            step=5, value=5,
+            style={"max-width": "30%"})],
+        width=12)],
     color="dark", body=True)
 
 # Tab-construction section
@@ -91,7 +90,7 @@ graph_tabs = [dbc.Tab(
         dbc.Row([
             dbc.Col([
                 html.P(globals()[f"description_{graph.lower()}_plot"],
-                    style={"color": "white"})],
+                    style={"color": "white", "fontSize": 12})],
                 width=10)],
             align="start")],
         color="dark"),
@@ -119,7 +118,7 @@ for key, val in double_tabs.items():
                 dbc.Row([
                     dbc.Col([
                         html.P(globals()[f"description_{key.lower()}_print"],
-                            style={"color": "white"})],
+                            style={"color": "white", "fontSize": 12})],
                         width=10)],
                     align="start"),],
                 color="dark"),
@@ -136,7 +135,7 @@ tabs["CQM"] = dbc.Card([
     dbc.Row([
         dbc.Col([
             html.P(description_cqm_print,
-                style={"color": "white"})],
+                style={"color": "white", "fontSize": 12})],
             width=10)],
         align="start")]),],
     color="dark")
@@ -146,15 +145,18 @@ tabs["Locomotion"] = dbc.Card([
     dbc.Row([
         dbc.Col([
             dbc.Row([
-                dbc.Col([html.P(f"{col}")],
+                dbc.Col([
+                    html.P(f"{col}")],
                     width=2) for col in locomotion_columns]),
             *[dbc.Row([
-                dbc.Col([html.P(f"{row}:",
-                    style={"color": "white", "font-size": 12})],
+                dbc.Col([
+                    html.P(f"{row}:",
+                        style={"color": "white", "fontSize": 12})],
                     width=2),
                 *[dbc.Col(
                     [layout._dcc_input(f"{name}")],
-                        width=2) for name in names_locomotion_inputs if row in name],
+                    width=2)
+                    for name in names_locomotion_inputs if row in name],
                 dbc.Col(
                     [dcc.Checklist([
                         {"label": html.Div([""],),
@@ -165,69 +167,75 @@ tabs["Locomotion"] = dbc.Card([
         dbc.Col([
             dcc.Textarea(id=f"locomotion_print", value="",
                 style={"width": "100%"}, rows=5)],
-            width=5, align="start"),
+            width=5),
     html.P(id="locomotion_state", children="", style = dict(display="none"))]),
     dbc.Row([
         dbc.Col([
             html.P(description_locomotion_print,
-                style={"color": "white"})],
+                style={"color": "white", "fontSize": 12})],
             width=10)],
         align="start")],
     color="dark")
 
 # CQM configuration sections
 
-weights_card = [dbc.Row([html.H4("Constraint Settings", className="card-title",
-    style={"color": "rgb(243, 120, 32)"}),
-    html.P(id="weights_state", children="", style = dict(display="none"))],
-    id="constraint_settings_row")]
+weights_card = [
+    dbc.Row([
+        html.H4("Constraint Settings", className="card-title",
+            style={"color": "rgb(243, 120, 32)"}),
+        html.P(id="weights_state", children="",
+            style = dict(display="none"))],
+        id="constraint_settings_row")]
 
 for key, val in zip(names_weight_inputs, ["Cost", "Time", "Slope"]):
     weights_card.extend([
         dbc.Row([
             dbc.Col([
-                html.P(f"{val}", style={"margin": "5px"})],
+                html.P(f"{val}",
+                    style={"marginBottom": 10})],
                 width=12)]),
         dbc.Row([
             dbc.Col([
                 html.P(f"{key}",
-                    style={"color": "white", "font-size": 12, "margin":"3px"})],
+                    style={"color": "white", "fontSize": 12, "marginBottom": 5})],
                 width=4)
                 for key in ["Constraint:", "Weight:", "Penalty:"]]),
         dbc.Row([
             dbc.Col([
                 layout._dcc_radio(key, "hardsoft")],
-                style={"margin-top": "3px"},
                 width=4),
             dbc.Col([
                 layout._dcc_input(key, step=1),],
-                    style={"margin-top": "3px"},
                 width=4),
             dbc.Col([
                 layout._dcc_radio(key, "penalty")],
-                    style={"margin-top": "3px"},
                 width=4)]),
-        dbc.Row([dbc.Col([html.Hr()], style={"PaddingBottom": "5px"})]) if
-            val != "Slope" else html.P(style={"margin": "0px"})
-])
+        dbc.Row([
+            dbc.Col([
+                html.Hr()])])
+            if val != "Slope" else  html.P(style={"marginBottom": 0})])
 
 tour_config = dbc.Card([
     dbc.Row([
         dbc.Col([
             html.H4("Tour Settings", className="card-title",
-                style={"textAlign": "left", "color": "rgb(243, 120, 32)"})])],
+                style={"color": "rgb(243, 120, 32)"})])],
         id="tour_settings_row"),
     dbc.Row([
         dbc.Col([
-            html.P(f"{title}", style={"margin": "5px"}) ], width=6)
-                for title in ["Legs", "Budget"]]),
+            html.P(f"{title}",
+                style={"marginBottom": 0}) ],
+            width=6)
+        for title in ["Legs", "Budget"]]),
     dbc.Row([
         dbc.Col([
             dbc.Row([
                 dbc.Col([
                     html.P(f"{label}",
-                        style={"color": "white", "font-size": 12, "margin": "3px"}),
-                    layout._dcc_input(input_name, step=1)], width=12)
+                        style={"color": "white", "fontSize": 12,
+                            "marginBottom": 5, "marginTop": 10}),
+                    layout._dcc_input(input_name, step=1)],
+                    width=12)
                 for label, input_name in
                 zip(["How Many:", "Longest:", "Shortest:"], names_leg_inputs)])],
             width=6),
@@ -235,25 +243,33 @@ tour_config = dbc.Card([
             dbc.Row([
                 dbc.Col([
                     html.P(f"{label}",
-                        style={"color": "white", "font-size": 12, "margin": "3px"}),
-                    layout._dcc_input(input_name, step=1)], width=12)
+                        style={"color": "white", "fontSize": 12,
+                            "marginBottom": 5, "marginTop": 10}),
+                    layout._dcc_input(input_name, step=1)],
+                    width=12)
                 for label, input_name in
                 zip(["Cost:", "Time:"], names_budget_inputs)]),],
             width=6)]),
-    dbc.Row([dbc.Col([html.Hr()], style={"PaddingBottom": "5px"})]),
+    dbc.Row([dbc.Col([html.Hr()], style={"marginBottom": 5})]),
     dbc.Row([
         dbc.Col([
-            html.P(f"{title}", style={"margin": "5px"}) ])
-                for title in ["Exercise Limits", "Tollbooths"]]),
+            html.P(f"{title}",
+                style={"marginBottom": 10})],
+            width=6)
+        for title in ["Exercise Limits", "Tollbooths"]]),
     dbc.Row([
         dbc.Col([
             html.P("Steepest Leg:",
-                style={"color": "white", "font-size": 12, "margin": "3px"}),
+                style={"color": "white", "fontSize": 12, "marginBottom": 5}),
             html.Div([
                 layout._dcc_slider(names_slope_inputs[0], step=1)],
-                style={"margin-left": "-20px"})],
-            style={"margin-right": "0px", "color": "white", "font-size": 12}),
-        dbc.Col([layout._dcc_radio("tollbooths", "active")]),
+                    style={"marginLeft": -20})],
+            width=6),
+        dbc.Col([
+            html.P("Random tollbooths:",
+                style={"color": "white", "fontSize": 12, "marginBottom": 5}),
+            layout._dcc_radio("tollbooths", "active")],
+            width=6),
         html.P(id="changed_input", children="", style = dict(display="none")),],)],
     body=True, color="dark")
 
@@ -273,8 +289,10 @@ app_layout = [
                     solver_card])]),
             dbc.Row([
                 dbc.Col([
+                    html.P("Tooltips",
+                        style={"marginTop": 30}),
                     html.P("Hover over fields for descriptions:",
-                        style={"color": "white", "paddingBottom": 5, "paddingTop": 30}),
+                        style={"color": "white", "fontSize": 12, "marginBottom": 5}),
                     layout._dcc_radio("tooltips", "active")])]),],
             width=3),],
         justify="left"),

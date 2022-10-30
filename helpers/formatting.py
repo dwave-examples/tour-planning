@@ -14,6 +14,7 @@
 
 import pandas as pd
 import json
+from dash import html
 
 import dimod
 
@@ -23,7 +24,7 @@ __all__ = ["job_status_to_str", "tour_from_json",
     "job_status_to_display",  "tour_to_display", "tour_to_json",
     "locomotion_to_display", "solutions_to_display",
     "sampleset_to_json", "sampleset_from_json", "cqm_to_display",
-    "state_from_json", "state_to_json"]
+    "state_from_json", "state_to_json", "elapsed_time"]
 
 def job_status_to_display(code):
     """Output status as 'Status: <status>'."""
@@ -125,3 +126,10 @@ def state_from_json(locomotion_json):
     """input locomotion state from saved."""
 
     return json.loads(locomotion_json)
+
+def elapsed_time(elapsed):
+    """Print elapsed time of job submission."""
+
+    return html.Div([
+        "Elapsed: ",
+        html.Span(f"{elapsed} sec.", style={"color": "white"})])

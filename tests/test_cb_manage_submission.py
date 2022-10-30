@@ -35,6 +35,10 @@ job_id = ContextVar('job_id')
 job_submit_state = ContextVar('job_submit_state')
 job_submit_time = ContextVar('job_submit_time')
 
+def elasped_time(printed_time):
+
+    return printed_time.children[1].children.split("sec")[0]
+
 def mock_get_status(client, job_id, job_submit_time):
 
     if job_id == "first few attempts":
@@ -92,7 +96,7 @@ def test_manage_submission_button_press(btn_solve_cqm_clicks, wd_job_intervals,
     assert output[0:5] == (btn_solve_cqm_disabled, wd_job_disabled, wd_job_interval,
         wd_job_n, submit_state_out)
     assert elapsed(output[5]) <= submit_time_out
-    assert int(output[6].split(" ")[1]) <= job_elapsed_time_val
+    assert int(elasped_time(output[6])) <= job_elapsed_time_val
 
 before_test = datetime.datetime.now().strftime("%c")
 parametrize_vals = [
@@ -160,4 +164,4 @@ def test_manage_submission_watchdog(btn_solve_cqm_clicks, wd_job_intervals,
     if job_id_val == "impossible input status":
         assert output[6] == job_elapsed_time_val
     else:
-        assert int(output[6].split(" ")[1]) <= job_elapsed_time_val
+        assert int(elasped_time(output[6])) <= job_elapsed_time_val

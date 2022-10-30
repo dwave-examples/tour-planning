@@ -12,7 +12,8 @@
 #    See the License for the specific language governing permissions and
 #    limitations under the License.
 
-from tour_planning import leg_ranges, budget_ranges, weight_ranges, MAX_SOLVER_RUNTIME
+from tour_planning import (leg_ranges, budget_ranges, weight_ranges, locomotion_ranges,
+    names_locomotion_inputs, MAX_SOLVER_RUNTIME)
 from dash import html
 
 tool_tips = {"num_legs":
@@ -136,3 +137,22 @@ constraints; feasible solutions may violate some soft constraints.""",
     "tollbooths_active":
 """When set to 'On', tollbooths are added randomly with likelihood 20% to legs.
 The generated CQM has a hard constraint to not drive on legs with tollbooths.""",}
+
+tips_cost = f"""Cost per length unit for a mode of locomotion. This value multiplied
+by the length of the leg gives the cost of that leg for this mode of locomotion.
+[Range: {locomotion_ranges['walk_cost']}]"""
+tool_tips_cost = {name: tips_cost for name in names_locomotion_inputs if "cost"
+    in name}
+tool_tips.update(tool_tips_cost)
+
+tips_speed = f"Speed for a mode of locomotion. [Range: {locomotion_ranges['walk_speed']}]"
+tool_tips_speed = {name: tips_speed for name in names_locomotion_inputs if "speed"
+    in name}
+tool_tips.update(tool_tips_speed)
+
+tips_exercise = f"""Exercise coefficient for a mode of locomotion. This value multiplied
+by the length of the leg and by its slope gives the cost of that leg for this mode
+of locomotion. [Range: {locomotion_ranges['walk_exercise']}]"""
+tool_tips_exercise = {name: tips_exercise for name in names_locomotion_inputs if "exercise"
+    in name}
+tool_tips.update(tool_tips_exercise)

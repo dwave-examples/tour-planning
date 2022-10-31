@@ -741,8 +741,7 @@ def manage_submission(n_clicks, n_intervals, job_id, job_submit_state, job_submi
         disable_watchdog = False
 
         return disable_btn, disable_watchdog, 0.2*1000, 0, \
-            formatting.job_status_to_display("SUBMITTED"), \
-            submit_time, formatting.elapsed_time(0)
+            formatting.job_status_to_display("SUBMITTED"), submit_time, f"Elapsed: 0 sec."
 
     if any(formatting.job_status_to_str(job_submit_state) == status for status in
         ["SUBMITTED", *jobs.RUNNING]):
@@ -758,7 +757,7 @@ def manage_submission(n_clicks, n_intervals, job_id, job_submit_state, job_submi
 
         return True, False, wd_time, 0, \
             formatting.job_status_to_display(job_submit_state), dash.no_update, \
-            formatting.elapsed_time(elapsed_time)
+            f"Elapsed: {elapsed_time} sec."
 
     if any(formatting.job_status_to_str(job_submit_state) == status for status in jobs.TERMINATED):
 
@@ -767,7 +766,7 @@ def manage_submission(n_clicks, n_intervals, job_id, job_submit_state, job_submi
         disable_watchdog = True
 
         return disable_btn, disable_watchdog, 0.1*1000, 0, \
-            dash.no_update, dash.no_update, formatting.elapsed_time(elapsed_time)
+            dash.no_update, dash.no_update, f"Elapsed: {elapsed_time} sec."
 
     else:   # Exception state: should only ever happen in testing
         return False, True, 0, 0, formatting.job_status_to_display("ERROR"), dash.no_update, \

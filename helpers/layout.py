@@ -41,7 +41,7 @@ def _dcc_input(name, step=None):
         max=ranges[name][1],
         step=step,
         value=init_values[name],
-        style={'max-width': '75%'})
+        style={"max-width": "95%"})
 
 def _dcc_slider(name, step=1):
     """Construct ``dash.Slider`` elements for layout."""
@@ -53,7 +53,7 @@ def _dcc_slider(name, step=1):
         marks={i: {"label": f"{str(i)}", "style": {"color": "white"}} for i in
             range(ranges[name][0], ranges[name][1] + 1, 2*step)},
         step=step,
-        value=init_values[f"{name}"],)
+        value=init_values[f"{name}"])
 
 labels = {"hardsoft": ["Soft", "Hard"],
           "penalty": ["Linear", "Quadratic"],
@@ -67,6 +67,7 @@ def _dcc_radio(name, suffix):
         {"label": html.Div([labels[suffix][1]]), "value": labels[suffix][1].lower(),},],
         value=labels[suffix][0].lower(),
         id=f"{name}_{suffix}",
+        inputStyle={"margin-right": "10px", "margin-bottom": "10px"},
         labelStyle={"color": "white", "font-size": 12, "display": "flex"})
 
 modal_texts = {"solver": ["Leap Hybrid CQM Solver Inaccessible",

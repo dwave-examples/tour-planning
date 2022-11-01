@@ -27,7 +27,7 @@ def _plot_background(fig, legs, df, x_axis, image):
     fig.add_layout_image(
             dict(source=image, xref="x", yref="y", x=0, y=0.5,
             sizex=df[x_axis].sum(), sizey=1, sizing="stretch",
-            opacity=0.15, layer="below"))
+            opacity=0.5, layer="below"))
 
     x_pos = 0
     x_width = df[x_axis].sum()
@@ -118,7 +118,7 @@ def plot_time(legs, locomotion_vals, sampleset):
     fig = px.bar(df_legs, x="Time", y="Tour", color="Cost", orientation="h",
         color_continuous_scale=["#074C91", "#2A7DE1", "#17BEBB", "#FFA143", "#F37820"])
 
-    x_width = _plot_background(fig, legs, df_legs, "Time", "assets/background_time.jpg")
+    x_width = _plot_background(fig, legs, df_legs, "Time", "assets/background_time.png")
 
     _plot_results(fig, first, df_legs, "Time", x_width)
 

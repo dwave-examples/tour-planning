@@ -34,7 +34,7 @@ RUNNING = ["PENDING", "IN_PROGRESS"]
 def cancel(client, job_id):
     """Try to cancel a job submission."""
 
-    p = Problems(endpoint=client.endpoint, token=client.token)
+    p = Problems.from_client_config(client)
     try:
         status = p.cancel_problem(job_id)
         return status
@@ -50,7 +50,7 @@ def elapsed(ref_time):
 def get_status(client, job_id, job_submit_time):
     """Return status of submitted job."""
 
-    p = Problems(endpoint=client.endpoint, token=client.token)
+    p = Problems.from_client_config(client)
     try:
         status = p.get_problem_status(job_id)
         label_time = dict(status)["label"].split("submitted: ")[1]

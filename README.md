@@ -1,3 +1,7 @@
+[![Open in Leap IDE](
+  https://cdn-assets.cloud.dwavesys.com/shared/latest/badges/leapide.svg)](
+  https://ide.dwavesys.io/#https://github.com/dwave-examples/tour-planning)
+
 # Tour Planning
 
 A demonstration of using hard and soft constraints on the Leap&trade;

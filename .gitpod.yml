@@ -8,4 +8,4 @@ tasks:
     init: |
       pip install -r requirements.txt
     command: |
-      PORT=8000 python app.py
+      PORT=8000 HOST=0.0.0.0 python app.py

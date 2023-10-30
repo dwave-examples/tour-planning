@@ -113,16 +113,25 @@ might return good solutions.
 
 ## <a name="Installation"></a> Installation
 
-This example can be run in the Leap IDE by accessing the following URL:
+You can run this example without installation in cloud-based IDEs that support 
+the [Development Containers specification](https://containers.dev/supporting)
+(aka "devcontainers").
 
-    https://ide.dwavesys.io/#https://github.com/dwave-examples/tour-planning
-
-
-Alternatively, install requirements locally. Ideally, in a virtual environment.
+For development environments that do not support ``devcontainers``, install 
+requirements:
 
     pip install -r requirements.txt
 
+If you are cloning the repo to your local system, working in a 
+[virtual environment](https://docs.python.org/3/library/venv.html) is 
+recommended.
+
 ## <a name="Usage"></a> Usage
+
+Your development environment should be configured to 
+[access Leap’s Solvers](https://docs.ocean.dwavesys.com/en/stable/overview/sapi.html).
+You can see information about supported IDEs and authorizing access to your 
+Leap account [here](https://docs.dwavesys.com/docs/latest/doc_leap_dev_env.html).  
 
 To run the demo:
 

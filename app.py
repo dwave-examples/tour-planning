@@ -17,10 +17,9 @@ import dash_bootstrap_components as dbc
 from dash import dcc, html, Input, Output, State
 
 from json import JSONDecodeError
-import time, datetime
+import datetime
 
 from dwave.cloud.hybrid import Client
-from dwave.cloud.api import Problems, exceptions
 
 from helpers import formatting
 from helpers import graphics

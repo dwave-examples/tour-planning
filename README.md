@@ -291,7 +291,7 @@ The CQM is built as follows with a single objective and several constraints:
     by the slope be less or equal to your configured highest slope.
     This can be a hard or soft constraint.
 
-    ![eq_slope](assets/formula_slope.png)
+    <img src="assets/slope_con.png" width="480">
 
 * **Constraint 4: Single Mode of Locomotion Per Leg**
 

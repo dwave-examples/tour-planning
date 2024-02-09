@@ -281,7 +281,7 @@ The CQM is built as follows with a single objective and several constraints:
 
     ![eq_time](assets/speed_eq.png)
 
-    where $w_j$ is the speed of locomotion mode $j$.
+    ![eq_time_terms](assets/formula_time_terms.png)
 
 * **Constraint 3: Steep Legs**
 

@@ -279,9 +279,9 @@ The CQM is built as follows with a single objective and several constraints:
     length divided by the value of speed for each mode of locomotion. This can be
     a hard or soft constraint.
 
-    ![eq_time](assets/formula_time.png)
+    ![eq_time](assets/speed_eq.png)
 
-    ![eq_time_terms](assets/formula_time_terms.png)
+    ![eq_time_terms](assets/speed_text.png)
 
 * **Constraint 3: Steep Legs**
 
@@ -291,7 +291,7 @@ The CQM is built as follows with a single objective and several constraints:
     by the slope be less or equal to your configured highest slope.
     This can be a hard or soft constraint.
 
-    ![eq_slope](assets/formula_slope.png)
+    <img src="assets/slope_con.png" width="480">
 
 * **Constraint 4: Single Mode of Locomotion Per Leg**
 

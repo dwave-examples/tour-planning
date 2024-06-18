@@ -83,12 +83,12 @@ modal_texts = {"solver": ["Leap Hybrid CQM Solver Inaccessible",
             style={"display":"inline-block"}),
         "documentation."],
             style={"display":"inline-block"}),
-        html.Div(['If you are running in an online IDE, see the ',
-        Link(children=[html.Div('system documentation')],
-            href='https://docs.dwavesys.com/docs/latest/doc_leap_dev_env.html',
-            style={'display':'inline-block'}),
-        ' on supported IDEs.'],
-            style={'display':'inline-block'}),])]
+        html.Div(["If you are running in an online IDE, see the ",
+        Link(children=[html.Div("system documentation")],
+            href="https://docs.dwavesys.com/docs/latest/doc_leap_dev_env.html",
+            style={"display":"inline-block"}),
+        " on supported IDEs."],
+            style={"display":"inline-block"}),])]
     ],
     "usemodes": ["One Locomotion Mode is Required",
     [html.Div("You must set at least one mode of locomotion to 'Use'.")]]}

@@ -129,9 +129,9 @@ recommended.
 ## <a name="Usage"></a> Usage
 
 Your development environment should be configured to 
-[access Leap’s Solvers](https://docs.ocean.dwavesys.com/en/stable/overview/sapi.html).
+[access Leap’s Solvers](https://docs.dwavequantum.com/en/latest/ocean/sapi_access_basic.html).
 You can see information about supported IDEs and authorizing access to your 
-Leap account [here](https://docs.dwavesys.com/docs/latest/doc_leap_dev_env.html).  
+Leap account [here](https://docs.dwavequantum.com/en/latest/ocean/leap_authorization.html).  
 
 To run the demo:
 
@@ -203,7 +203,7 @@ found solutions.
 
 * **Solutions:** displays the returned solutions, formatted for reading and as
   a [dimod sampleset](
-https://docs.ocean.dwavesys.com/en/stable/docs_dimod/reference/sampleset.html)
+https://docs.dwavequantum.com/en/latest/concepts/samplesets.html)
   for copying into your code.
 
 * **CQM:** displays the constrained quadratic model generated for your configured
@@ -297,7 +297,7 @@ The CQM is built as follows with a single objective and several constraints:
 
     To ensure a single mode of locomotion is selected for each
     leg, the sum of the binary variables representing each leg must equal one
-    (a ["one-hot" constraint](https://docs.dwavesys.com/docs/latest/handbook_reformulating.html)).
+    (a ["one-hot" constraint](https://docs.dwavequantum.com/en/latest/quantum_research/reformulating.html#example-constraints-one-hot-domain-wall-n-choose-k)).
     This is a hard constraint.
 
     ![eq_one_hot](assets/formula_one_hot.png)
@@ -320,18 +320,18 @@ the user interface.
 
 ---
 **Note:** Standard practice for submitting problems to Leap solvers is to use
-a [dwave-system](https://docs.ocean.dwavesys.com/en/stable/docs_system/sdk_index.html)
+a [dwave-system](https://docs.dwavequantum.com/en/latest/ocean/api_ref_system/index.html)
 sampler; for example, you typically use
-[LeapHybridCQMSampler](https://docs.ocean.dwavesys.com/en/stable/docs_system/reference/samplers.html)
+[LeapHybridCQMSampler](https://docs.dwavequantum.com/en/latest/ocean/api_ref_system/samplers.html)
 for CQM problems. The code in this example uses the
-[dwave-cloud-client](https://docs.ocean.dwavesys.com/en/stable/docs_cloud/sdk_index.html),
+[dwave-cloud-client](https://docs.dwavequantum.com/en/latest/ocean/api_ref_cloud/index.html),
 which enables finer control over communications with the Solver API (SAPI).
 
 If you are learning to submit problems to Leap solvers, use a ``dwave-system``
 solver, with its higher level of abstraction and thus greater simplicity,
 as demonstrated in most the code examples of the
 [example collection](https://github.com/dwave-examples) and in the
-[Ocean documentation](https://docs.ocean.dwavesys.com/en/stable/index.html).
+[documentation](https://docs.dwavequantum.com/en/latest/index.html).
 
 ---
 

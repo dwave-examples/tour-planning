@@ -34,11 +34,13 @@ Constraints for optimization problems are often categorized as either “hard”
 “soft”.
 
 Any hard constraint  must be satisfied for a solution of the problem to qualify
-as feasible. Soft constraints may be violated to achieve an overall good solution.
+as feasible. Soft constraints may be violated to achieve an overall good
+solution.
 
-By setting appropriate weights to soft constraints in comparison to the objective
-and to other soft constraints, you can express the relative importance of such
-constraints. Soft constraints on binary variables can be one of two types:
+By setting appropriate weights to soft constraints in comparison to the
+objective and to other soft constraints, you can express the relative importance
+of such constraints. Soft constraints on binary variables can be one of two
+types:
 
 * linear: the penalty for violating such a constraint is proportional to the
   value of the violation (i.e., by how much the constraint is violated).
@@ -52,9 +54,9 @@ goes up, for a leg length of 3, to 9 and 81, respectively. Such a quadratic
 constraint severely discourages driving on longer legs.
 
 This example enables you to set hard or soft constraints on the tour's cost, its
-duration, and the steepest leg one can walk or cycle. The CQM has hard constraints
-that ensure a single mode of locomotion is selected for each leg and, optionally,
-prevent driving on legs with toll booths.  
+duration, and the steepest leg one can walk or cycle. The CQM has hard
+constraints that ensure a single mode of locomotion is selected for each leg
+and, optionally, prevent driving on legs with toll booths.
 
 ### Example Results
 
@@ -79,59 +81,60 @@ maximum.
 </details>
 
 <details><summary>3. Constraint on slope is also relaxed.</summary>
-Now the returned solution is to cycle on all but the steepest slopes, gaining exercise
-by tolerating a wide margin of violations of the slope constraint.
+Now the returned solution is to cycle on all but the steepest slopes, gaining
+exercise by tolerating a wide margin of violations of the slope constraint.
 
 ![Example All Soft Linear Constraints](assets/example_soft_linear_all_constraints.png)
 </details>
 
 <details><summary>4. Soft constraint on slope is set to quadratic.</summary>
 Now the solver discriminates sharply between slopes that are just a bit over the
-configured maximum and those significantly too steep. The returned solution allows
-for cycling on legs that violate the slope constraint by a narrow margin.
+configured maximum and those significantly too steep. The returned solution
+allows for cycling on legs that violate the slope constraint by a narrow margin.
 
 ![Example Slope Quadratic Constraint](assets/example_quadratic_slope_linear_other_constraints.png)
 </details>
 
-[^1]: The tour comprises 20 legs of equal length, 2, with budgeted cost of 150 and
-duration of 5, and a steepest leg for exercising of 2. Cycling (speed 3, cost 2)
-and bussing (speed 5, cost 4) are the available modes of locomotion. For soft
-constraints, weights are set to 5.
+[^1]: The tour comprises 20 legs of equal length, 2, with budgeted cost of 150
+and duration of 5, and a steepest leg for exercising of 2. Cycling (speed 3,
+cost 2) and bussing (speed 5, cost 4) are the available modes of locomotion. For
+soft constraints, weights are set to 5.
 
-In general, the use of soft constraints can result in imperfect but good solutions
-to many optimization problems: for example, in
+In general, the use of soft constraints can result in imperfect but good
+solutions to many optimization problems: for example, in
 [three-dimensional bin packing](https://github.com/dwave-examples/3d-bin-packing),
-which addresses problems in areas such as containers, pallets and aircraft, boxes
-should be fully supported to ensure stability; however, satisfying such a hard
-constraint might not be possible due to a variety of box sizes or bin size. Using
-a soft constraint that enables solutions with 70% support might be acceptable.
-Another example is
+which addresses problems in areas such as containers, pallets and aircraft,
+boxes should be fully supported to ensure stability; however, satisfying such a
+hard constraint might not be possible due to a variety of box sizes or bin size.
+Using a soft constraint that enables solutions with 70% support might be
+acceptable. Another example is
 [job shop scheduling](https://github.com/dwave-examples/job-shop-scheduling-cqm),
-where jobs should complete on time. If this constraint cannot be met
-due to conflicting constraints, a soft constraint that penalizes delays by length
+where jobs should complete on time. If this constraint cannot be met due to
+conflicting constraints, a soft constraint that penalizes delays by length
 might return good solutions.
 
 ## <a name="Installation"></a> Installation
 
-You can run this example without installation in cloud-based IDEs that support 
+You can run this example without installation in cloud-based IDEs that support
 the [Development Containers specification](https://containers.dev/supporting)
 (aka "devcontainers").
 
-For development environments that do not support ``devcontainers``, install 
+For development environments that do not support ``devcontainers``, install
 requirements:
 
     pip install -r requirements.txt
 
-If you are cloning the repo to your local system, working in a 
-[virtual environment](https://docs.python.org/3/library/venv.html) is 
+If you are cloning the repo to your local system, working in a
+[virtual environment](https://docs.python.org/3/library/venv.html) is
 recommended.
 
 ## <a name="Usage"></a> Usage
 
-Your development environment should be configured to 
+Your development environment should be configured to
 [access Leap’s Solvers](https://docs.dwavequantum.com/en/latest/ocean/sapi_access_basic.html).
-You can see information about supported IDEs and authorizing access to your 
-Leap account [here](https://docs.dwavequantum.com/en/latest/ocean/leap_authorization.html).  
+You can see information about supported IDEs and authorizing access to your
+Leap account
+[here](https://docs.dwavequantum.com/en/latest/ocean/leap_authorization.html).
 
 To run the demo:
 
@@ -156,25 +159,26 @@ tour: modes of locomotion vary in price and speed. For example, walking is free
 but slower than driving. Finally, you can chose whether or not to add tollbooths
 randomly to 20% of the legs.
 
-Leg lengths are set to a uniform random value between your configured minimum and
-maximum values. Steepness is set uniformly at random between zero and ten.
+Leg lengths are set to a uniform random value between your configured minimum
+and maximum values. Steepness is set uniformly at random between zero and ten.
 
 A leg's steepness affects exercising: a constraint is set to discourage (soft
 constraint) or disallow (hard constraint) walking or cycling on those legs that
 exceed the maximum slope you configured.
 
-When you update a tour's legs, toll booths may be placed at random on some of the
-legs (each leg has a 20% probability that it is given a tollbooth). These affect
-driving in a private car (but not bussing): the generated CQM has a hard constraint
-to not drive on legs with toll booths. This constraint is optional.
+When you update a tour's legs, toll booths may be placed at random on some of
+the legs (each leg has a 20% probability that it is given a tollbooth). These
+affect driving in a private car (but not bussing): the generated CQM has a hard
+constraint to not drive on legs with toll booths. This constraint is optional.
 
 ### Configuring the Constraints
 
 The upper-middle section of the user interface lets you tune the constraints
 on cost, time, and steepness.
 
-You can select whether to use hard or soft constraints, and for soft constraints,
-you can set weights and chose between linear or quadratic penalties.
+You can select whether to use hard or soft constraints, and for soft
+constraints, you can set weights and chose between linear or quadratic
+penalties.
 
 ### Submitting the Problem for Solution
 
@@ -187,46 +191,47 @@ unless you choose to increase it.
 The lower section's following tabs contain information about the problem and any
 found solutions.
 
-* **Graph:** displays the configured problem and any found solutions in three ways:
+*   **Graph:** displays the configured problem and any found solutions in three
+    ways:
 
-  - **Space:** displays relative leg lengths, steepness as a
-    color heatmap, and toll booths as icons above the colored bar representing
-    the tour. Modes of locomotion for the best solution found are displayed as
-    icons below it.
-  - **Time:** displays relative leg duration and, for the best found solution,
-    the cost per leg as a color heatmap.   
-  - **Feasibility:** displays feasible and non-feasible solutions in a
-    three-dimensional plot of exercise, cost, and time.
+    -   **Space:** displays relative leg lengths, steepness as a color heatmap,
+        and toll booths as icons above the colored bar representing the tour.
+        Modes of locomotion for the best solution found are displayed as icons
+        below it.
+    -   **Time:** displays relative leg duration and, for the best found
+        solution, the cost per leg as a color heatmap.
+    -   **Feasibility:** displays feasible and non-feasible solutions in a
+        three-dimensional plot of exercise, cost, and time.
 
-* **Problem:** displays the legs of the tour (length, slope, and toll booths),
-  formatted for reading and for copying into your code.
+*   **Problem:** displays the legs of the tour (length, slope, and toll booths),
+    formatted for reading and for copying into your code.
 
-* **Solutions:** displays the returned solutions, formatted for reading and as
-  a [dimod sampleset](
-https://docs.dwavequantum.com/en/latest/concepts/samplesets.html)
-  for copying into your code.
+*   **Solutions:** displays the returned solutions, formatted for reading and as
+    a [dimod sampleset](https://docs.dwavequantum.com/en/latest/concepts/samplesets.html)
+    for copying into your code.
 
-* **CQM:** displays the constrained quadratic model generated for your configured
-  tour and constraints. A good way to learn about the construction of a CQM, is
-  to begin with a minimal problem (a single mode of locomotion, one leg, no
-  tollbooths), study the simple CQM, and watch it change as you increase the
-  problem's complexity.
+*   **CQM:** displays the constrained quadratic model generated for your
+    configured tour and constraints. A good way to learn about the construction
+    of a CQM, is to begin with a minimal problem (a single mode of locomotion,
+    one leg, no tollbooths), study the simple CQM, and watch it change as you
+    increase the problem's complexity.
 
-* **Locomotion:** contains information about your configured tour, such as the
-  minimum, maximum, and average values of cost and time, and the values for
-  the available modes of locomotion (speed, cost, exercise) that **you can configure**.
+*   **Locomotion:** contains information about your configured tour, such as the
+    minimum, maximum, and average values of cost and time, and the values for
+    the available modes of locomotion (speed, cost, exercise) that
+    **you can configure**.
 
 ## <a name="Model-Overview"></a> Model Overview
 
-The problem of selecting a mode of locomotion for every leg of the tour to achieve
-some objective (maximize exercise) given a number of constraints (e.g., do not
-overpay) can be modeled as an optimization problem with decisions that could
-either be true or false: for any leg, should one drive? Should one
-walk?
+The problem of selecting a mode of locomotion for every leg of the tour to
+achieve some objective (maximize exercise) given a number of constraints (e.g.,
+do not overpay) can be modeled as an optimization problem with decisions that
+could either be true or false: for any leg, should one drive? Should one walk?
 
 This model uses up to four binary variables for each leg of the tour, each one
-representing whether one particular mode of locomotion is used or not. For example,
-leg number 5 might have the following binary variables and values in one solution:
+representing whether one particular mode of locomotion is used or not. For
+example, leg number 5 might have the following binary variables and values in
+one solution:
 
 | Binary Variable        | Represents    | Value in a Particular Solution |
 |------------------------|---------------|--------------------------------|
@@ -239,11 +244,11 @@ In the solution above, cycling is the mode of locomotion selected for leg 5.
 
 The CQM is built as follows with a single objective and several constraints:
 
-* **Objective: Maximize Exercise**
+*   **Objective: Maximize Exercise**
 
-    To maximize exercise on the tour, the CQM objective is to minimize the negative
-    summation of values of exercise set for each locomotion mode across all the
-    tour's legs.
+    To maximize exercise on the tour, the CQM objective is to minimize the
+    negative summation of values of exercise set for each locomotion mode
+    across all the tour's legs.
 
     ![eq_exercise](assets/formula_exercise.png)
 
@@ -257,13 +262,13 @@ The CQM is built as follows with a single objective and several constraints:
     multiplied by its slope and the exercise value of cycling because, for this
     leg, the binary variable representing cycling is the only non-zero variable.
 
-* **Constraint 1: Cost**
+*   **Constraint 1: Cost**
 
     To discourage or prevent the tour's cost from exceeding
     your preferred budget, the CQM sets a constraint that the total cost over
-    all legs is less or equal to your configured cost. It does this by minimizing
-    the summation of leg lengths multiplied by the cost value of locomotion mode
-    for the leg. This can be a hard or soft constraint.
+    all legs is less or equal to your configured cost. It does this by
+    minimizing the summation of leg lengths multiplied by the cost value of
+    locomotion mode for the leg. This can be a hard or soft constraint.
 
     ![eq_cost](assets/formula_cost.png)
 
@@ -272,28 +277,28 @@ The CQM is built as follows with a single objective and several constraints:
     Again, for each leg the only non-zero product has the binary variable
     representing the selected locomotion mode.
 
-* **Constraint 2: Time**
+*   **Constraint 2: Time**
 
     To discourage or prevent the tour's duration from exceeding your configured
     value, the CQM sets a constraint similar to that on cost but with the leg
-    length divided by the value of speed for each mode of locomotion. This can be
-    a hard or soft constraint.
+    length divided by the value of speed for each mode of locomotion. This can
+    be a hard or soft constraint.
 
     ![eq_time](assets/speed_eq.png)
 
     ![eq_time_terms](assets/speed_text.png)
 
-* **Constraint 3: Steep Legs**
+*   **Constraint 3: Steep Legs**
 
     To discourage or prevent the selection of exercising on legs where the slope
     is steeper than your configured maximum, the CQM sets a constraint that
-    for each leg the binary variables representing walking and cycling multiplied
-    by the slope be less or equal to your configured highest slope.
+    for each leg the binary variables representing walking and cycling
+    multiplied by the slope be less or equal to your configured highest slope.
     This can be a hard or soft constraint.
 
     <img src="assets/slope_con.png" width="480">
 
-* **Constraint 4: Single Mode of Locomotion Per Leg**
+*   **Constraint 4: Single Mode of Locomotion Per Leg**
 
     To ensure a single mode of locomotion is selected for each
     leg, the sum of the binary variables representing each leg must equal one
@@ -302,7 +307,7 @@ The CQM is built as follows with a single objective and several constraints:
 
     ![eq_one_hot](assets/formula_one_hot.png)
 
-* **Constraint 5: Toll Booths**
+*   **Constraint 5: Toll Booths**
 
     This optional constraint prevents driving on legs with toll booths. If you
     choose to enable the placement of tollbooths on some legs (tollbooths may be

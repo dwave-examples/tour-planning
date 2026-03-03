@@ -19,7 +19,7 @@ from dash import dcc, html, Input, Output, State
 from json import JSONDecodeError
 import datetime
 
-from dwave.cloud.hybrid import Client
+from dwave.cloud import Client
 
 from helpers import formatting
 from helpers import graphics
@@ -773,4 +773,4 @@ def manage_submission(n_clicks, n_intervals, job_id, job_submit_state, job_submi
             "Please restart"
 
 if __name__ == "__main__":
-    app.run_server(debug=True)
+    app.run(debug=True)

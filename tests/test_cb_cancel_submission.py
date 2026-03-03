@@ -30,7 +30,7 @@ btn_cancel = ContextVar('btn_cancel')
 job_id = ContextVar('job_id')
 
 status = api.models.ProblemStatus(id='1',  type=api.constants.ProblemType.CQM,
-    solver="Henry", submitted_on=time.time(), status=api.constants.ProblemStatus.CANCELLED)
+    solver=api.models.SolverIdentity(name="Henry"), submitted_on=time.time(), status=api.constants.ProblemStatus.CANCELLED)
 
 def mock_cancel(client, job_id):
 
